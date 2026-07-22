@@ -10,12 +10,12 @@ public class Ticket
     public int? assignedToId { get; set; }
     public int teamId { get; set; }
     public int categoryId { get; set; }
-    public int subcategoryId { get; set; } = null!;
+    public int subcategoryId { get; set; }
     public int statusId { get; set; }
     public int priorityId { get; set; }
     public int impactLevelId { get; set; }
     public int urgencyLevelId { get; set; }
-    public string subject { get; set; }
+    public string subject { get; set; } = string.Empty;
     public DateTime createdAt { get; set; }
     public DateTime? firstResponseAt { get; set; }
     public DateTime? resolvedAt { get; set; }

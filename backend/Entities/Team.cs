@@ -11,7 +11,7 @@ public class Team
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public Guid DepartmentId { get; set; }
-    public Department Department { get; set; } = null!
+    public Department Department { get; set; } = null!;
 
     public ICollection<TeamMember> TeamMembers { get; set; } = new List<TeamMember>();
     public ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
