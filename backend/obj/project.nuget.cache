@@ -1,0 +1,24 @@
+{
+  "version": 2,
+  "dgSpecHash": "nt6vfzk9N/E=",
+  "success": true,
+  "projectFilePath": "/Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/backend.csproj",
+  "expectedPackageFiles": [
+    "/Users/baranokcuoglu/.nuget/packages/microsoft.aspnetcore.openapi/10.0.10/microsoft.aspnetcore.openapi.10.0.10.nupkg.sha512",
+    "/Users/baranokcuoglu/.nuget/packages/microsoft.openapi/2.0.0/microsoft.openapi.2.0.0.nupkg.sha512"
+  ],
+  "logs": [
+    {
+      "code": "NU1903",
+      "level": "Warning",
+      "message": "'Microsoft.OpenApi' 2.0.0 paketinde önem derecesi yüksek olan bilinen bir https://github.com/advisories/GHSA-v5pm-xwqc-g5wc güvenlik açığı var",
+      "projectPath": "/Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/backend.csproj",
+      "warningLevel": 1,
+      "filePath": "/Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/backend.csproj",
+      "libraryId": "Microsoft.OpenApi",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    }
+  ]
+}
