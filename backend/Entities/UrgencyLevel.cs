@@ -2,8 +2,9 @@
 
 public class UrgencyLevel
 {
-	public Guid Id { get; set; }
-	public string name { get; set; } = string.Empty;
-	public int order { get; set; }
-	public bool isActive { get; set; }
+	public Guid Id { get; set; } = Guid.NewGuid();
+	public string Name { get; set; } = string.Empty;
+	public int Order { get; set; }
+	public bool IsActive { get; set; }
+	public ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
 }
