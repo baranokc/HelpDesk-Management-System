@@ -9,6 +9,6 @@ public class AuditLog
     public Guid? entityId {get; set; }
     public string? oldValues {get; set; }
     public string? newValues {get; set; }
-    public string ipAddress {get; set; }
+    public string ipAddress { get; set; } = string.Empty;
     public DateTime createdAt {get; set; }
 }

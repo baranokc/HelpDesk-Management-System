@@ -7,7 +7,7 @@ public class Ticket
     public string ticketTitle { get; set; } = null!;
     public string ticketDescription { get; set; } = null!;
     public Guid createdById { get; set; }
-    public User CreatedBy {get; set; }
+    public User CreatedBy { get; set; } = null!;
     public Guid? assignedToId { get; set; }
     public User? AssignedTo {get; set; }
     public Guid? teamId { get; set; }
@@ -15,15 +15,15 @@ public class Ticket
     public Guid categoryId { get; set; }
     public TicketCategory Category {get; set; } = null!;
     public Guid? subcategoryId { get; set; }
-    public TicketSubCategory Subcategory { get; set; }
+    public TicketSubCategory Subcategory { get; set; } = null!;
     public Guid statusId { get; set; }
     public TicketStatus Status { get; set; } = null!;
     public Guid priorityId { get; set; }
-    public TicketPriority Priority { get; set; }
+    public TicketPriority Priority { get; set; } = null!;
     public Guid impactLevelId { get; set; }
-    public ImpactLevel ImpactLevel { get; set; }
+    public ImpactLevel ImpactLevel { get; set; } = null!;
     public Guid urgencyLevelId { get; set; }
-    public UrgencyLevel UrgencyLevel { get; set; }
+    public UrgencyLevel UrgencyLevel { get; set; } = null!;
     public string subject { get; set; } = string.Empty;
     public DateTime createdAt { get; set; } = DateTime.UtcNow;
     public DateTime? firstResponseAt { get; set; }

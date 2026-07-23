@@ -26,7 +26,7 @@ public class AppDbContext : DbContext
     public DbSet<Asset> Assets { get; set; } = null!;
     public DbSet<AssetAssignment> AssetAssignments { get; set; } = null!;
     public DbSet<AssetStatus> AssetStatuses { get; set; } = null!;
-    public DbSet<AssetTypes> AssetTypes { get; set; } = null!;
+    public DbSet<AssetType> AssetTypes { get; set; } = null!;
     public DbSet<ImpactLevel> ImpactLevels { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

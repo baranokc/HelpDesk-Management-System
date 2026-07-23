@@ -4,7 +4,7 @@ public class SlaPolicy
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid priorityId {get; set; }
-    public TicketPriority Priority {get; set; }
+    public TicketPriority Priority { get; set; } = null!;
     public TimeSpan firstResponseTime {get; set; }
     public TimeSpan resolutionTime {get; set; }
     public bool isActive {get; set; } = true;
