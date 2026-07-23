@@ -33,7 +33,30 @@ public class AppDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.Entity<UserRole>()
-            .HasKey(ur => new{ur.UserId, ur.RoleId});
+            .HasKey(ur => new { ur.UserId, ur.RoleId });
+
+        modelBuilder.Entity<Ticket>()
+        .HasOne(t => t.CreatedBy)
+        .WithMany()
+        .HasForeignKey(t => t.CreatedById)
+        .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Ticket>()
+        .HasOne(t => t.AssignedTo)
+        .WithMany()
+        .HasForeignKey(t => t.AssignedToId)
+        .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Ticket>()
+        .HasOne(t => t.AssignedTo)
+        .WithMany()
+        .HasForeignKey(t => t.AssignedToId)
+        .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Ticket>()
+        .HasOne(t => t.Team)
+        .WithMany()
+        .HasForeignKey(t => t.TeamId);
     }
 }
 
