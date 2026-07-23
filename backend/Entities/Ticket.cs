@@ -6,15 +6,24 @@ public class Ticket
     public string ticketNumber { get; set; } = null!;
     public string ticketTitle { get; set; } = null!;
     public string ticketDescription { get; set; } = null!;
-    public int createdById { get; set; }
-    public int? assignedToId { get; set; }
-    public int teamId { get; set; }
-    public int categoryId { get; set; }
-    public int subcategoryId { get; set; }
-    public int statusId { get; set; }
-    public int priorityId { get; set; }
-    public int impactLevelId { get; set; }
-    public int urgencyLevelId { get; set; }
+    public Guid createdById { get; set; }
+    public User CreatedBy {get; set; }
+    public Guid? assignedToId { get; set; }
+    public User? AssignedTo {get; set; }
+    public Guid? teamId { get; set; }
+    public Team? TeamId {get; set; }
+    public Guid categoryId { get; set; }
+    public TicketCategory Category {get; set; } = null!;
+    public Guid? subcategoryId { get; set; }
+    public TicketSubCategory Subcategory { get; set; }
+    public Guid statusId { get; set; }
+    public TicketStatus Status { get; set; } = null!;
+    public Guid priorityId { get; set; }
+    public TicketPriority Priority { get; set; }
+    public Guid impactLevelId { get; set; }
+    public ImpactLevel ImpactLevel { get; set; }
+    public Guid urgencyLevelId { get; set; }
+    public UrgencyLevel UrgencyLevel { get; set; }
     public string subject { get; set; } = string.Empty;
     public DateTime createdAt { get; set; } = DateTime.UtcNow;
     public DateTime? firstResponseAt { get; set; }
@@ -22,4 +31,6 @@ public class Ticket
     public DateTime? closedAt { get; set; }
     public DateTime slaDueAt { get; set; }
     public bool isDeleted { get; set; }
+    public ICollection<TicketAssignment> Assignments { get; set; } = new List<TicketAssignment>(); 
+    public ICollection<SlaRecord> SlaRecords { get; set; } = new List<SlaRecord>();
 }

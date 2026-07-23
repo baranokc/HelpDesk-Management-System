@@ -4,10 +4,11 @@ public class AssetAssignment
 {
 	public Guid Id { get; set; } = Guid.NewGuid();
     public Guid assetId {get; set; }
-    public Asset AssetId { get; set; } = null!;
+    public Asset Asset {get; set; }
     public Guid userId {get; set; }
-    public User UserId { get; set; } = null!;
-    public DateTime AssignedAt {get; set; }
-    public DateTime ReturnedAt {get; set; }
-    public string Notes {get; set; } = string.Empty;
+    public User User {get; set; }
+    public DateTime assignedAt {get; set; }
+    public DateTime returnedAt {get; set; }
+    public string notes {get; set; } =string.Empty;
+// 
 }
