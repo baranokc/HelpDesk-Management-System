@@ -1,6 +1,6 @@
 ﻿namespace backend.Entities;
 
-public class TicketSubCategories
+public class TicketSubCategory
 {
     public Guid Id { get; set; }
     public int categoryId { get; set; }
