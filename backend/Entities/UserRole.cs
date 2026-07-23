@@ -1,4 +1,4 @@
-// namespace backend.Entities;
+namespace backend.Entities;
 
 public class UserRole
 {
