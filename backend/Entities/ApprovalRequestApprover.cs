@@ -6,7 +6,8 @@ public class ApprovalRequestApprover
     public ApprovalRequest Request { get; set; } = null!;
     public Guid ApproverId {get; set; }
     public User Approver { get; set; } = null!;
-    public int orderNo {get; set; }
-    public DateTime respondedAt {get; set; } = DateTime.UtcNow;
+    public int OrderNo {get; set; }
+    public DateTime? RespondedAt {get; set; } 
+    public Guid StatusId {get; set; }
     public ApprovalStatus Status { get; set; } = null!;
 }

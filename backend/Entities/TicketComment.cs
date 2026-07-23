@@ -11,4 +11,5 @@ public class TicketComment
     public User User { get; set; } = null!;
     public bool IsInternal { get; set; } = false;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public ICollection<TicketAttachment> Attachments { get; set; } = new List<TicketAttachment>();
 }

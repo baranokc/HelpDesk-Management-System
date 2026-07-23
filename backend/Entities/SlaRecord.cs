@@ -3,16 +3,17 @@ namespace backend.Entities;
 public class SlaRecord
 {
     public Guid Id { get; set; } = Guid.NewGuid();
-    public Guid ticketId {get; set; }
+    public Guid TicketId {get; set; }
     public Ticket Ticket {get; set; } = null!;
-    public Guid policyId {get; set; }
+    public Guid SlaPolicyId {get; set; }
     public SlaPolicy SlaPolicy {get; set; } = null!;
-    public DateTime firstResponseDueAt {get; set; }
-    public DateTime firstResponseAt {get; set; }
-    public DateTime resolutionDueAt {get; set; }
-    public DateTime resolutionAt {get; set; }
-    public bool isPaused {get; set; } = true;
-    public string pauseReason {get; set; } = string.Empty;
-    public DateTime pausedAt {get; set; }
-    public DateTime resumedAt {get; set; }
+    public DateTime FirstResponseDueAt {get; set; }
+    public DateTime? FirstResponseAt {get; set; }
+    public DateTime ResolutionDueAt {get; set; }
+    public DateTime? ResolutionAt {get; set; }
+    public bool IsPaused {get; set; }
+    public string PauseReason {get; set; } = string.Empty;
+    public DateTime PausedAt {get; set; }
+    public DateTime ResumedAt {get; set; }
+    public ICollection<SlaPause> Pauses { get; set; } = new List<SlaPause>();
 }

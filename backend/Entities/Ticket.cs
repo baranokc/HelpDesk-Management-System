@@ -3,34 +3,34 @@
 public class Ticket
 {
     public Guid Id { get; set; } = Guid.NewGuid();
-    public string ticketNumber { get; set; } = null!;
-    public string ticketTitle { get; set; } = null!;
-    public string ticketDescription { get; set; } = null!;
-    public Guid createdById { get; set; }
+    public string TicketNumber { get; set; } = string.Empty;
+    public string TicketTitle { get; set; } = string.Empty;
+    public string TicketDescription { get; set; } = string.Empty;
+    public Guid CreatedById { get; set; }
     public User CreatedBy { get; set; } = null!;
-    public Guid? assignedToId { get; set; }
+    public Guid? AssignedToId { get; set; }
     public User? AssignedTo {get; set; }
-    public Guid? teamId { get; set; }
-    public Team? TeamId {get; set; }
-    public Guid categoryId { get; set; }
+    public Guid? TeamId { get; set; }
+    public Team? Team {get; set; }
+    public Guid CategoryId { get; set; }
     public TicketCategory Category {get; set; } = null!;
-    public Guid? subcategoryId { get; set; }
-    public TicketSubCategory Subcategory { get; set; } = null!;
-    public Guid statusId { get; set; }
+    public Guid? SubcategoryId { get; set; }
+    public TicketSubCategory Subcategory { get; set; }
+    public Guid StatusId { get; set; }
     public TicketStatus Status { get; set; } = null!;
-    public Guid priorityId { get; set; }
+    public Guid PriorityId { get; set; }
     public TicketPriority Priority { get; set; } = null!;
-    public Guid impactLevelId { get; set; }
+    public Guid ImpactLevelId { get; set; }
     public ImpactLevel ImpactLevel { get; set; } = null!;
-    public Guid urgencyLevelId { get; set; }
+    public Guid UrgencyLevelId { get; set; }
     public UrgencyLevel UrgencyLevel { get; set; } = null!;
-    public string subject { get; set; } = string.Empty;
-    public DateTime createdAt { get; set; } = DateTime.UtcNow;
-    public DateTime? firstResponseAt { get; set; }
-    public DateTime? resolvedAt { get; set; }
-    public DateTime? closedAt { get; set; }
-    public DateTime slaDueAt { get; set; }
-    public bool isDeleted { get; set; }
+    public string Subject { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? FirstResponseAt { get; set; }
+    public DateTime? ResolvedAt { get; set; }
+    public DateTime? ClosedAt { get; set; }
+    public DateTime? SlaDueAt { get; set; }
+    public bool IsDeleted { get; set; }
     public ICollection<TicketAssignment> Assignments { get; set; } = new List<TicketAssignment>(); 
     public ICollection<SlaRecord> SlaRecords { get; set; } = new List<SlaRecord>();
 }
