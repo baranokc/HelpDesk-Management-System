@@ -15,7 +15,7 @@ public class Ticket
     public Guid CategoryId { get; set; }
     public TicketCategory Category {get; set; } = null!;
     public Guid? SubcategoryId { get; set; }
-    public TicketSubCategory Subcategory { get; set; }
+    public TicketSubCategory? Subcategory { get; set; }
     public Guid StatusId { get; set; }
     public TicketStatus Status { get; set; } = null!;
     public Guid PriorityId { get; set; }

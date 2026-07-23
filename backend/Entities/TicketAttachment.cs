@@ -14,7 +14,7 @@ public class TicketAttachment
     public TicketComment? TicketComment { get; set; } 
     public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
 
-    public Guid UploaderID { get; set; }
+    public Guid UploaderId { get; set; }
     public User Uploader { get; set; } = null!;
 
 }
