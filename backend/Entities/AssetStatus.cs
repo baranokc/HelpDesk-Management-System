@@ -1,4 +1,4 @@
-namespace backend.Entites;
+namespace backend.Entities;
 
 public class AssetStatus
 {

@@ -1,0 +1,9 @@
+/Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/obj/Debug/net10.0/backend.csproj.AssemblyReference.cache
+/Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/obj/Debug/net10.0/rpswa.dswa.cache.json
+/Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/obj/Debug/net10.0/backend.GeneratedMSBuildEditorConfig.editorconfig
+/Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/obj/Debug/net10.0/backend.AssemblyInfoInputs.cache
+/Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/obj/Debug/net10.0/backend.AssemblyInfo.cs
+/Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/obj/Debug/net10.0/backend.csproj.CoreCompileInputs.cache
+/Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/obj/Debug/net10.0/backend.MvcApplicationPartsAssemblyInfo.cs
+/Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/obj/Debug/net10.0/backend.MvcApplicationPartsAssemblyInfo.cache
+/Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/obj/Debug/net10.0/backend.sourcelink.json

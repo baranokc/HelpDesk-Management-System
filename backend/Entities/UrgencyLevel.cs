@@ -1,6 +1,6 @@
 ﻿namespace backend.Entities;
 
-public class Class1
+public class UrgencyLevel
 {
 	public Guid Id { get; set; }
 	public string name { get; set; } = string.Empty;
