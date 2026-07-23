@@ -2,7 +2,7 @@
 
 public class Ticket
 {
-    public Guid ID { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
     public string ticketNumber { get; set; } = null!;
     public string ticketTitle { get; set; } = null!;
     public string ticketDescription { get; set; } = null!;
@@ -16,7 +16,7 @@ public class Ticket
     public int impactLevelId { get; set; }
     public int urgencyLevelId { get; set; }
     public string subject { get; set; } = string.Empty;
-    public DateTime createdAt { get; set; }
+    public DateTime createdAt { get; set; } = DateTime.UtcNow;
     public DateTime? firstResponseAt { get; set; }
     public DateTime? resolvedAt { get; set; }
     public DateTime? closedAt { get; set; }
