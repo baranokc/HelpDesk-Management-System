@@ -6,6 +6,7 @@ using System.Text;
 using backend.Data;
 using backend.DTO.Auth;
 using backend.Entities;
+using BCrypt.Net;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
@@ -36,7 +37,7 @@ public class AuthService : IAuthService
         {
             Token = token,
             Email = user.Email,
-            FullName = $"{user.Name}{user.SurName}",
+            FullName = $"{user.Name}{user.LastName}",
             Role = user.Role?.Name ?? "User",
         };
 
@@ -64,5 +65,30 @@ public class AuthService : IAuthService
         var token = tokenHandler.CreateToken(tokenDescriptor);
         return tokenHandler.WriteToken(token);
     }
-    public async  Task<bool> RegisterAsync(UserCreate dto) => throw new NotImplementedException();
+    public async Task<bool> RegisterAsync(UserCreate dto)
+    {
+        var existingUser = await _context.Users
+            .FirstOrDefaultAsync(u => u.Email == dto.Email);
+        if (existingUser != null)
+        {
+            return false;
+        }
+        string passwordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+
+        var newUser = new User
+        {
+            Email = dto.Email,
+            PasswordHash = passwordHash,
+            Name = dto.Name,
+            LastName = dto.LastName,
+            DepartmentId = null!,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _context.Users.AddAsync(newUser);
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+    
 }

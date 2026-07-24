@@ -121,3 +121,13 @@
 /Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/obj/Debug/net10.0/backend.pdb
 /Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/obj/Debug/net10.0/backend.genruntimeconfig.cache
 /Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/obj/Debug/net10.0/ref/backend.dll
+/Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/bin/Debug/net10.0/BCrypt-Net-Next.dll
+/Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/bin/Debug/net10.0/Microsoft.AspNetCore.Authentication.JwtBearer.dll
+/Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/bin/Debug/net10.0/Microsoft.Bcl.Cryptography.dll
+/Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/bin/Debug/net10.0/Microsoft.IdentityModel.Abstractions.dll
+/Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/bin/Debug/net10.0/Microsoft.IdentityModel.JsonWebTokens.dll
+/Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/bin/Debug/net10.0/Microsoft.IdentityModel.Logging.dll
+/Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/bin/Debug/net10.0/Microsoft.IdentityModel.Protocols.dll
+/Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/bin/Debug/net10.0/Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+/Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/bin/Debug/net10.0/Microsoft.IdentityModel.Tokens.dll
+/Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/bin/Debug/net10.0/System.IdentityModel.Tokens.Jwt.dll

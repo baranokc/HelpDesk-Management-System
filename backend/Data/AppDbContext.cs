@@ -1,4 +1,5 @@
 using backend.Entities;
+using Microsoft.AspNetCore.Razor.TagHelpers;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.Data;
@@ -57,6 +58,19 @@ public class AppDbContext : DbContext
         .HasOne(t => t.Team)
         .WithMany()
         .HasForeignKey(t => t.TeamId);
+
+        modelBuilder.Entity<TicketAssignment>(entity =>
+        {
+            entity.HasOne(ta => ta.AssignedBy)
+            .WithMany(tm => tm.AssignmentsCreated)
+            .HasForeignKey(ta => ta.AssignedById)
+            .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(ta => ta.AssignedTo)
+            .WithMany(tm => tm.AssignmentsReceived)
+            .HasForeignKey(ta => ta.AssignedToId)
+            .OnDelete(DeleteBehavior.Restrict);
+        });
     }
 }
 

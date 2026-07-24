@@ -9,7 +9,7 @@ public class UserCreate
     public string Email { get; set; } = string.Empty;
     [Required(ErrorMessage = "Password is required")]
     [MinLength(6, ErrorMessage = "The password must be 6 characters long")]
-    public string Passowrd { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
     [Required(ErrorMessage = "Name is required")]
     public string Name { get; set; } = string.Empty;
     [Required(ErrorMessage = "Last name is required")]

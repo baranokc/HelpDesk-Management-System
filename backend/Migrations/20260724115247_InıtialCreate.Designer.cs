@@ -12,8 +12,8 @@ using backend.Data;
 namespace backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260723105111_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260724115247_InıtialCreate")]
+    partial class InıtialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -31,43 +31,43 @@ namespace backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("assetTypeId")
+                    b.Property<Guid>("AssetStatusId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("brand")
+                    b.Property<Guid>("AssetTypeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Brand")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("location")
+                    b.Property<string>("Location")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("model")
+                    b.Property<string>("Model")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("notes")
+                    b.Property<string>("Notes")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<DateTime>("purchaseDate")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<DateOnly?>("PurchaseDate")
+                        .HasColumnType("date");
 
-                    b.Property<string>("serialNumber")
+                    b.Property<string>("SerialNumber")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("statusId")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("warrantyEndDate")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<DateOnly?>("WarrantyEndDate")
+                        .HasColumnType("date");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("assetTypeId");
+                    b.HasIndex("AssetStatusId");
 
-                    b.HasIndex("statusId");
+                    b.HasIndex("AssetTypeId");
 
                     b.ToTable("Assets");
                 });
@@ -78,40 +78,45 @@ namespace backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("assetId")
+                    b.Property<Guid>("AssetId")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime>("assignedAt")
+                    b.Property<DateTime>("AssignedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("notes")
+                    b.Property<string>("Notes")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<DateTime>("returnedAt")
+                    b.Property<DateTime?>("ReturnedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("userId")
+                    b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("assetId");
+                    b.HasIndex("AssetId");
 
-                    b.HasIndex("userId");
+                    b.HasIndex("UserId");
 
                     b.ToTable("AssetAssignments");
                 });
 
             modelBuilder.Entity("backend.Entities.AssetStatus", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("text");
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
 
                     b.Property<string>("ColorCode")
                         .HasColumnType("text");
 
                     b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -126,14 +131,14 @@ namespace backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("description")
+                    b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("name")
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -182,14 +187,14 @@ namespace backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<bool>("isActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("order")
+                    b.Property<int>("Order")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
@@ -219,31 +224,62 @@ namespace backend.Migrations
                     b.ToTable("Roles");
                 });
 
+            modelBuilder.Entity("backend.Entities.SlaPause", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("PausedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("PausedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("ResumedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("SlaRecordId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PausedById");
+
+                    b.HasIndex("SlaRecordId");
+
+                    b.ToTable("SlaPause");
+                });
+
             modelBuilder.Entity("backend.Entities.SlaPolicy", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("description")
+                    b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<TimeSpan>("firstResponseTime")
+                    b.Property<TimeSpan>("FirstResponseTime")
                         .HasColumnType("interval");
 
-                    b.Property<bool>("isActive")
+                    b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
-                    b.Property<Guid>("priorityId")
+                    b.Property<Guid>("PriorityId")
                         .HasColumnType("uuid");
 
-                    b.Property<TimeSpan>("resolutionTime")
+                    b.Property<TimeSpan>("ResolutionTime")
                         .HasColumnType("interval");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("priorityId");
+                    b.HasIndex("PriorityId");
 
                     b.ToTable("SlaPolicy");
                 });
@@ -254,45 +290,42 @@ namespace backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("SlaPolicyId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("firstResponseAt")
+                    b.Property<DateTime?>("FirstResponseAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime>("firstResponseDueAt")
+                    b.Property<DateTime>("FirstResponseDueAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool>("isPaused")
+                    b.Property<bool>("IsPaused")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("pauseReason")
+                    b.Property<string>("PauseReason")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<DateTime>("pausedAt")
+                    b.Property<DateTime>("PausedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("policyId")
+                    b.Property<DateTime?>("ResolutionAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ResolutionDueAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ResumedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("SlaPolicyId")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime>("resolutionAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("resolutionDueAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("resumedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("ticketId")
+                    b.Property<Guid>("TicketId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
                     b.HasIndex("SlaPolicyId");
 
-                    b.HasIndex("ticketId");
+                    b.HasIndex("TicketId");
 
                     b.ToTable("SlaRecord");
                 });
@@ -339,9 +372,8 @@ namespace backend.Migrations
                     b.Property<DateTime>("JoinedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("RoleInTeam")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<int>("RoleInTeam")
+                        .HasColumnType("integer");
 
                     b.Property<Guid>("TeamId")
                         .HasColumnType("uuid");
@@ -364,96 +396,101 @@ namespace backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("AssignedToId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("FirstResponseAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ImpactLevelId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("PriorityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("SlaDueAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("StatusId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("SubcategoryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("TeamId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("TeamId1")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TicketDescription")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("TicketNumber")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("TicketTitle")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UrgencyLevelId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("UserId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid?>("UserId1")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("assignedToId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("categoryId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("closedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("createdAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("createdById")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("firstResponseAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("impactLevelId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("isDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<Guid>("priorityId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("resolvedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("slaDueAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("statusId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("subcategoryId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("subject")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid?>("teamId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ticketDescription")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ticketNumber")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ticketTitle")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("urgencyLevelId")
-                        .HasColumnType("uuid");
-
                     b.HasKey("Id");
+
+                    b.HasIndex("AssignedToId");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("ImpactLevelId");
+
+                    b.HasIndex("PriorityId");
+
+                    b.HasIndex("StatusId");
+
+                    b.HasIndex("SubcategoryId");
+
+                    b.HasIndex("TeamId");
+
+                    b.HasIndex("TeamId1");
+
+                    b.HasIndex("UrgencyLevelId");
 
                     b.HasIndex("UserId");
 
                     b.HasIndex("UserId1");
-
-                    b.HasIndex("assignedToId");
-
-                    b.HasIndex("categoryId");
-
-                    b.HasIndex("createdById");
-
-                    b.HasIndex("impactLevelId");
-
-                    b.HasIndex("priorityId");
-
-                    b.HasIndex("statusId");
-
-                    b.HasIndex("subcategoryId");
-
-                    b.HasIndex("teamId");
-
-                    b.HasIndex("urgencyLevelId");
 
                     b.ToTable("Tickets");
                 });
@@ -464,25 +501,25 @@ namespace backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime>("assignedAt")
+                    b.Property<DateTime>("AssignedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("assignedById")
+                    b.Property<Guid>("AssignedById")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("assignedToId")
+                    b.Property<Guid>("AssignedToId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("ticketId")
+                    b.Property<Guid>("TicketId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("assignedById");
+                    b.HasIndex("AssignedById");
 
-                    b.HasIndex("assignedToId");
+                    b.HasIndex("AssignedToId");
 
-                    b.HasIndex("ticketId");
+                    b.HasIndex("TicketId");
 
                     b.ToTable("TicketAssignments");
                 });
@@ -505,9 +542,8 @@ namespace backend.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("FileSize")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
 
                     b.Property<Guid?>("TicketCommentId")
                         .HasColumnType("uuid");
@@ -518,10 +554,7 @@ namespace backend.Migrations
                     b.Property<DateTime>("UploadedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("UploadedById")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("UploaderID")
+                    b.Property<Guid>("UploaderId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
@@ -530,7 +563,7 @@ namespace backend.Migrations
 
                     b.HasIndex("TicketId");
 
-                    b.HasIndex("UploadedById");
+                    b.HasIndex("UploaderId");
 
                     b.ToTable("TicketAttachments");
                 });
@@ -541,19 +574,16 @@ namespace backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("description")
+                    b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<bool>("isActive")
+                    b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("name")
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<int>("parentCategoryId")
-                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -597,14 +627,14 @@ namespace backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("name")
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<TimeSpan>("resolutionTime")
+                    b.Property<TimeSpan>("ResolutionTime")
                         .HasColumnType("interval");
 
-                    b.Property<TimeSpan>("responseTime")
+                    b.Property<TimeSpan>("ResponseTime")
                         .HasColumnType("interval");
 
                     b.HasKey("Id");
@@ -618,17 +648,17 @@ namespace backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("description")
+                    b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<bool>("isActive")
+                    b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
-                    b.Property<bool>("isClosed")
+                    b.Property<bool>("IsClosed")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("name")
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -647,9 +677,6 @@ namespace backend.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("ChangedById")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ChangerId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("NewStatusId")
@@ -683,23 +710,23 @@ namespace backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("categoryId")
+                    b.Property<Guid>("CategoryId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("description")
+                    b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<bool>("isActive")
+                    b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("name")
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("categoryId");
+                    b.HasIndex("CategoryId");
 
                     b.ToTable("TicketSubCategories");
                 });
@@ -710,14 +737,14 @@ namespace backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<bool>("isActive")
+                    b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("name")
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("order")
+                    b.Property<int>("Order")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
@@ -744,6 +771,10 @@ namespace backend.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<Guid?>("ManagerId")
                         .HasColumnType("uuid");
 
@@ -755,6 +786,9 @@ namespace backend.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("RoleId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Username")
                         .IsRequired()
                         .HasColumnType("text");
@@ -764,6 +798,8 @@ namespace backend.Migrations
                     b.HasIndex("DepartmentId");
 
                     b.HasIndex("ManagerId");
+
+                    b.HasIndex("RoleId");
 
                     b.ToTable("Users");
                 });
@@ -788,32 +824,34 @@ namespace backend.Migrations
 
             modelBuilder.Entity("backend.Entities.Asset", b =>
                 {
-                    b.HasOne("backend.Entities.AssetType", "AssetType")
+                    b.HasOne("backend.Entities.AssetStatus", "AssetStatus")
                         .WithMany("Assets")
-                        .HasForeignKey("assetTypeId")
+                        .HasForeignKey("AssetStatusId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("backend.Entities.AssetStatus", "status")
-                        .WithMany()
-                        .HasForeignKey("statusId");
+                    b.HasOne("backend.Entities.AssetType", "AssetType")
+                        .WithMany("Assets")
+                        .HasForeignKey("AssetTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AssetStatus");
 
                     b.Navigation("AssetType");
-
-                    b.Navigation("status");
                 });
 
             modelBuilder.Entity("backend.Entities.AssetAssignment", b =>
                 {
                     b.HasOne("backend.Entities.Asset", "Asset")
                         .WithMany("Assignments")
-                        .HasForeignKey("assetId")
+                        .HasForeignKey("AssetId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("backend.Entities.User", "User")
                         .WithMany()
-                        .HasForeignKey("userId")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -831,11 +869,30 @@ namespace backend.Migrations
                     b.Navigation("ParentDepartment");
                 });
 
+            modelBuilder.Entity("backend.Entities.SlaPause", b =>
+                {
+                    b.HasOne("backend.Entities.User", "PausedBy")
+                        .WithMany()
+                        .HasForeignKey("PausedById")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("backend.Entities.SlaRecord", "SlaRecord")
+                        .WithMany("Pauses")
+                        .HasForeignKey("SlaRecordId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PausedBy");
+
+                    b.Navigation("SlaRecord");
+                });
+
             modelBuilder.Entity("backend.Entities.SlaPolicy", b =>
                 {
                     b.HasOne("backend.Entities.TicketPriority", "Priority")
                         .WithMany("SlaPolicies")
-                        .HasForeignKey("priorityId")
+                        .HasForeignKey("PriorityId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -852,7 +909,7 @@ namespace backend.Migrations
 
                     b.HasOne("backend.Entities.Ticket", "Ticket")
                         .WithMany("SlaRecords")
-                        .HasForeignKey("ticketId")
+                        .HasForeignKey("TicketId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -893,6 +950,59 @@ namespace backend.Migrations
 
             modelBuilder.Entity("backend.Entities.Ticket", b =>
                 {
+                    b.HasOne("backend.Entities.User", "AssignedTo")
+                        .WithMany()
+                        .HasForeignKey("AssignedToId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("backend.Entities.TicketCategory", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("backend.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("backend.Entities.ImpactLevel", "ImpactLevel")
+                        .WithMany("Tickets")
+                        .HasForeignKey("ImpactLevelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("backend.Entities.TicketPriority", "Priority")
+                        .WithMany("Tickets")
+                        .HasForeignKey("PriorityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("backend.Entities.TicketStatus", "Status")
+                        .WithMany("Tickets")
+                        .HasForeignKey("StatusId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("backend.Entities.TicketSubCategory", "Subcategory")
+                        .WithMany()
+                        .HasForeignKey("SubcategoryId");
+
+                    b.HasOne("backend.Entities.Team", "Team")
+                        .WithMany()
+                        .HasForeignKey("TeamId");
+
+                    b.HasOne("backend.Entities.Team", null)
+                        .WithMany("Tickets")
+                        .HasForeignKey("TeamId1");
+
+                    b.HasOne("backend.Entities.UrgencyLevel", "UrgencyLevel")
+                        .WithMany("Tickets")
+                        .HasForeignKey("UrgencyLevelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("backend.Entities.User", null)
                         .WithMany("AssignedTickets")
                         .HasForeignKey("UserId");
@@ -900,55 +1010,6 @@ namespace backend.Migrations
                     b.HasOne("backend.Entities.User", null)
                         .WithMany("CreatedTickets")
                         .HasForeignKey("UserId1");
-
-                    b.HasOne("backend.Entities.User", "AssignedTo")
-                        .WithMany()
-                        .HasForeignKey("assignedToId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("backend.Entities.TicketCategory", "Category")
-                        .WithMany()
-                        .HasForeignKey("categoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("backend.Entities.User", "CreatedBy")
-                        .WithMany()
-                        .HasForeignKey("createdById")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("backend.Entities.ImpactLevel", "ImpactLevel")
-                        .WithMany()
-                        .HasForeignKey("impactLevelId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("backend.Entities.TicketPriority", "Priority")
-                        .WithMany("Tickets")
-                        .HasForeignKey("priorityId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("backend.Entities.TicketStatus", "Status")
-                        .WithMany("Tickets")
-                        .HasForeignKey("statusId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("backend.Entities.TicketSubCategory", "Subcategory")
-                        .WithMany()
-                        .HasForeignKey("subcategoryId");
-
-                    b.HasOne("backend.Entities.Team", "TeamId")
-                        .WithMany("Tickets")
-                        .HasForeignKey("teamId");
-
-                    b.HasOne("backend.Entities.UrgencyLevel", "UrgencyLevel")
-                        .WithMany()
-                        .HasForeignKey("urgencyLevelId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
 
                     b.Navigation("AssignedTo");
 
@@ -964,7 +1025,7 @@ namespace backend.Migrations
 
                     b.Navigation("Subcategory");
 
-                    b.Navigation("TeamId");
+                    b.Navigation("Team");
 
                     b.Navigation("UrgencyLevel");
                 });
@@ -972,20 +1033,20 @@ namespace backend.Migrations
             modelBuilder.Entity("backend.Entities.TicketAssignment", b =>
                 {
                     b.HasOne("backend.Entities.TeamMember", "AssignedBy")
-                        .WithMany()
-                        .HasForeignKey("assignedById")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .WithMany("AssignmentsCreated")
+                        .HasForeignKey("AssignedById")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("backend.Entities.TeamMember", "AssignedTo")
-                        .WithMany()
-                        .HasForeignKey("assignedToId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .WithMany("AssignmentsReceived")
+                        .HasForeignKey("AssignedToId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("backend.Entities.Ticket", "Ticket")
                         .WithMany("Assignments")
-                        .HasForeignKey("ticketId")
+                        .HasForeignKey("TicketId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -999,7 +1060,7 @@ namespace backend.Migrations
             modelBuilder.Entity("backend.Entities.TicketAttachment", b =>
                 {
                     b.HasOne("backend.Entities.TicketComment", "TicketComment")
-                        .WithMany()
+                        .WithMany("Attachments")
                         .HasForeignKey("TicketCommentId");
 
                     b.HasOne("backend.Entities.Ticket", "Ticket")
@@ -1008,9 +1069,9 @@ namespace backend.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("backend.Entities.User", "UploadedBy")
+                    b.HasOne("backend.Entities.User", "Uploader")
                         .WithMany()
-                        .HasForeignKey("UploadedById")
+                        .HasForeignKey("UploaderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1018,13 +1079,13 @@ namespace backend.Migrations
 
                     b.Navigation("TicketComment");
 
-                    b.Navigation("UploadedBy");
+                    b.Navigation("Uploader");
                 });
 
             modelBuilder.Entity("backend.Entities.TicketComment", b =>
                 {
                     b.HasOne("backend.Entities.Ticket", "Ticket")
-                        .WithMany()
+                        .WithMany("Comments")
                         .HasForeignKey("TicketId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1076,8 +1137,8 @@ namespace backend.Migrations
             modelBuilder.Entity("backend.Entities.TicketSubCategory", b =>
                 {
                     b.HasOne("backend.Entities.TicketCategory", "Category")
-                        .WithMany()
-                        .HasForeignKey("categoryId")
+                        .WithMany("Subcategories")
+                        .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1093,12 +1154,18 @@ namespace backend.Migrations
                         .IsRequired();
 
                     b.HasOne("backend.Entities.User", "Manager")
-                        .WithMany()
+                        .WithMany("DirectReports")
                         .HasForeignKey("ManagerId");
+
+                    b.HasOne("backend.Entities.Role", "Role")
+                        .WithMany()
+                        .HasForeignKey("RoleId");
 
                     b.Navigation("Department");
 
                     b.Navigation("Manager");
+
+                    b.Navigation("Role");
                 });
 
             modelBuilder.Entity("backend.Entities.UserRole", b =>
@@ -1125,6 +1192,11 @@ namespace backend.Migrations
                     b.Navigation("Assignments");
                 });
 
+            modelBuilder.Entity("backend.Entities.AssetStatus", b =>
+                {
+                    b.Navigation("Assets");
+                });
+
             modelBuilder.Entity("backend.Entities.AssetType", b =>
                 {
                     b.Navigation("Assets");
@@ -1139,6 +1211,11 @@ namespace backend.Migrations
                     b.Navigation("Users");
                 });
 
+            modelBuilder.Entity("backend.Entities.ImpactLevel", b =>
+                {
+                    b.Navigation("Tickets");
+                });
+
             modelBuilder.Entity("backend.Entities.Role", b =>
                 {
                     b.Navigation("UserRoles");
@@ -1149,6 +1226,11 @@ namespace backend.Migrations
                     b.Navigation("SlaRecords");
                 });
 
+            modelBuilder.Entity("backend.Entities.SlaRecord", b =>
+                {
+                    b.Navigation("Pauses");
+                });
+
             modelBuilder.Entity("backend.Entities.Team", b =>
                 {
                     b.Navigation("TeamMembers");
@@ -1156,11 +1238,30 @@ namespace backend.Migrations
                     b.Navigation("Tickets");
                 });
 
+            modelBuilder.Entity("backend.Entities.TeamMember", b =>
+                {
+                    b.Navigation("AssignmentsCreated");
+
+                    b.Navigation("AssignmentsReceived");
+                });
+
             modelBuilder.Entity("backend.Entities.Ticket", b =>
                 {
                     b.Navigation("Assignments");
 
+                    b.Navigation("Comments");
+
                     b.Navigation("SlaRecords");
+                });
+
+            modelBuilder.Entity("backend.Entities.TicketCategory", b =>
+                {
+                    b.Navigation("Subcategories");
+                });
+
+            modelBuilder.Entity("backend.Entities.TicketComment", b =>
+                {
+                    b.Navigation("Attachments");
                 });
 
             modelBuilder.Entity("backend.Entities.TicketPriority", b =>
@@ -1175,11 +1276,18 @@ namespace backend.Migrations
                     b.Navigation("Tickets");
                 });
 
+            modelBuilder.Entity("backend.Entities.UrgencyLevel", b =>
+                {
+                    b.Navigation("Tickets");
+                });
+
             modelBuilder.Entity("backend.Entities.User", b =>
                 {
                     b.Navigation("AssignedTickets");
 
                     b.Navigation("CreatedTickets");
+
+                    b.Navigation("DirectReports");
 
                     b.Navigation("TeamMembers");
 

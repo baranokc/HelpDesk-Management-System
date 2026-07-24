@@ -1,11 +1,12 @@
 using backend.DTO.Auth;
 using backend.Services.Auth;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
 namespace backend.Controllers;
 
 [ApiController]
-[Route("api/(controller)")]
+[Route("api/auth")]
 
 public class AuthController : ControllerBase
 {
@@ -15,16 +16,6 @@ public class AuthController : ControllerBase
         _authService = authService;
 
     }
-    public async Task<IActionResult> Register([FromBody] UserCreate dto)
-    {
-        var result = await _authService.RegisterAsync(dto);
-
-        if (!result)
-            return BadRequest(new { message = "This email is already used" });
-
-        return Ok(new { message = "Username registration successful."});
-    }
-
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] Login dto)
     {
@@ -34,6 +25,17 @@ public class AuthController : ControllerBase
             return Unauthorized(new { message = "Incorrect Email/Passowrd" });
 
         return Ok(result);
+    }
+    [HttpPost("register")]
+    public async Task<IActionResult> Register([FromBody] UserCreate dto)
+    {
+        var result = await _authService.RegisterAsync(dto);
+        
+        if (!result)
+        {
+            return BadRequest(new {message = "Email adress is already in use."});
+        }
+        return Ok(new { message = "User registered successfully." });
     }
 }
 
