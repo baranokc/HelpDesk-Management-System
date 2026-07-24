@@ -6,6 +6,8 @@ public class TicketDetailDto
     public string TicketTitle {get; set; } = string.Empty;
     public string TicketDescription {get; set; } = string.Empty;
     public string Subject {get; set; } = string.Empty;
+    public Guid TeamId {get; set; }
+    public string TeamName {get; set; } = string.Empty;
     public Guid StatusId {get; set; }
     public string StatusName {get; set; } = string.Empty;
     public Guid PriorityId {get; set; }
@@ -27,4 +29,6 @@ public class TicketDetailDto
     public DateTime? ResolvedAt {get; set; }
     public DateTime? ClosedAt {get; set; }
     public List <TicketCommentDto> Comments {get; set; } = [];
+    public List <TicketAttachmentDto> Attachments {get; set; } = [];
+
 }
