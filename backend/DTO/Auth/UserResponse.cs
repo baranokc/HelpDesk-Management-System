@@ -1,4 +1,4 @@
-namespace backend.DTO.UserResponse;
+namespace backend.DTO.Auth;
 
 public class UserResponse
 {

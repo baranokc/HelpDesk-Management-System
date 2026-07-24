@@ -6,5 +6,7 @@ public class UrgencyLevel
 	public string Name { get; set; } = string.Empty;
 	public int Order { get; set; }
 	public bool IsActive { get; set; } = true;
+	
 
-public ICollection<Tickets> Tickets { get; set; } = new List<Ticket>();}
+public ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
+}
