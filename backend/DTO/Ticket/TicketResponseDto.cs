@@ -1,5 +1,5 @@
 namespace backend.DTO.Ticket;
-public class TicketResponseDTO
+public class TicketResponseDto
 {
     public Guid Id {get; set; }
     public string TicketTitle {get; set; } = string.Empty;
@@ -10,6 +10,6 @@ public class TicketResponseDTO
     public string CategoryName {get; set; } = string.Empty;
     public string CreatedByName {get; set; } = string.Empty;
     public string? AssignedToName {get; set; }
-    public DateTime CreatedAt {get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAt {get; set; }
 
 }

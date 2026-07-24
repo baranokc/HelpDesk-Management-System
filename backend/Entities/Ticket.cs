@@ -32,5 +32,6 @@ public class Ticket
     public DateTime? SlaDueAt { get; set; }
     public bool IsDeleted { get; set; }
     public ICollection<TicketAssignment> Assignments { get; set; } = new List<TicketAssignment>(); 
+    public ICollection<TicketComment> Comments { get; set; } = new List<TicketComment>();
     public ICollection<SlaRecord> SlaRecords { get; set; } = new List<SlaRecord>();
 }
