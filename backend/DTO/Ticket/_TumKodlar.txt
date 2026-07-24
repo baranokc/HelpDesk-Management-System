@@ -1,0 +1,181 @@
+namespace backend.DTO.Ticket;
+public class TicketAssignmentDto
+{
+    public Guid TeamId {get; set; }
+    public Guid? TeamMemberId {get; set; }
+    public string? Reason {get; set; }
+}
+namespace backend.DTO.Ticket;
+public class TicketAssignmentResponseDto
+{
+    public Guid TeamId {get; set; }
+    public string TeamName {get; set; } = string.Empty;
+    public Guid? TeamMemberId {get; set; }
+    public string? TeamMemberName {get; set; }
+    public Guid AssignedById {get; set; }
+    public string AssignedByName {get; set; } = string.Empty;
+    public DateTime AssignedAt {get; set; }
+    public string? Reason {get; set; }
+}
+namespace backend.DTO.Ticket;
+public class TicketAttachmentCreateDto
+{
+    public List<IFormFile> File {get; set; } = [];
+    public Guid? CommentId {get; set; }
+    public string? Description {get; set; }
+}
+namespace backend.DTO.Ticket;
+public class TicketAttachmentDto
+{
+    public Guid Id {get; set;}
+    public string FileName {get; set;} = string.Empty;
+    public string ContentType {get; set; } = string.Empty;
+    public long FileSize {get; set;}
+    public string DownloadUrl {get; set; } = string.Empty;
+    public Guid? CommentId {get; set; }
+    public Guid UploadedById {get; set; }
+    public string? UploadedByName {get; set; }
+    public DateTime UploadedAt {get; set; }
+}
+namespace backend.DTO.Ticket;
+public class TicketCommentCreateDto
+{
+    public string Comment {get; set;} = string.Empty;
+    public List<IFormFile> Attachments { get; set; } = [];
+    public bool IsInternal {get; set; }
+}
+namespace backend.DTO.Ticket;
+public class TicketCommentDto
+{
+    public Guid Id {get; set; }
+    public string Comment {get; set; } = string.Empty;
+    public Guid CreatedById {get; set; }
+    public string CreatedByName {get; set;} = string.Empty;
+    public DateTime CreatedAt {get; set; }
+    public DateTime? EditedAt {get; set; }
+    public List<TicketAttachmentDto> Attachments {get; set; } = [];
+}
+namespace backend.DTO.Ticket;
+public class TicketCreateDto
+{
+    public string TicketTitle {get; set; } = string.Empty;
+    public string TicketDescription {get; set; } = string.Empty;
+    public string Subject {get; set; } = string.Empty;
+    public Guid CategoryId {get; set; }
+    public Guid? SubcategoryId {get; set; }
+    public Guid PriorityId {get; set; }
+    public Guid ImpactLevelId {get; set; }
+    public Guid UrgencyLevelId {get; set; }
+}
+namespace backend.DTO.Ticket;
+public class TicketDetailDto
+{
+    public Guid Id {get; set; }
+    public string TicketNumber {get; set; } = string.Empty;
+    public string TicketTitle {get; set; } = string.Empty;
+    public string TicketDescription {get; set; } = string.Empty;
+    public string Subject {get; set; } = string.Empty;
+    public Guid StatusId {get; set; }
+    public string StatusName {get; set; } = string.Empty;
+    public Guid PriorityId {get; set; }
+    public string PriorityName {get; set; } = string.Empty;
+    public Guid CategoryId {get; set; }
+    public string CategoryName {get; set; } = string.Empty;
+    public Guid? SubcategoryId {get; set; }
+    public string? SubcategoryName {get; set; } = string.Empty;
+    public Guid ImpactLevelId {get; set; }
+    public string ImpactLevelName {get; set; } = string.Empty;
+    public Guid UrgencyLevelId {get; set; }
+    public string UrgencyLevelName {get; set; } = string.Empty;
+    public Guid CreatedById {get; set; }
+    public string CreatedByName {get; set; } = string.Empty;
+    public Guid? AssignedToId {get; set; }
+    public string? AssignedToName {get; set; }
+    public DateTime CreatedAt {get; set; }
+    public DateTime? FirstResponseAt {get; set; }
+    public DateTime? ResolvedAt {get; set; }
+    public DateTime? ClosedAt {get; set; }
+    public List <TicketCommentDto> Comments {get; set; } = [];
+}
+namespace backend.DTO.Ticket;
+public class TicketFilterDto
+{
+    public string? Search {get; set; }
+    public Guid? StatusId {get; set; }
+    public Guid? CategoryId {get; set; }
+    public Guid? AssignedToId {get; set;}
+    public Guid? CreatedById {get; set; }
+    public Guid? UrgencyLevelId {get; set; }
+    public Guid? ImpactLevelId {get; set; }
+    public DateTime? CreatedFrom {get; set; }
+    public DateTime? CreatedTo {get; set; }
+    public int PageNumber {get; set; } = 1;
+    public int PageSize {get; set; } = 25;
+}
+using backend.Entities;
+
+namespace backend.DTO.Ticket;
+public class TicketHistoryDto
+{
+    public Guid Id {get; set; }
+    public Guid TicketId {get; set; }
+    public TicketHistoryActionType ActionType {get; set; }
+    public string? FieldName {get; set; }
+    public string? OldValue {get; set; }
+    public string? NewValue {get; set; }
+    public string? Description {get; set; }
+    public Guid ChangedById {get; set; }
+    public string? ChangedByName {get; set; }
+    public DateTime? ChangedAt {get; set; }
+}
+namespace backend.DTO.Ticket;
+public class TicketListDto
+{
+    public Guid Id {get; set; }
+    public string TicketNumber {get; set; } = string.Empty;
+    public string TicketTitle {get; set; } = string.Empty;
+    public string StatusName {get; set; } = string.Empty;
+    public string PriorityName {get; set; } = string.Empty;
+    public string CategoryName {get; set; } = string.Empty;
+    public string? SubcategoryName {get; set; } = string.Empty;
+    public string CreatedByName {get; set; } = string.Empty;
+    public string? AssignedToName {get; set; }
+    public DateTime CreatedAt {get; set; }
+
+}
+namespace backend.DTO.Ticket;
+public class TicketResolveDto
+{
+    public string Resolution {get; set; } = string.Empty;
+    public Guid? ResolutionCategoryId {get; set;}
+    public string? InternalNote {get; set; }
+}
+namespace backend.DTO.Ticket;
+public class TicketStatusDto
+{
+        public Guid StatusId {get; set; }
+}
+namespace backend.DTO.Ticket;
+public class TicketStatusUpdateDto
+{
+    public Guid StatusId {get; set; }
+    public string? Reason {get; set; }
+}
+namespace backend.DTO.Ticket;
+public class TicketUnassignmentDto
+{
+    public string? Reason {get; set; }
+    public bool KeepTeamAssignment {get; set; }
+}
+namespace backend.DTO.Ticket;
+public class TicketUpdateDto
+{
+    public string TicketTitle {get; set; } = string.Empty;
+    public string TicketDescription {get; set; } = string.Empty;
+    public string Subject {get; set; } = string.Empty;
+    public Guid CategoryId {get; set; }
+    public Guid? SubcategoryId {get; set; }
+    public Guid PriorityId {get; set; }
+    public Guid ImpactLevelId {get; set; }
+    public Guid UrgencyLevelId {get; set; }
+}
