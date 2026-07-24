@@ -12,5 +12,5 @@ public class TicketHistoryDto
     public string? Description {get; set; }
     public Guid ChangedById {get; set; }
     public string? ChangedByName {get; set; }
-    public DateTime? ChangedAt {get; set; }
+    public DateTime ChangedAt {get; set; }
 }

@@ -7,4 +7,5 @@ public class TicketCommentDto
     public string CreatedByName {get; set;} = string.Empty;
     public DateTime CreatedAt {get; set; }
     public DateTime? EditedAt {get; set; }
+    public bool IsInternal {get; set; }
 }
