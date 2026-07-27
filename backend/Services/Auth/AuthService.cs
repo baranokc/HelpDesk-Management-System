@@ -81,7 +81,6 @@ public class AuthService : IAuthService
             PasswordHash = passwordHash,
             Name = dto.Name,
             LastName = dto.LastName,
-            DepartmentId = null!,
             CreatedAt = DateTime.UtcNow
         };
 
