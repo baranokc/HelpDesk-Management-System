@@ -8,4 +8,5 @@ public class TicketCommentDto
     public DateTime CreatedAt {get; set; }
     public DateTime? EditedAt {get; set; }
     public bool IsInternal {get; set; }
+    public List<TicketAttachmentDto> Attachments {get; set; } = [];
 }

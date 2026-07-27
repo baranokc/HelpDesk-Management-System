@@ -8,9 +8,9 @@ public class TicketAssignment
 	public Guid TeamId { get; set; }
 	public Team Team { get; set; } = null!;
 	public Guid AssignedToId { get; set; }
-	public TeamMember AssignedTo {get; set; } = null!;
+	public TeamMember AssignedToTeamMember {get; set; } = null!;
 	public Guid AssignedById {get; set; }
-	public TeamMember AssignedBy {get; set; } = null!;
+	public TeamMember AssignedByTeamMember {get; set; } = null!;
 
 	public DateTime AssignedAt {get; set; } = DateTime.UtcNow;
 }

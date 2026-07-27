@@ -30,6 +30,11 @@ public class Ticket
     public DateTime? ResolvedAt { get; set; }
     public DateTime? ClosedAt { get; set; }
     public DateTime? SlaDueAt { get; set; }
+    public Guid? ResolvedById {get; set; }
+    public User? ResolvedBy { get; set; }
+    public string? Resolution { get; set; }
+    public Guid? ResolutionCategoryId { get; set; }
+    public ResolutionCategory? ResolutionCategory { get; set; }
     public bool IsDeleted { get; set; }
     public ICollection<TicketAssignment> Assignments { get; set; } = new List<TicketAssignment>(); 
     public ICollection<TicketComment> Comments { get; set; } = new List<TicketComment>();
