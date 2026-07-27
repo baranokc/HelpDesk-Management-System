@@ -1,12 +1,15 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
+
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
 
 namespace backend.Migrations
 {
     /// <inheritdoc />
-    public partial class InıtialCreate : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -43,20 +46,22 @@ namespace backend.Migrations
                 name: "Departments",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Name = table.Column<string>(type: "text", nullable: false),
                     Code = table.Column<string>(type: "text", nullable: false),
                     Description = table.Column<string>(type: "text", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    ParentDepartmentId = table.Column<Guid>(type: "uuid", nullable: true)
+                    ParentDepartmentId = table.Column<Guid>(type: "uuid", nullable: true),
+                    ParentDepartmentId1 = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Departments", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Departments_Departments_ParentDepartmentId",
-                        column: x => x.ParentDepartmentId,
+                        name: "FK_Departments_Departments_ParentDepartmentId1",
+                        column: x => x.ParentDepartmentId1,
                         principalTable: "Departments",
                         principalColumn: "Id");
                 });
@@ -73,6 +78,20 @@ namespace backend.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ImpactLevels", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ResolutionCategory",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ResolutionCategory", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -187,14 +206,15 @@ namespace backend.Migrations
                     Description = table.Column<string>(type: "text", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    DepartmentId = table.Column<Guid>(type: "uuid", nullable: false)
+                    DepartmentId = table.Column<Guid>(type: "uuid", nullable: false),
+                    DepartmentId1 = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Teams", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Teams_Departments_DepartmentId",
-                        column: x => x.DepartmentId,
+                        name: "FK_Teams_Departments_DepartmentId1",
+                        column: x => x.DepartmentId1,
                         principalTable: "Departments",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -205,7 +225,7 @@ namespace backend.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    DepartmentId = table.Column<Guid>(type: "uuid", nullable: false),
+                    DepartmentId = table.Column<int>(type: "integer", nullable: true),
                     ManagerId = table.Column<Guid>(type: "uuid", nullable: true),
                     Name = table.Column<string>(type: "text", nullable: false),
                     LastName = table.Column<string>(type: "text", nullable: false),
@@ -223,8 +243,7 @@ namespace backend.Migrations
                         name: "FK_Users_Departments_DepartmentId",
                         column: x => x.DepartmentId,
                         principalTable: "Departments",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Users_Roles_RoleId",
                         column: x => x.RoleId,
@@ -384,6 +403,9 @@ namespace backend.Migrations
                     ResolvedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     ClosedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     SlaDueAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    ResolvedById = table.Column<Guid>(type: "uuid", nullable: true),
+                    Resolution = table.Column<string>(type: "text", nullable: true),
+                    ResolutionCategoryId = table.Column<Guid>(type: "uuid", nullable: true),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
                     TeamId1 = table.Column<Guid>(type: "uuid", nullable: true),
                     UserId = table.Column<Guid>(type: "uuid", nullable: true),
@@ -398,6 +420,11 @@ namespace backend.Migrations
                         principalTable: "ImpactLevels",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Tickets_ResolutionCategory_ResolutionCategoryId",
+                        column: x => x.ResolutionCategoryId,
+                        principalTable: "ResolutionCategory",
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Tickets_Teams_TeamId",
                         column: x => x.TeamId,
@@ -446,6 +473,12 @@ namespace backend.Migrations
                     table.ForeignKey(
                         name: "FK_Tickets_Users_CreatedById",
                         column: x => x.CreatedById,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Tickets_Users_ResolvedById",
+                        column: x => x.ResolvedById,
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -500,6 +533,7 @@ namespace backend.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     TicketId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TeamId = table.Column<Guid>(type: "uuid", nullable: false),
                     AssignedToId = table.Column<Guid>(type: "uuid", nullable: false),
                     AssignedById = table.Column<Guid>(type: "uuid", nullable: false),
                     AssignedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
@@ -519,6 +553,12 @@ namespace backend.Migrations
                         principalTable: "TeamMembers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_TicketAssignments_Teams_TeamId",
+                        column: x => x.TeamId,
+                        principalTable: "Teams",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_TicketAssignments_Tickets_TicketId",
                         column: x => x.TicketId,
@@ -550,6 +590,37 @@ namespace backend.Migrations
                     table.ForeignKey(
                         name: "FK_TicketComments_Users_UserId",
                         column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TicketHistories",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    TicketId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ActionType = table.Column<int>(type: "integer", nullable: false),
+                    FieldName = table.Column<string>(type: "text", nullable: true),
+                    OldValue = table.Column<string>(type: "text", nullable: true),
+                    NewValue = table.Column<string>(type: "text", nullable: true),
+                    ChangedById = table.Column<Guid>(type: "uuid", nullable: false),
+                    ChangedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TicketHistories", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_TicketHistories_Tickets_TicketId",
+                        column: x => x.TicketId,
+                        principalTable: "Tickets",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_TicketHistories_Users_ChangedById",
+                        column: x => x.ChangedById,
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -659,6 +730,15 @@ namespace backend.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.InsertData(
+                table: "Departments",
+                columns: new[] { "Id", "Code", "CreatedAt", "Description", "IsActive", "Name", "ParentDepartmentId", "ParentDepartmentId1" },
+                values: new object[,]
+                {
+                    { 1, "", new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "", true, "Yazılım", null, null },
+                    { 2, "", new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "", true, "İnsan Kaynakları", null, null }
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_AssetAssignments_AssetId",
                 table: "AssetAssignments",
@@ -680,9 +760,9 @@ namespace backend.Migrations
                 column: "AssetTypeId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Departments_ParentDepartmentId",
+                name: "IX_Departments_ParentDepartmentId1",
                 table: "Departments",
-                column: "ParentDepartmentId");
+                column: "ParentDepartmentId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SlaPause_PausedById",
@@ -720,9 +800,9 @@ namespace backend.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Teams_DepartmentId",
+                name: "IX_Teams_DepartmentId1",
                 table: "Teams",
-                column: "DepartmentId");
+                column: "DepartmentId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_TicketAssignments_AssignedById",
@@ -733,6 +813,11 @@ namespace backend.Migrations
                 name: "IX_TicketAssignments_AssignedToId",
                 table: "TicketAssignments",
                 column: "AssignedToId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TicketAssignments_TeamId",
+                table: "TicketAssignments",
+                column: "TeamId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_TicketAssignments_TicketId",
@@ -765,6 +850,16 @@ namespace backend.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_TicketHistories_ChangedById",
+                table: "TicketHistories",
+                column: "ChangedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TicketHistories_TicketId",
+                table: "TicketHistories",
+                column: "TicketId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Tickets_AssignedToId",
                 table: "Tickets",
                 column: "AssignedToId");
@@ -788,6 +883,16 @@ namespace backend.Migrations
                 name: "IX_Tickets_PriorityId",
                 table: "Tickets",
                 column: "PriorityId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Tickets_ResolutionCategoryId",
+                table: "Tickets",
+                column: "ResolutionCategoryId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Tickets_ResolvedById",
+                table: "Tickets",
+                column: "ResolvedById");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Tickets_StatusId",
@@ -886,6 +991,9 @@ namespace backend.Migrations
                 name: "TicketAttachments");
 
             migrationBuilder.DropTable(
+                name: "TicketHistories");
+
+            migrationBuilder.DropTable(
                 name: "TicketStatusHistories");
 
             migrationBuilder.DropTable(
@@ -917,6 +1025,9 @@ namespace backend.Migrations
 
             migrationBuilder.DropTable(
                 name: "ImpactLevels");
+
+            migrationBuilder.DropTable(
+                name: "ResolutionCategory");
 
             migrationBuilder.DropTable(
                 name: "Teams");

@@ -1,7 +1,8 @@
 namespace backend.Entities;
+
 public class TicketHistory
 {
-    public Guid Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
 
     public Guid TicketId { get; set; }
     public Ticket Ticket { get; set; } = null!;
@@ -16,4 +17,5 @@ public class TicketHistory
     public User ChangedBy { get; set; } = null!;
 
     public DateTime ChangedAt { get; set; }
+    public string? Description { get; set; }
 }

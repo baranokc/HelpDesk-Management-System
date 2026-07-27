@@ -7,7 +7,7 @@ namespace backend.Entities;
 public class User
 {
     public Guid Id { get; set; } = Guid.NewGuid();
-    public Guid DepartmentId { get; set; }
+    public int? DepartmentId { get; set; }
     public Guid? ManagerId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
@@ -17,7 +17,7 @@ public class User
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    public Department Department { get; set; } = null!;
+    public Department? Department { get; set; }
     public User? Manager { get; set; }
    
 

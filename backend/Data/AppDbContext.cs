@@ -8,7 +8,7 @@ public class AppDbContext : DbContext
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-    public DbSet<Department> Departments { get; set; } = null!;
+    public DbSet<Department> Departments { get; set; }
     public DbSet<User> Users { get; set; } = null!;
     public DbSet<Team> Teams { get; set; } = null!;
     public DbSet<Role> Roles { get; set; } = null!;
@@ -29,7 +29,7 @@ public class AppDbContext : DbContext
     public DbSet<AssetStatus> AssetStatuses { get; set; } = null!;
     public DbSet<AssetType> AssetTypes { get; set; } = null!;
     public DbSet<ImpactLevel> ImpactLevels { get; set; } = null!;
-
+    public DbSet<TicketHistory> TicketHistories { get; set; } = null!;
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -71,6 +71,19 @@ public class AppDbContext : DbContext
             .HasForeignKey(ta => ta.AssignedToId)
             .OnDelete(DeleteBehavior.Restrict);
         });
-    }
+        modelBuilder.Entity<Ticket>()
+            .HasOne(t => t.ResolvedBy)
+            .WithMany()
+            .HasForeignKey(t => t.ResolvedById)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Department>().HasData(
+            new Department { Id = 1, Name = "Yazılım" },
+            new Department { Id = 2, Name = "İnsan Kaynakları" }
+);
 }
+
+    }
+    
+
 
