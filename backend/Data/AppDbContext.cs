@@ -61,12 +61,12 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<TicketAssignment>(entity =>
         {
-            entity.HasOne(ta => ta.AssignedBy)
+            entity.HasOne(ta => ta.AssignedByTeamMember)
             .WithMany(tm => tm.AssignmentsCreated)
             .HasForeignKey(ta => ta.AssignedById)
             .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasOne(ta => ta.AssignedTo)
+            entity.HasOne(ta => ta.AssignedToTeamMember)
             .WithMany(tm => tm.AssignmentsReceived)
             .HasForeignKey(ta => ta.AssignedToId)
             .OnDelete(DeleteBehavior.Restrict);
