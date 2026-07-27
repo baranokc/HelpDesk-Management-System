@@ -35,6 +35,14 @@ public class AppDbContext : DbContext
         base.OnModelCreating(modelBuilder);
         modelBuilder.Entity<UserRole>()
             .HasKey(ur => new { ur.UserId, ur.RoleId });
+        
+        modelBuilder.HasSequence<long>("TicketNumberSequence")
+        .StartsAt(1)
+        .IncrementsBy(1);
+        
+        modelBuilder.Entity<Ticket>()
+        .HasIndex(x => x.TicketNumber)
+        .IsUnique();
 
         modelBuilder.Entity<Ticket>()
         .HasOne(t => t.CreatedBy)

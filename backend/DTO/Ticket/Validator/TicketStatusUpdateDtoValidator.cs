@@ -2,7 +2,7 @@ using FluentValidation;
 namespace backend.DTO.Ticket.Validator;
 public class TicketStatusUpdateDtoValidator : AbstractValidator<TicketStatusUpdateDto>
 {
-    TicketStatusUpdateDtoValidator()
+    public TicketStatusUpdateDtoValidator()
     {
         RuleFor(x => x.Reason)
             .MaximumLength(250).When(x => !string.IsNullOrWhiteSpace(x.Reason))

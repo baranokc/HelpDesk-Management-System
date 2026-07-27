@@ -2,7 +2,6 @@ using backend.DTO.Common;
 using backend.DTO.Ticket;
 
 namespace backend.Services.Ticket;
-
 public interface ITicketService
 {
     Task<PagedResultDto<TicketListDto>> GetTicketAsync(
