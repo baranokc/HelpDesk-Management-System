@@ -38,6 +38,11 @@ public class TicketService : ITicketService
         if(filter.CategoryId.HasValue) query = query.Where(t => t.CategoryId == filter.CategoryId.Value);
         if(filter.AssignedToId.HasValue) query = query.Where(t => t.AssignedToId == filter.AssignedToId.Value);
         if(filter.CreatedById.HasValue) query = query.Where(t => t.CreatedById == filter.CreatedById.Value);
+        if(filter.UrgencyLevelId.HasValue) query = query.Where(t => t.UrgencyLevelId == filter.UrgencyLevelId.Value);
+        if(filter.ImpactLevelId.HasValue) query = query.Where(t => t.ImpactLevelId == filter.ImpactLevelId.Value);
+        if(filter.CreatedFrom.HasValue) query = query.Where(t => t.CreatedAt == filter.CreatedFrom.Value);
+        if(filter.CreatedTo.HasValue) query = query.Where(t => t.CreatedAt == filter.CreatedTo.Value);
+
 
         var pageNumber = Math.Max(filter.PageNumber, 1);
         var pageSize = Math.Clamp(filter.PageSize, 1, 100);
@@ -45,7 +50,7 @@ public class TicketService : ITicketService
 
         var items = await query
             .OrderByDescending(t => t.CreatedAt)
-            .Skip((pageNumber-10*pageSize))
+            .Skip((pageNumber- 1)*pageSize)
             .Take(pageSize)
             .Select(t => new TicketListDto{
                 Id = t.Id,
@@ -105,7 +110,7 @@ public class TicketService : ITicketService
         string formattedTicketNumber = rawSeqValue.ToString("D8");
 
         var ticket = new Entities.Ticket{
-            TicketNumber = $"HD -{formattedTicketNumber}",
+            TicketNumber = $"HD-{formattedTicketNumber}",
             TicketTitle = dto.TicketTitle.Trim(),
             TicketDescription = dto.TicketDescription.Trim(),
             Subject = dto.Subject,
@@ -140,6 +145,10 @@ public class TicketService : ITicketService
         ticket.TicketDescription = dto.TicketDescription.Trim();
         ticket.Subject = dto.Subject.Trim();
         ticket.CategoryId = dto.CategoryId;
+        ticket.SubcategoryId = dto.SubcategoryId;
+        ticket.PriorityId = dto.PriorityId;
+        ticket.ImpactLevelId = dto.ImpactLevelId;
+        ticket.UrgencyLevelId = dto.UrgencyLevelId;
 
         await _db.SaveChangesAsync(cancellationToken);
 
@@ -224,7 +233,9 @@ public async Task<TicketCommentDto?> AddCommentAsync(Guid ticketId, TicketCommen
 
         foreach (var file in dto.Files)
         {
-            var filePath = Path.Combine(uploadsFolder, $"{Guid.NewGuid()}_{file.FileName}");
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            var uniqueFileName = $"{Guid.NewGuid():N}{extension}";
+            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
             using (var stream = new FileStream(filePath, FileMode.Create))
             {
                 await file.CopyToAsync(stream, cancellationToken);
@@ -250,7 +261,7 @@ public async Task<TicketCommentDto?> AddCommentAsync(Guid ticketId, TicketCommen
                 FileName = attachment.FileName,
                 ContentType = attachment.ContentType,
                 FileSize = attachment.FileSize,
-                DownloadUrl = attachment.FilePath,
+                DownloadUrl = $"/uploads/{uniqueFileName}",
                 UploadedById = uploaderId,
                 UploadedAt = attachment.UploadedAt
             });
