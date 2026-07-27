@@ -1,0 +1,305 @@
+using System.Security.AccessControl;
+using backend.Data;
+using backend.DTO.Common;
+using backend.DTO.Ticket;
+using backend.Entities;
+using backend.Services.Ticket;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
+
+namespace backend.Services;
+
+public class TicketService : ITicketService
+{
+    private readonly AppDbContext _db;
+    private readonly IWebHostEnvironment _enviroment;
+    
+    public TicketService(AppDbContext db, IWebHostEnvironment enviroment)
+    {
+        _db = db;
+        _enviroment = enviroment;
+    }
+
+    public async Task<PagedResultDto<TicketListDto>> GetTicketAsync (
+        TicketFilterDto filter,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _db.Tickets.AsNoTracking().Where(t => !t.IsDeleted);
+        if (!string.IsNullOrWhiteSpace(filter.Search))
+        {
+            var search = filter.Search.Trim().ToLower();
+            query = query.Where(t => t.TicketNumber.ToLower().Contains(search) || 
+            t.TicketTitle.ToLower().Contains(search) || 
+            t.Subject.ToLower().Contains(search) || 
+            t.TicketDescription.ToLower().Contains(search));
+        }
+
+        if(filter.StatusId.HasValue) query = query.Where(t => t.StatusId == filter.StatusId.Value);
+        if(filter.CategoryId.HasValue) query = query.Where(t => t.CategoryId == filter.CategoryId.Value);
+        if(filter.AssignedToId.HasValue) query = query.Where(t => t.AssignedToId == filter.AssignedToId.Value);
+        if(filter.CreatedById.HasValue) query = query.Where(t => t.CreatedById == filter.CreatedById.Value);
+
+        var pageNumber = Math.Max(filter.PageNumber, 1);
+        var pageSize = Math.Clamp(filter.PageSize, 1, 100);
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var items = await query
+            .OrderByDescending(t => t.CreatedAt)
+            .Skip((pageNumber-10*pageSize))
+            .Take(pageSize)
+            .Select(t => new TicketListDto{
+                Id = t.Id,
+                TicketNumber = t.TicketNumber,
+                TicketTitle = t.TicketTitle,
+                StatusName = t.Status.Name,
+                PriorityName = t.Priority.Name,
+                CategoryName = t.Category.Name,
+                SubcategoryName = t.Subcategory != null ? t.Subcategory.Name : null,
+                CreatedByName = t.CreatedBy.Name + " " + t.CreatedBy.LastName,
+                AssignedToName = t.AssignedTo!= null? t.AssignedTo.Name + " " + t.AssignedTo.LastName : null,
+                CreatedAt = t.CreatedAt}).ToListAsync(cancellationToken);
+
+        var totalPages = totalCount == 0 ? 0 : (int)Math.Ceiling(totalCount / (double)pageSize);
+        return new PagedResultDto<TicketListDto>(items, pageNumber, pageSize, totalCount, totalPages);
+    }
+
+    public async Task<TicketDetailDto?> GetTicketByAsync (Guid ticketId, CancellationToken cancellationToken = default)
+    {
+        var ticket =  await _db.Tickets
+            .Include(t => t.CreatedBy)
+            .Include(t => t.AssignedTo)
+            .Include(t => t.Team)
+            .Include(t => t.Status)
+            .Include(t => t.Priority)
+            .Include(t => t.Category)
+            .Include(t => t.Comments).ThenInclude(c => c.User)
+            .FirstOrDefaultAsync(t => t.Id == ticketId && !t.IsDeleted, cancellationToken);
+        
+        if (ticket is null ) return null;
+
+        return new TicketDetailDto
+        {
+            Id = ticket.Id,
+            TicketNumber = ticket.TicketNumber,
+            TicketTitle = ticket.TicketTitle,
+            TicketDescription = ticket.TicketDescription,
+            Subject = ticket.Subject,
+            StatusName = ticket.Status.Name,
+            PriorityName = ticket.Priority.Name,
+            CategoryName = ticket.Category.Name,
+            CreatedByName = $"{ticket.CreatedBy.Name} {ticket.CreatedBy.LastName}",
+            AssignedToName = ticket.AssignedTo != null ? $"{ticket.AssignedTo.Name} {ticket.AssignedTo.LastName}" : null,
+            CreatedAt = ticket.CreatedAt
+        };
+    }
+
+    public async Task<TicketResponseDto> CreateTicketAsync(TicketCreateDto dto, Guid createdBy, CancellationToken cancellationToken = default)
+    {
+        var initialStatus = await _db.TicketStatuses.FirstOrDefaultAsync(s => s.IsActive, cancellationToken)
+            ?? throw new InvalidOperationException("Aktif başlangıç durumu bulunamadı.");
+        
+        var rawSeqValue = await _db.Database
+            .SqlQueryRaw<long>("SELECT nextval('\"TicketNumberSequence\"') AS \"Value\"")
+            .FirstOrDefaultAsync(cancellationToken);
+
+        string formattedTicketNumber = rawSeqValue.ToString("D8");
+
+        var ticket = new Entities.Ticket{
+            TicketNumber = $"HD -{formattedTicketNumber}",
+            TicketTitle = dto.TicketTitle.Trim(),
+            TicketDescription = dto.TicketDescription.Trim(),
+            Subject = dto.Subject,
+            CreatedById = createdBy,
+            CategoryId = dto.CategoryId,
+            SubcategoryId = dto.SubcategoryId,
+            StatusId = initialStatus.Id,
+            PriorityId = dto.PriorityId,
+            ImpactLevelId = dto.ImpactLevelId,
+            UrgencyLevelId = dto.UrgencyLevelId,
+            CreatedAt = DateTime.UtcNow,
+        };
+
+        _db.Tickets.Add(ticket);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return new TicketResponseDto
+        {
+            Id = ticket.Id,
+            TicketTitle = ticket.TicketTitle,
+            Subject = ticket.Subject,
+            CreatedAt = ticket.CreatedAt
+        };
+    }
+
+    public async Task<TicketResponseDto?> UpdateTicketAsync(Guid ticketId, TicketUpdateDto dto, Guid assignedByUserId, CancellationToken cancellationToken = default)
+    {
+        var ticket = await _db.Tickets.FirstOrDefaultAsync(t => t.Id == ticketId && !t.IsDeleted, cancellationToken);
+        if (ticket is null ) return null;
+
+        ticket.TicketTitle = dto.TicketTitle.Trim();
+        ticket.TicketDescription = dto.TicketDescription.Trim();
+        ticket.Subject = dto.Subject.Trim();
+        ticket.CategoryId = dto.CategoryId;
+
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return new TicketResponseDto
+        {
+            Id = ticket.Id,
+            TicketTitle = ticket.TicketTitle,
+            TicketDescription = ticket.TicketDescription,
+            Subject = ticket.Subject,
+            CreatedAt = ticket.CreatedAt,
+        };
+    }
+
+    public async Task<bool> UpdateAsync(Guid ticketId, TicketAssignmentDto dto, Guid changedById, CancellationToken cancellationToken = default)
+    {
+        var ticket = await _db.Tickets.FirstOrDefaultAsync(t => t.Id == ticketId && !t.IsDeleted, cancellationToken);
+        if( ticket is null) return false;
+
+        ticket.TeamId = dto.TeamId;
+        await _db.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    public async Task<TicketAssignmentResponseDto?> AssignTicketAsync (Guid ticketId, TicketAssignmentDto dto, Guid assignedByUserId, CancellationToken cancellationToken = default)
+    {
+        var ticket = await _db.Tickets.FirstOrDefaultAsync(t => t.Id == ticketId && !t.IsDeleted, cancellationToken);
+        if( ticket is null) return null;
+
+        ticket.TeamId = dto.TeamId;
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return new TicketAssignmentResponseDto
+        {
+          TeamId = dto.TeamId,
+          AssignedById = assignedByUserId,
+          AssignedAt = DateTime.UtcNow  
+        };
+    }
+
+    public async Task<bool> UnassignTicketAsync(Guid ticketId, TicketAssignmentDto dto, Guid changedById, CancellationToken cancellationToken = default)
+    {
+        var ticket = await _db.Tickets.FirstOrDefaultAsync(t => t.Id == ticketId && !t.IsDeleted, cancellationToken);
+        if (ticket is null) return false;
+
+        ticket.AssignedToId = null;
+        await _db.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+public async Task<TicketCommentDto?> AddCommentAsync(Guid ticketId, TicketCommentCreateDto dto, Guid userId, CancellationToken cancellationToken = default)
+    {
+        var comment = new TicketComment
+        {
+            TicketId = ticketId,
+            UserId = userId,
+            Comment = dto.Comment.Trim(),
+            IsInternal = dto.IsInternal,
+            CreatedAt = DateTime.UtcNow,
+        };
+
+        _db.TicketComments.Add(comment);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return new TicketCommentDto
+        {
+            Id = comment.Id,
+            Comment = comment.Comment,
+            CreatedById = userId,
+            CreatedAt = comment.CreatedAt,
+        };
+    }
+
+    public async Task<IReadOnlyCollection<TicketAttachmentDto>> AddAttachmentAsync(Guid ticketId, TicketAttachmentCreateDto dto, Guid uploaderId, CancellationToken cancellationToken = default)
+    {
+        var ticket = await _db.Tickets.FirstOrDefaultAsync(t => t.Id == ticketId && !t.IsDeleted, cancellationToken);
+        if( ticket is null || dto.Files == null || !dto.Files.Any()) return Array.Empty<TicketAttachmentDto>();
+
+        var uploadsFolder = Path.Combine(_enviroment.ContentRootPath, "uploads");
+        if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+
+        var result = new List<TicketAttachmentDto>();
+
+        foreach (var file in dto.Files)
+        {
+            var filePath = Path.Combine(uploadsFolder, $"{Guid.NewGuid()}_{file.FileName}");
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream, cancellationToken);
+            }
+
+            var attachment = new TicketAttachment
+            {
+              TicketId = ticketId,
+              TicketCommentId = dto.CommentId,
+              FileName = file.FileName,
+              FilePath = filePath,
+              ContentType = file.ContentType,
+              FileSize = file.Length,
+              UploadedAt = DateTime.UtcNow,
+              UploaderId = uploaderId  
+            };
+
+            _db.TicketAttachments.Add(attachment);
+
+            result.Add(new TicketAttachmentDto
+            {
+                Id = attachment.Id,
+                FileName = attachment.FileName,
+                ContentType = attachment.ContentType,
+                FileSize = attachment.FileSize,
+                DownloadUrl = attachment.FilePath,
+                UploadedById = uploaderId,
+                UploadedAt = attachment.UploadedAt
+            });
+        }
+
+        await _db.SaveChangesAsync(cancellationToken);
+        return result;
+    }
+
+    public async Task<bool> ResolveTicketAsync(Guid ticketId, TicketResolveDto dto, Guid resolvedById, CancellationToken cancellationToken = default)
+    {
+        var ticket = await _db.Tickets.FirstOrDefaultAsync(t => t.Id == ticketId && !t.IsDeleted, cancellationToken);
+        if (ticket is null ) return false;
+
+        ticket.Resolution = dto.Resolution;
+        ticket.ResolvedById = resolvedById;
+        ticket.ResolvedAt = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+
+    public async Task<IReadOnlyCollection<TicketHistoryDto>> GetHistoryAsync(Guid ticketId, CancellationToken cancellationToken = default)
+    {
+        return await _db.Set<TicketHistory>()
+            .AsNoTracking()
+            .Where(h => h.TicketId == ticketId)
+            .OrderByDescending(h => h.ChangedAt)
+            .Select(h => new TicketHistoryDto
+            {
+                Id = h.Id,
+                TicketId = h.TicketId,
+                ActionType = h.ActionType,
+                FieldName = h.FieldName,
+                OldValue = h.OldValue,
+                NewValue = h.NewValue,
+                ChangedById = h.ChangedById,
+                ChangedAt = h.ChangedAt,
+            }).ToListAsync(cancellationToken);
+    }
+
+    public async Task<bool> DeleteTicketAsync(Guid ticketId, Guid deletedById, CancellationToken cancellationToken = default)
+    {
+        var ticket = await _db.Tickets.FirstOrDefaultAsync(t => t.Id == ticketId && !t.IsDeleted, cancellationToken);
+        if (ticket is null) return false;
+
+        ticket.IsDeleted = true;
+        await _db.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+}
