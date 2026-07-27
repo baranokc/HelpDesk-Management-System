@@ -172,24 +172,81 @@ public class TicketService : ITicketService
         return true;
     }
 
-    public async Task<TicketAssignmentResponseDto?> AssignTicketAsync (Guid ticketId, TicketAssignmentDto dto, Guid assignedByUserId, CancellationToken cancellationToken = default)
+public async Task<TicketAssignmentResponseDto?> AssignTicketAsync(Guid ticketId, TicketAssignmentDto dto, Guid assignedByUserId, CancellationToken cancellationToken = default)
+{
+    var ticket = await _db.Tickets
+        .FirstOrDefaultAsync(
+            t => t.Id == ticketId,
+            cancellationToken);
+
+    if (ticket is null) return null;
+
+    var assignedByTeamMember = await _db.TeamMembers
+        .Include(tm => tm.User)
+        .FirstOrDefaultAsync(
+            tm =>
+                tm.UserId == assignedByUserId &&
+                tm.IsActive,
+            cancellationToken);
+
+    if (assignedByTeamMember is null) throw new InvalidOperationException("Atama yapan kullanıcı aktif bir takım üyesi değil.");
+
+    var team = await _db.Teams.FirstOrDefaultAsync(t => t.Id == dto.TeamId, cancellationToken);
+
+    if (team is null) throw new KeyNotFoundException("Atama yapılacak takım bulunamadı.");
+    
+    TeamMember? assignedTeamMember = null;
+
+    if (dto.TeamMemberId.HasValue)
     {
-        var ticket = await _db.Tickets.FirstOrDefaultAsync(t => t.Id == ticketId && !t.IsDeleted, cancellationToken);
-        if( ticket is null) return null;
+        assignedTeamMember = await _db.TeamMembers
+            .Include(tm => tm.User)
+            .FirstOrDefaultAsync(
+                tm =>
+                    tm.Id == dto.TeamMemberId.Value &&
+                    tm.TeamId == dto.TeamId &&
+                    tm.IsActive,
+                cancellationToken);
 
-        ticket.TeamId = dto.TeamId;
-        await _db.SaveChangesAsync(cancellationToken);
-
-        var AssignedByTeamMember = await _db.TeamMembers.FirstOrDefaultAsync(tm => tm.UserId ==assignedByUserId, cancellationToken);
-        if( AssignedByTeamMember is null ) throw new InvalidOperationException("Atama yapan kullanıcı hatası.");
-
-        return new TicketAssignmentResponseDto
-        {
-          TeamId = dto.TeamId,
-          AssignedById = assignedByUserId,
-          AssignedAt = DateTime.UtcNow,
-        };
+        if (assignedTeamMember is null) throw new KeyNotFoundException("Atanacak aktif takım üyesi bulunamadı " + "veya kullanıcı seçilen takıma ait değil.");
+        
     }
+
+    ticket.TeamId = dto.TeamId;
+    ticket.AssignedToId = assignedTeamMember?.UserId;
+
+    TicketAssignment? assignment = null;
+
+    if (assignedTeamMember is not null)
+    {
+        assignment = new TicketAssignment
+        {
+            TicketId = ticket.Id,
+            TeamId = dto.TeamId,
+            AssignedToId = assignedTeamMember.Id,
+            AssignedById = assignedByTeamMember.Id,
+            AssignedAt = DateTime.UtcNow
+        };
+
+        _db.TicketAssignments.Add(assignment);
+    }
+
+    await _db.SaveChangesAsync(cancellationToken);
+
+    return new TicketAssignmentResponseDto
+    {
+        Id = assignment?.Id ?? Guid.Empty,
+        TicketId = ticket.Id,
+        TeamId = team.Id,
+        TeamName = team.Name,
+        TeamMemberId = assignedTeamMember?.Id,
+        TeamMemberName = assignedTeamMember is null ? null : $"{assignedTeamMember.User.Name} " + $"{assignedTeamMember.User.LastName}",
+        AssignedById = assignedByTeamMember.Id,
+        AssignedByName = $"{assignedByTeamMember.User.Name} " + $"{assignedByTeamMember.User.LastName}",
+        AssignedAt = assignment?.AssignedAt ?? DateTime.UtcNow,
+        Note = dto.Reason
+    };
+}
 
     public async Task<bool> UnassignTicketAsync(Guid ticketId, TicketAssignmentDto dto, Guid changedById, CancellationToken cancellationToken = default)
     {
