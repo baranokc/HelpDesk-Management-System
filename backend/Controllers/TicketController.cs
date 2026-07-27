@@ -107,9 +107,10 @@ public class TicketController : ControllerBase
     }
 
     [HttpPost("{id:guid}/comments")]
+    [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(TicketCommentDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> AddComment(Guid id, [FromBody] TicketCommentCreateDto dto, CancellationToken cancellationToken)
+    public async Task<IActionResult> AddComment(Guid id, [FromForm] TicketCommentCreateDto dto, CancellationToken cancellationToken)
     {
         var currentUserId = GetCurrentUserId();
         var comment = await _ticketService.AddCommentAsync(id, dto, currentUserId, cancellationToken);

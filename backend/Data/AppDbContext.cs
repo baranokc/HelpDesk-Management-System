@@ -39,6 +39,10 @@ public class AppDbContext : DbContext
         modelBuilder.HasSequence<long>("TicketNumberSequence")
         .StartsAt(1)
         .IncrementsBy(1);
+        
+        modelBuilder.Entity<Ticket>()
+        .HasIndex(x => x.TicketNumber)
+        .IsUnique();
 
         modelBuilder.Entity<Ticket>()
         .HasOne(t => t.CreatedBy)
