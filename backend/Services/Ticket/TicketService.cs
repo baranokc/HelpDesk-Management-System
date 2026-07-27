@@ -209,7 +209,7 @@ public async Task<TicketAssignmentResponseDto?> AssignTicketAsync(Guid ticketId,
                 cancellationToken);
 
         if (assignedTeamMember is null) throw new KeyNotFoundException("Atanacak aktif takım üyesi bulunamadı " + "veya kullanıcı seçilen takıma ait değil.");
-        
+
     }
 
     ticket.TeamId = dto.TeamId;
