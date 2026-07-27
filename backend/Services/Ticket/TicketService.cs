@@ -180,11 +180,14 @@ public class TicketService : ITicketService
         ticket.TeamId = dto.TeamId;
         await _db.SaveChangesAsync(cancellationToken);
 
+        var AssignedByTeamMember = await _db.TeamMembers.FirstOrDefaultAsync(tm => tm.UserId ==assignedByUserId, cancellationToken);
+        if( AssignedByTeamMember is null ) throw new InvalidOperationException("Atama yapan kullanıcı hatası.");
+
         return new TicketAssignmentResponseDto
         {
           TeamId = dto.TeamId,
           AssignedById = assignedByUserId,
-          AssignedAt = DateTime.UtcNow  
+          AssignedAt = DateTime.UtcNow,
         };
     }
 
@@ -275,6 +278,7 @@ public async Task<TicketCommentDto?> AddCommentAsync(Guid ticketId, TicketCommen
     {
         var ticket = await _db.Tickets.FirstOrDefaultAsync(t => t.Id == ticketId && !t.IsDeleted, cancellationToken);
         if (ticket is null ) return false;
+        if (ticket.ResolvedAt.HasValue) throw new InvalidOperationException("Ticket zaten çözümlenmiş.");
 
         ticket.Resolution = dto.Resolution;
         ticket.ResolvedById = resolvedById;
