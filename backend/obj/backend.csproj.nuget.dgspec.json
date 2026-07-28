@@ -1,25 +1,27 @@
 {
   "format": 1,
   "restore": {
-    "/Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/backend.csproj": {}
+    "C:\\Users\\Mesutcan\\source\\repos\\HelpDesk-Management-System\\backend\\backend.csproj": {}
   },
   "projects": {
-    "/Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/backend.csproj": {
+    "C:\\Users\\Mesutcan\\source\\repos\\HelpDesk-Management-System\\backend\\backend.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/backend.csproj",
+        "projectUniqueName": "C:\\Users\\Mesutcan\\source\\repos\\HelpDesk-Management-System\\backend\\backend.csproj",
         "projectName": "backend",
-        "projectPath": "/Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/backend.csproj",
-        "packagesPath": "/Users/baranokcuoglu/.nuget/packages/",
-        "outputPath": "/Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/obj/",
+        "projectPath": "C:\\Users\\Mesutcan\\source\\repos\\HelpDesk-Management-System\\backend\\backend.csproj",
+        "packagesPath": "C:\\Users\\Mesutcan\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Mesutcan\\source\\repos\\HelpDesk-Management-System\\backend\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "/Users/baranokcuoglu/.nuget/NuGet/NuGet.Config"
+          "C:\\Users\\Mesutcan\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
         ],
         "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -108,7 +110,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/10.0.302/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.302/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.AspNetCore": "(,10.0.32767]",
             "Microsoft.AspNetCore.Antiforgery": "(,10.0.32767]",

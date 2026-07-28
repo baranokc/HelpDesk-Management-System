@@ -3,9 +3,7 @@ using backend.Constants;
 using backend.DTO.Common;
 using backend.DTO.Ticket;
 using backend.Services.Ticket;
-using backend.Services.TicketAttachment;
 using backend.Services.TicketAssignment;
-using backend.Services.TicketComment;
 using backend.Services.TicketHistory;
 using backend.Services.TicketResolution;
 using backend.Services.TicketUnassignment;
@@ -21,8 +19,6 @@ namespace backend.Controllers;
 public class TicketController : ControllerBase
 {
     private readonly ITicketService _ticketService;
-    private readonly ITicketCommentService _ticketCommentService;
-    private readonly ITicketAttachmentService _ticketAttachmentService;
     private readonly ITicketUnassignmentService _ticketUnassignmentService;
     private readonly ITicketResolutionService _ticketResolutionService;
     private readonly ITicketHistoryService _ticketHistoryService;
@@ -30,17 +26,13 @@ public class TicketController : ControllerBase
 
     public TicketController(
         ITicketService ticketService,
-        ITicketCommentService ticketCommentService,
         ITicketAssignmentService ticketAssignmentService,
-        ITicketAttachmentService ticketAttachmentService,
         ITicketUnassignmentService ticketUnassignmentService,
         ITicketResolutionService ticketResolutionService,
         ITicketHistoryService ticketHistoryService)
     {
         _ticketService = ticketService;
-        _ticketCommentService = ticketCommentService;
         _ticketAssignmentService = ticketAssignmentService;
-        _ticketAttachmentService = ticketAttachmentService;
         _ticketUnassignmentService = ticketUnassignmentService;
         _ticketResolutionService = ticketResolutionService;
         _ticketHistoryService = ticketHistoryService;
@@ -174,49 +166,6 @@ public class TicketController : ControllerBase
             return NotFound(new { message = "Ticket assignment to remove was not found." });
 
         return Ok(new { message = "Assignment successfully removed." });
-    }
-
-    [HttpPost("{id:guid}/comments")]
-    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.User}")]
-    [Consumes("multipart/form-data")]
-    [ProducesResponseType(typeof(TicketCommentDto), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> AddComment(
-        Guid id,
-        [FromForm] TicketCommentCreateDto dto,
-        CancellationToken cancellationToken)
-    {
-        var currentUserId = GetCurrentUserId();
-        var comment = await _ticketCommentService.AddCommentAsync(
-            id,
-            dto,
-            currentUserId,
-            cancellationToken);
-
-        if (comment is null)
-            return NotFound(new { message = "Ticket to add comment to was not found." });
-
-        return CreatedAtAction(nameof(GetTicketById), new { id }, comment);
-    }
-
-    [HttpPost("{id:guid}/attachments")]
-    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.User}")]
-    [Consumes("multipart/form-data")]
-    [ProducesResponseType(typeof(IReadOnlyCollection<TicketAttachmentDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> AddAttachment(
-        Guid id,
-        [FromForm] TicketAttachmentCreateDto dto,
-        CancellationToken cancellationToken)
-    {
-        var currentUserId = GetCurrentUserId();
-        var attachments = await _ticketAttachmentService.AddAttachmentAsync(
-            id,
-            dto,
-            currentUserId,
-            cancellationToken);
-
-        return Ok(attachments);
     }
 
     [HttpPost("{id:guid}/resolve")]

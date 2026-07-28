@@ -6,6 +6,7 @@ public class TicketAttachmentDto
     public string ContentType {get; set; } = string.Empty;
     public long FileSize {get; set;}
     public string DownloadUrl {get; set; } = string.Empty;
+    public string? Description {get; set; }
     public Guid? CommentId {get; set; }
     public Guid UploadedById {get; set; }
     public string? UploadedByName {get; set; }

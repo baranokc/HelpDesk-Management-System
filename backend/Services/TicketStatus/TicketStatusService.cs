@@ -71,8 +71,8 @@ public class TicketStatusService : ITicketStatusService
             .ToListAsync();
     }
 
-    public Task<List<TicketHistoryDto>> GetTicketHistoryDtosAsync(Guid ticketId)
+    public Task<List<TicketHistoryDto>>  GetTicketHistoryDtosAsync(Guid ticketId)
     {
-        throw new NotImplementedException();
+        return GetTicketHistoryAsync(ticketId);
     }
 }
