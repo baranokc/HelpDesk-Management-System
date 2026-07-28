@@ -36,7 +36,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<UserRole>()
             .HasKey(ur => new { ur.UserId, ur.RoleId });
         
-        modelBuilder.HasSequence<long>("TicketNumberSequence")
+        modelBuilder.HasSequence<long>("TicketNumberSequence", schema: "public")
         .StartsAt(1)
         .IncrementsBy(1);
         

@@ -7,5 +7,6 @@ public class TicketStatus
     public string Description { get; set; } = string.Empty;
     public bool IsActive { get; set; } = true;
     public bool IsClosed { get; set; }
+    public bool IsDefault { get; set; }
     public ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
 }

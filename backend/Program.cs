@@ -1,22 +1,41 @@
-using backend.Data;
-using Microsoft.EntityFrameworkCore;
 using System.Text;
+using backend.Data;
+using backend.DTO.Services.TicketAssignment;
 using backend.Services.Auth;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
+using backend.Services.Ticket;
+using backend.Services.TicketAttachment;
+using backend.Services.TicketComment;
+using backend.Services.TicketHistory;
+using backend.Services.TicketResolution;
 using backend.Services.TicketStatus;
+using backend.Services.TicketUnassignment;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
 builder.Services.AddOpenApi();
-builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddControllers();
+
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ITicketService, TicketService>();
+
 builder.Services.AddScoped<ITicketStatusService, TicketStatusService>();
+builder.Services.AddScoped<ITicketAssignmentService, TicketAssignmentService>();
+
+builder.Services.AddScoped<ITicketCommentService, TicketCommentService>();
+builder.Services.AddScoped<ITicketAttachmentService, TicketAttachmentService>();
+builder.Services.AddScoped<ITicketUnassignmentService, TicketUnassignmentService>();
+builder.Services.AddScoped<ITicketResolutionService, TicketResolutionService>();
+builder.Services.AddScoped<ITicketHistoryService, TicketHistoryService>();
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = Encoding.UTF8.GetBytes(jwtSettings["Secret"]!);
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -33,7 +52,6 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = jwtSettings["Issuer"],
         ValidAudience = jwtSettings["Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(secretKey)
-
     };
 });
 
@@ -42,15 +60,7 @@ builder.Services.AddAuthorization();
 var app = builder.Build();
 
 app.UseHttpsRedirection();
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();
-
-
-
-
-
