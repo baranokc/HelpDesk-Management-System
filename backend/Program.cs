@@ -1,5 +1,6 @@
 using System.Text;
 using backend.Data;
+using backend.DTO.Ticket.Validator;
 using backend.DTO.Services.TicketAssignment;
 using backend.Services.Auth;
 using backend.Services.Ticket;
@@ -20,6 +21,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
 builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddValidatorsFromAssemblyContaining<TicketCreateDtoValidator>();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("DefaultConnection")));
