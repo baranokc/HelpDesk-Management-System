@@ -41,7 +41,7 @@ public class TicketController : ControllerBase
     {
         var ticket = await _ticketService.GetTicketByAsync(id, cancellationToken);
         if (ticket == null)
-            return NotFound(new { message = "Ticket bulunamadı." });
+            return NotFound(new { message = "Ticket not found." });
 
         return Ok(ticket);
     }
@@ -53,7 +53,7 @@ public class TicketController : ControllerBase
     {
         var currentUserId = GetCurrentUserId();
         if (currentUserId == Guid.Empty)
-            return Unauthorized(new { message = "Geçersiz kullanıcı kimliği." });
+            return Unauthorized(new { message = "Invalid user identity." });
 
         var createdTicket = await _ticketService.CreateTicketAsync(dto, currentUserId, cancellationToken);
         
@@ -73,7 +73,7 @@ public class TicketController : ControllerBase
         var updatedTicket = await _ticketService.UpdateTicketAsync(id, dto, currentUserId, cancellationToken);
         
         if (updatedTicket == null)
-            return NotFound(new { message = "Güncellenecek ticket bulunamadı." });
+            return NotFound(new { message = "Ticket to update was not found." });
 
         return Ok(updatedTicket);
     }
@@ -87,7 +87,7 @@ public class TicketController : ControllerBase
         var result = await _ticketService.AssignTicketAsync(id, dto, currentUserId, cancellationToken);
         
         if (result == null)
-            return NotFound(new { message = "Ticket veya atanacak kişi bulunamadı." });
+            return NotFound(new { message = "Ticket or assignee not found." });
 
         return Ok(result);
     }
@@ -101,9 +101,9 @@ public class TicketController : ControllerBase
         var success = await _ticketService.UnassignTicketAsync(id, dto, currentUserId, cancellationToken);
         
         if (!success)
-            return NotFound(new { message = "Ataması kaldırılacak ticket bulunamadı." });
+            return NotFound(new { message = "Ticket assignment to remove was not found." });
 
-        return Ok(new { message = "Atama başarıyla kaldırıldı." });
+        return Ok(new { message = "Assignment succesffuly removed." });
     }
 
     [HttpPost("{id:guid}/comments")]
@@ -116,7 +116,7 @@ public class TicketController : ControllerBase
         var comment = await _ticketService.AddCommentAsync(id, dto, currentUserId, cancellationToken);
         
         if (comment == null)
-            return NotFound(new { message = "Yorum eklenecek ticket bulunamadı." });
+            return NotFound(new { message = "Ticket to add comment to was not found." });
 
         return CreatedAtAction(nameof(GetTicketById), new { id }, comment);
     }
@@ -142,9 +142,9 @@ public class TicketController : ControllerBase
         var success = await _ticketService.ResolveTicketAsync(id, dto, currentUserId, cancellationToken);
         
         if (!success)
-            return NotFound(new { message = "Ticket bulunamadı veya çözümlenemedi." });
+            return NotFound(new { message = "Ticket not found or could not be resolved.." });
 
-        return Ok(new { message = "Ticket başarıyla çözümlendi." });
+        return Ok(new { message = "Ticket succesfully resolved.." });
     }
 
     [HttpGet("{id:guid}/history")]
@@ -164,8 +164,8 @@ public class TicketController : ControllerBase
         var success = await _ticketService.DeleteTicketAsync(id, currentUserId, cancellationToken);
         
         if (!success)
-            return NotFound(new { message = "Silinecek ticket bulunamadı." });
+            return NotFound(new { message = "Ticket to delete was not found." });
 
-        return Ok(new { message = "Ticket başarıyla silindi." });
+        return Ok(new { message = "Ticket succesfully deleted." });
     }
 }
