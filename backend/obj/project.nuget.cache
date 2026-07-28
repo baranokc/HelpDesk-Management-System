@@ -1,11 +1,13 @@
 {
   "version": 2,
-  "dgSpecHash": "Cdg75B/CExA=",
+  "dgSpecHash": "fqOvVg4i0jI=",
   "success": true,
   "projectFilePath": "C:\\Users\\Mesutcan\\source\\repos\\HelpDesk-Management-System\\backend\\backend.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Mesutcan\\.nuget\\packages\\bcrypt.net-next\\4.2.0\\bcrypt.net-next.4.2.0.nupkg.sha512",
     "C:\\Users\\Mesutcan\\.nuget\\packages\\fluentvalidation\\12.1.1\\fluentvalidation.12.1.1.nupkg.sha512",
+    "C:\\Users\\Mesutcan\\.nuget\\packages\\fluentvalidation.aspnetcore\\11.3.1\\fluentvalidation.aspnetcore.11.3.1.nupkg.sha512",
+    "C:\\Users\\Mesutcan\\.nuget\\packages\\fluentvalidation.dependencyinjectionextensions\\12.1.1\\fluentvalidation.dependencyinjectionextensions.12.1.1.nupkg.sha512",
     "C:\\Users\\Mesutcan\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
     "C:\\Users\\Mesutcan\\.nuget\\packages\\microsoft.aspnetcore.authentication.jwtbearer\\10.0.10\\microsoft.aspnetcore.authentication.jwtbearer.10.0.10.nupkg.sha512",
     "C:\\Users\\Mesutcan\\.nuget\\packages\\microsoft.aspnetcore.openapi\\10.0.10\\microsoft.aspnetcore.openapi.10.0.10.nupkg.sha512",
@@ -49,7 +51,7 @@
     {
       "code": "NU1903",
       "level": "Warning",
-      "message": "Package 'Microsoft.OpenApi' 2.0.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-v5pm-xwqc-g5wc",
+      "message": "'Microsoft.OpenApi' 2.0.0 paketinde önem derecesi yüksek olan bilinen bir https://github.com/advisories/GHSA-v5pm-xwqc-g5wc güvenlik açığı var",
       "projectPath": "C:\\Users\\Mesutcan\\source\\repos\\HelpDesk-Management-System\\backend\\backend.csproj",
       "warningLevel": 1,
       "filePath": "C:\\Users\\Mesutcan\\source\\repos\\HelpDesk-Management-System\\backend\\backend.csproj",
