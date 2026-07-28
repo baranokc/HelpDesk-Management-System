@@ -101,7 +101,7 @@ public class TicketService : ITicketService
     public async Task<TicketResponseDto> CreateTicketAsync(TicketCreateDto dto, Guid createdBy, CancellationToken cancellationToken = default)
     {
         var initialStatus = await _db.TicketStatuses.FirstOrDefaultAsync(s => s.IsActive, cancellationToken)
-            ?? throw new InvalidOperationException("Aktif başlangıç durumu bulunamadı.");
+            ?? throw new InvalidOperationException("No active initial state found.");
         
         var rawSeqValue = await _db.Database
             .SqlQueryRaw<long>("SELECT nextval('\"TicketNumberSequence\"') AS \"Value\"")
@@ -189,11 +189,11 @@ public async Task<TicketAssignmentResponseDto?> AssignTicketAsync(Guid ticketId,
                 tm.IsActive,
             cancellationToken);
 
-    if (assignedByTeamMember is null) throw new InvalidOperationException("Atama yapan kullanıcı aktif bir takım üyesi değil.");
+    if (assignedByTeamMember is null) throw new InvalidOperationException("The user who made the assignment is not an active team member.");
 
     var team = await _db.Teams.FirstOrDefaultAsync(t => t.Id == dto.TeamId, cancellationToken);
 
-    if (team is null) throw new KeyNotFoundException("Atama yapılacak takım bulunamadı.");
+    if (team is null) throw new KeyNotFoundException("No team was found to assign to..");
     
     TeamMember? assignedTeamMember = null;
 
@@ -208,8 +208,8 @@ public async Task<TicketAssignmentResponseDto?> AssignTicketAsync(Guid ticketId,
                     tm.IsActive,
                 cancellationToken);
 
-        if (assignedTeamMember is null) throw new KeyNotFoundException("Atanacak aktif takım üyesi bulunamadı " + "veya kullanıcı seçilen takıma ait değil.");
-
+        if (assignedTeamMember is null) throw new KeyNotFoundException("No active team member could be assigned " + "or the user does not belong to the selected team.");
+        
     }
 
     ticket.TeamId = dto.TeamId;
@@ -335,7 +335,7 @@ public async Task<TicketCommentDto?> AddCommentAsync(Guid ticketId, TicketCommen
     {
         var ticket = await _db.Tickets.FirstOrDefaultAsync(t => t.Id == ticketId && !t.IsDeleted, cancellationToken);
         if (ticket is null ) return false;
-        if (ticket.ResolvedAt.HasValue) throw new InvalidOperationException("Ticket zaten çözümlenmiş.");
+        if (ticket.ResolvedAt.HasValue) throw new InvalidOperationException("Ticket has been already resolved.");
 
         ticket.Resolution = dto.Resolution;
         ticket.ResolvedById = resolvedById;
