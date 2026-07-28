@@ -38,7 +38,7 @@ public class AuthService : IAuthService
         {
             Token = token,
             Email = user.Email,
-            FullName = $"{user.Name}{user.LastName}",
+            FullName = $"{user.Name} {user.LastName}",
             Role = user.Role?.Name ?? "User",
         };
 

@@ -4,8 +4,7 @@ using backend.DTO.Ticket;
 using Microsoft.EntityFrameworkCore;
 
 
-
-namespace backend.DTO.Services.TicketAssignment;
+namespace backend.Services.TicketAssignment;
 
 public class TicketAssignmentService : ITicketAssignmentService
 {
@@ -56,7 +55,7 @@ public class TicketAssignmentService : ITicketAssignmentService
             TeamId = assignment.TeamId,
             TeamName = team.Name,
             TeamMemberId = assignment.AssignedToId,
-            TeamMemberName = $"{assignedTo.User.Name} {assignedTo.User.Name}",
+            TeamMemberName = $"{assignedTo.User.Name} {assignedTo.User.LastName}",
             AssignedById = assignment.AssignedById,
             AssignedByName = $"{assignedBy.User.Name} {assignedBy.User.LastName}",
             AssignedAt = assignment.AssignedAt,

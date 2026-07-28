@@ -1,6 +1,6 @@
 using backend.DTO.Ticket;
 
-namespace backend.DTO.Services.TicketAssignment;
+namespace backend.Services.TicketAssignment;
 
 public interface ITicketAssignmentService
 {

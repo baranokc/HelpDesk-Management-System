@@ -57,12 +57,6 @@ public class AppDbContext : DbContext
         .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<Ticket>()
-        .HasOne(t => t.AssignedTo)
-        .WithMany()
-        .HasForeignKey(t => t.AssignedToId)
-        .OnDelete(DeleteBehavior.Restrict);
-
-        modelBuilder.Entity<Ticket>()
         .HasOne(t => t.Team)
         .WithMany()
         .HasForeignKey(t => t.TeamId);

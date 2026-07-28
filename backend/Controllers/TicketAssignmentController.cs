@@ -1,5 +1,5 @@
 using backend.DTO.Ticket;
-using backend.DTO.Services.TicketAssignment;
+using backend.Services.TicketAssignment;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;

@@ -3,6 +3,8 @@ using backend.DTO.Ticket;
 using backend.Entities;
 using Microsoft.EntityFrameworkCore;
 
+
+
 namespace backend.Services.TicketStatus;
 
 public class TicketStatusService : ITicketStatusService
@@ -32,7 +34,7 @@ public class TicketStatusService : ITicketStatusService
 
         ticket.StatusId = newStatusId;
 
-        var historyLog = new TicketHistory
+        var historyLog = new Entities.TicketHistory
         {
             Id = Guid.NewGuid(),
             TicketId = ticketId,

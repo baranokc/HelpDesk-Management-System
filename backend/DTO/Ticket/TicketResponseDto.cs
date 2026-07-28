@@ -6,7 +6,9 @@ public class TicketResponseDto
     public string TicketDescription {get; set; } = string.Empty;
     public string Subject {get; set; } = string.Empty;
     public string StatusName {get; set; } = string.Empty;
-    public string PriorityName {get; set; } = string.Empty;
+    public string ImpactLevelName { get; set; } = string.Empty;
+    public string UrgencyLevelName { get; set; } = string.Empty;
+    public string PriorityName { get; set; } = string.Empty;
     public string CategoryName {get; set; } = string.Empty;
     public string CreatedByName {get; set; } = string.Empty;
     public string? AssignedToName {get; set; }
