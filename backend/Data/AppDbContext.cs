@@ -34,7 +34,13 @@ public class AppDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.Entity<UserRole>()
-            .HasKey(ur => new { ur.UserId, ur.RoleId });
+        .HasKey(ur => new { ur.UserId, ur.RoleId });
+        
+        modelBuilder.Entity<User>()
+        .HasOne(u => u.Manager)
+        .WithMany(u => u.DirectReports)
+        .HasForeignKey(u => u.ManagerId)
+        .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.HasSequence<long>("TicketNumberSequence")
         .StartsAt(1)
@@ -46,20 +52,21 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Ticket>()
         .HasOne(t => t.CreatedBy)
-        .WithMany()
+        .WithMany(u => u.CreatedTickets)
         .HasForeignKey(t => t.CreatedById)
         .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<Ticket>()
         .HasOne(t => t.AssignedTo)
-        .WithMany()
+        .WithMany(u => u.AssignedTickets)
         .HasForeignKey(t => t.AssignedToId)
         .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<Ticket>()
         .HasOne(t => t.Team)
-        .WithMany()
-        .HasForeignKey(t => t.TeamId);
+        .WithMany(team => team.Tickets)
+        .HasForeignKey(t => t.TeamId)
+        .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<TicketAssignment>(entity =>
         {
@@ -75,7 +82,7 @@ public class AppDbContext : DbContext
         });
         modelBuilder.Entity<Ticket>()
             .HasOne(t => t.ResolvedBy)
-            .WithMany()
+            .WithMany(u => u.ResolvedTickets)
             .HasForeignKey(t => t.ResolvedById)
             .OnDelete(DeleteBehavior.Restrict);
 

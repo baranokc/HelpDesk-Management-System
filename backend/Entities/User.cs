@@ -26,6 +26,7 @@ public class User
 
     public ICollection<Ticket> CreatedTickets { get; set; } = new List<Ticket>();
     public ICollection<Ticket> AssignedTickets { get; set; } = new List<Ticket>();
+    public ICollection<Ticket> ResolvedTickets { get; set; } = new List<Ticket>();
     public ICollection<User> DirectReports { get; set; } = new List<User>();
     public Guid? RoleId { get; set; } 
     public Role? Role { get; set; } 
