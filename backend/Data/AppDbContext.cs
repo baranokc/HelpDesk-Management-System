@@ -35,11 +35,11 @@ public class AppDbContext : DbContext
         base.OnModelCreating(modelBuilder);
         modelBuilder.Entity<UserRole>()
             .HasKey(ur => new { ur.UserId, ur.RoleId });
-        
+
         modelBuilder.HasSequence<long>("TicketNumberSequence")
         .StartsAt(1)
         .IncrementsBy(1);
-        
+
         modelBuilder.Entity<Ticket>()
         .HasIndex(x => x.TicketNumber)
         .IsUnique();
@@ -86,10 +86,11 @@ public class AppDbContext : DbContext
             .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<Department>().HasData(
-            new Department { Id = 1, Name = "Yazılım" },
-            new Department { Id = 2, Name = "İnsan Kaynakları" }
-);
-}
+            new Department { Id = 1, Name = "Software" },
+            new Department { Id = 2, Name = "Human Resources" }
+        );
+
+    }
 
     }
     

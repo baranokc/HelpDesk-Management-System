@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using backend.Constants;
 using backend.DTO.Common;
 using backend.DTO.Ticket;
 using backend.Services.Ticket;
@@ -25,8 +26,8 @@ public class TicketController : ControllerBase
         return Guid.TryParse(userIdClaim, out var userId) ? userId : Guid.Empty;
     }
 
-
     [HttpGet]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.User}")]
     [ProducesResponseType(typeof(PagedResultDto<TicketListDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetTickets([FromQuery] TicketFilterDto filter, CancellationToken cancellationToken)
     {
@@ -35,6 +36,7 @@ public class TicketController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.User}")]
     [ProducesResponseType(typeof(TicketDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetTicketById(Guid id, CancellationToken cancellationToken)
@@ -47,6 +49,7 @@ public class TicketController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.User}")]
     [ProducesResponseType(typeof(TicketResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateTicket([FromBody] TicketCreateDto dto, CancellationToken cancellationToken)
@@ -65,6 +68,7 @@ public class TicketController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.User}")]
     [ProducesResponseType(typeof(TicketResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateTicket(Guid id, [FromBody] TicketUpdateDto dto, CancellationToken cancellationToken)
@@ -79,6 +83,7 @@ public class TicketController : ControllerBase
     }
 
     [HttpPost("{id:guid}/assign")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent}")]
     [ProducesResponseType(typeof(TicketAssignmentResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> AssignTicket(Guid id, [FromBody] TicketAssignmentDto dto, CancellationToken cancellationToken)
@@ -93,6 +98,7 @@ public class TicketController : ControllerBase
     }
 
     [HttpDelete("{id:guid}/assign")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UnassignTicket(Guid id, [FromBody] TicketAssignmentDto dto, CancellationToken cancellationToken)
@@ -103,10 +109,11 @@ public class TicketController : ControllerBase
         if (!success)
             return NotFound(new { message = "Ticket assignment to remove was not found." });
 
-        return Ok(new { message = "Assignment succesffuly removed." });
+        return Ok(new { message = "Assignment successfully removed." });
     }
 
     [HttpPost("{id:guid}/comments")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.User}")]
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(TicketCommentDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -122,6 +129,7 @@ public class TicketController : ControllerBase
     }
 
     [HttpPost("{id:guid}/attachments")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.User}")]
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(IReadOnlyCollection<TicketAttachmentDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -134,6 +142,7 @@ public class TicketController : ControllerBase
     }
 
     [HttpPost("{id:guid}/resolve")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ResolveTicket(Guid id, [FromBody] TicketResolveDto dto, CancellationToken cancellationToken)
@@ -142,12 +151,13 @@ public class TicketController : ControllerBase
         var success = await _ticketService.ResolveTicketAsync(id, dto, currentUserId, cancellationToken);
         
         if (!success)
-            return NotFound(new { message = "Ticket not found or could not be resolved.." });
+            return NotFound(new { message = "Ticket not found or could not be resolved." });
 
-        return Ok(new { message = "Ticket succesfully resolved.." });
+        return Ok(new { message = "Ticket successfully resolved." });
     }
 
     [HttpGet("{id:guid}/history")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.User}")]
     [ProducesResponseType(typeof(IReadOnlyCollection<TicketHistoryDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetHistory(Guid id, CancellationToken cancellationToken)
     {
@@ -156,6 +166,7 @@ public class TicketController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Roles = Roles.Admin)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteTicket(Guid id, CancellationToken cancellationToken)
@@ -166,6 +177,6 @@ public class TicketController : ControllerBase
         if (!success)
             return NotFound(new { message = "Ticket to delete was not found." });
 
-        return Ok(new { message = "Ticket succesfully deleted." });
+        return Ok(new { message = "Ticket successfully deleted." });
     }
 }

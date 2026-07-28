@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using backend.Data;
@@ -11,9 +12,11 @@ using backend.Data;
 namespace backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260728071459_AddIsInitialToTicketStatus")]
+    partial class AddIsInitialToTicketStatus
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -192,7 +195,7 @@ namespace backend.Migrations
                             CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Description = "",
                             IsActive = true,
-                            Name = "Software"
+                            Name = "Yazılım"
                         },
                         new
                         {
@@ -201,7 +204,7 @@ namespace backend.Migrations
                             CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Description = "",
                             IsActive = true,
-                            Name = "Human Resources"
+                            Name = "İnsan Kaynakları"
                         });
                 });
 
@@ -782,6 +785,17 @@ namespace backend.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("TicketStatuses");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("11111111-1111-1111-1111-111111111111"),
+                            Description = "",
+                            IsActive = true,
+                            IsClosed = true,
+                            IsInitial = true,
+                            Name = "Open"
+                        });
                 });
 
             modelBuilder.Entity("backend.Entities.TicketStatusHistory", b =>
