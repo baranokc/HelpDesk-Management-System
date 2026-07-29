@@ -30,6 +30,7 @@ public class AppDbContext : DbContext
     public DbSet<AssetType> AssetTypes { get; set; } = null!;
     public DbSet<ImpactLevel> ImpactLevels { get; set; } = null!;
     public DbSet<TicketHistory> TicketHistories { get; set; } = null!;
+    public DbSet<ResolutionCategory> ResolutionCategories { get; set; } = null!;
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
