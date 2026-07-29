@@ -1,4 +1,5 @@
 using backend.DTO.Ticket;
+using backend.Constants;
 using backend.Services.TicketAssignment;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,14 +21,26 @@ public class TicketAssignmentController : ControllerBase
     {
         _assignmentService = assignmentService;
     }
+
     [HttpPost]
-    public async Task<IActionResult> AssignTicket([FromBody] TicketAssignRequestDto request)
+    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent}")]
+    [ProducesResponseType(typeof(TicketAssignmentResponseDto),StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> AssignTicket(
+        [FromBody] TicketAssignRequestDto request)
     {
-        var currentUserIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                                ?? User.FindFirst("sub")?.Value;
-        if (string.IsNullOrEmpty(currentUserIdClaim))
-            return Unauthorized(new { message = "You need to log in." });
-        Guid currentUserId = Guid.Parse(currentUserIdClaim);
+        var currentUserIdClaim =
+            User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? User.FindFirst("sub")?.Value;
+
+        if (!Guid.TryParse(currentUserIdClaim, out var currentUserId))
+        {
+            return Unauthorized(new
+            {
+                message = "Invalid user identity."
+            });
+        }
 
         var createDto = new TicketAssignmentCreateDto
         {
@@ -35,16 +48,37 @@ public class TicketAssignmentController : ControllerBase
             AssignedById = currentUserId,
             Note = request.Note
         };
+
         var assignmentDto = new TicketAssignmentDto
         {
             TeamId = request.TeamId,
             TeamMemberId = request.TeamMemberId,
+            Reason = request.Note
         };
-        var result = await _assignmentService.AssignTicketAsync(createDto, assignmentDto);
 
-        if (result is null)
-            return BadRequest(new { message = "Assignment failed. Please check yoru Ticket, Team or Member IDs." });
-        return Ok(result); }
+        try
+        {
+            var result = await _assignmentService
+                .AssignTicketAsync(createDto, assignmentDto);
+
+            if (result is null)
+            {
+                return BadRequest(new
+                {
+                    message = "Ticket assignment failed."
+                });
+            }
+
+            return Ok(result);
+        }
+        catch (ArgumentException exception)
+        {
+            return BadRequest(new
+            {
+                message = exception.Message
+            });
+        }
+    }
 
         
 }

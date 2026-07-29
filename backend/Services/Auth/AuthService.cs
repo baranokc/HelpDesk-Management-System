@@ -6,7 +6,6 @@ using System.Text;
 using backend.Data;
 using backend.DTO.Auth;
 using backend.Entities;
-using backend.Migrations;
 using BCrypt.Net;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;

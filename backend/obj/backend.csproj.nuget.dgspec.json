@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Mesutcan\\source\\repos\\HelpDesk-Management-System\\backend\\backend.csproj": {}
+    "c:\\Users\\Mesutcan\\source\\repos\\HelpDesk-Management-System\\backend\\backend.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Mesutcan\\source\\repos\\HelpDesk-Management-System\\backend\\backend.csproj": {
+    "c:\\Users\\Mesutcan\\source\\repos\\HelpDesk-Management-System\\backend\\backend.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Mesutcan\\source\\repos\\HelpDesk-Management-System\\backend\\backend.csproj",
+        "projectUniqueName": "c:\\Users\\Mesutcan\\source\\repos\\HelpDesk-Management-System\\backend\\backend.csproj",
         "projectName": "backend",
-        "projectPath": "C:\\Users\\Mesutcan\\source\\repos\\HelpDesk-Management-System\\backend\\backend.csproj",
+        "projectPath": "c:\\Users\\Mesutcan\\source\\repos\\HelpDesk-Management-System\\backend\\backend.csproj",
         "packagesPath": "C:\\Users\\Mesutcan\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Mesutcan\\source\\repos\\HelpDesk-Management-System\\backend\\obj\\",
+        "outputPath": "c:\\Users\\Mesutcan\\source\\repos\\HelpDesk-Management-System\\backend\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Mesutcan\\AppData\\Roaming\\NuGet\\NuGet.Config",

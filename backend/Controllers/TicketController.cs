@@ -133,28 +133,55 @@ public class TicketController : ControllerBase
     [HttpPost("{id:guid}/assign")]
     [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent}")]
     [ProducesResponseType(typeof(TicketAssignmentResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> AssignTicket(
-    Guid id, 
-    [FromBody] TicketAssignmentDto dto, 
-    CancellationToken cancellationToken)
-{
-    var currentUserId = GetCurrentUserId();
-    if (currentUserId == Guid.Empty)
-        return Unauthorized(new { message = "Invalid user identity." });
-
-    var createDto = new TicketAssignmentCreateDto
+        Guid id,
+        [FromBody] TicketAssignmentDto dto,
+        CancellationToken cancellationToken)
     {
-        TicketId = id,
-        AssignedById = currentUserId
-    };
-    var result = await _ticketAssignmentService.AssignTicketAsync(createDto, dto);
+        var currentUserId = GetCurrentUserId();
 
-    if (result == null)
-        return NotFound(new { message = "Ticket, team, or team member not found." });
+        if (currentUserId == Guid.Empty)
+        {
+            return Unauthorized(new
+            {
+                message = "Invalid user identity."
+            });
+        }
 
-    return Ok(result);
-}
+        var createDto = new TicketAssignmentCreateDto
+        {
+            TicketId = id,
+            AssignedById = currentUserId,
+            Note = dto.Reason
+        };
+
+        try
+        {
+            var result = await _ticketAssignmentService
+                .AssignTicketAsync(createDto, dto);
+
+            if (result is null)
+            {
+                return NotFound(new
+                {
+                    message =
+                        "Ticket, team, or team member not found."
+                });
+            }
+
+            return Ok(result);
+        }
+        catch (ArgumentException exception)
+        {
+            return BadRequest(new
+            {
+                message = exception.Message
+            });
+        }
+    }
 
     [HttpDelete("{id:guid}/assign")]
     [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent}")]

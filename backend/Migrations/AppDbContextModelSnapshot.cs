@@ -172,15 +172,12 @@ namespace backend.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("ParentDepartmentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int?>("ParentDepartmentId1")
+                    b.Property<int?>("ParentDepartmentId")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ParentDepartmentId1");
+                    b.HasIndex("ParentDepartmentId");
 
                     b.ToTable("Departments");
 
@@ -244,7 +241,7 @@ namespace backend.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ResolutionCategory");
+                    b.ToTable("ResolutionCategories");
                 });
 
             modelBuilder.Entity("backend.Entities.Role", b =>
@@ -384,10 +381,7 @@ namespace backend.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("DepartmentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("DepartmentId1")
+                    b.Property<int>("DepartmentId")
                         .HasColumnType("integer");
 
                     b.Property<string>("Description")
@@ -403,7 +397,7 @@ namespace backend.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DepartmentId1");
+                    b.HasIndex("DepartmentId");
 
                     b.ToTable("Teams");
                 });
@@ -499,9 +493,6 @@ namespace backend.Migrations
                     b.Property<Guid?>("TeamId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("TeamId1")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("TicketDescription")
                         .IsRequired()
                         .HasColumnType("text");
@@ -515,12 +506,6 @@ namespace backend.Migrations
                         .HasColumnType("text");
 
                     b.Property<Guid>("UrgencyLevelId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("UserId1")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
@@ -545,16 +530,10 @@ namespace backend.Migrations
 
                     b.HasIndex("TeamId");
 
-                    b.HasIndex("TeamId1");
-
                     b.HasIndex("TicketNumber")
                         .IsUnique();
 
                     b.HasIndex("UrgencyLevelId");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("UserId1");
 
                     b.ToTable("Tickets");
                 });
@@ -981,7 +960,7 @@ namespace backend.Migrations
                 {
                     b.HasOne("backend.Entities.Department", "ParentDepartment")
                         .WithMany("SubDepartments")
-                        .HasForeignKey("ParentDepartmentId1");
+                        .HasForeignKey("ParentDepartmentId");
 
                     b.Navigation("ParentDepartment");
                 });
@@ -1039,7 +1018,7 @@ namespace backend.Migrations
                 {
                     b.HasOne("backend.Entities.Department", "Department")
                         .WithMany("Teams")
-                        .HasForeignKey("DepartmentId1")
+                        .HasForeignKey("DepartmentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1068,7 +1047,7 @@ namespace backend.Migrations
             modelBuilder.Entity("backend.Entities.Ticket", b =>
                 {
                     b.HasOne("backend.Entities.User", "AssignedTo")
-                        .WithMany()
+                        .WithMany("AssignedTickets")
                         .HasForeignKey("AssignedToId")
                         .OnDelete(DeleteBehavior.Restrict);
 
@@ -1079,7 +1058,7 @@ namespace backend.Migrations
                         .IsRequired();
 
                     b.HasOne("backend.Entities.User", "CreatedBy")
-                        .WithMany()
+                        .WithMany("CreatedTickets")
                         .HasForeignKey("CreatedById")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -1101,7 +1080,7 @@ namespace backend.Migrations
                         .HasForeignKey("ResolutionCategoryId");
 
                     b.HasOne("backend.Entities.User", "ResolvedBy")
-                        .WithMany()
+                        .WithMany("ResolvedTickets")
                         .HasForeignKey("ResolvedById")
                         .OnDelete(DeleteBehavior.Restrict);
 
@@ -1116,26 +1095,15 @@ namespace backend.Migrations
                         .HasForeignKey("SubcategoryId");
 
                     b.HasOne("backend.Entities.Team", "Team")
-                        .WithMany()
-                        .HasForeignKey("TeamId");
-
-                    b.HasOne("backend.Entities.Team", null)
                         .WithMany("Tickets")
-                        .HasForeignKey("TeamId1");
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("backend.Entities.UrgencyLevel", "UrgencyLevel")
                         .WithMany("Tickets")
                         .HasForeignKey("UrgencyLevelId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("backend.Entities.User", null)
-                        .WithMany("AssignedTickets")
-                        .HasForeignKey("UserId");
-
-                    b.HasOne("backend.Entities.User", null)
-                        .WithMany("CreatedTickets")
-                        .HasForeignKey("UserId1");
 
                     b.Navigation("AssignedTo");
 
@@ -1310,7 +1278,8 @@ namespace backend.Migrations
 
                     b.HasOne("backend.Entities.User", "Manager")
                         .WithMany("DirectReports")
-                        .HasForeignKey("ManagerId");
+                        .HasForeignKey("ManagerId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("backend.Entities.Role", "Role")
                         .WithMany()
@@ -1448,6 +1417,8 @@ namespace backend.Migrations
                     b.Navigation("CreatedTickets");
 
                     b.Navigation("DirectReports");
+
+                    b.Navigation("ResolvedTickets");
 
                     b.Navigation("TeamMembers");
 
