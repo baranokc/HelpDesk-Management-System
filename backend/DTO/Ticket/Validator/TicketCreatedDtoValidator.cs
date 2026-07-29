@@ -3,6 +3,41 @@ using FluentValidation;
 namespace backend.DTO.Ticket.Validator;
 public class TicketCreateDtoValidator : AbstractValidator<TicketCreateDto>
 {
+    private static readonly string[] AllowedExtensions =
+    [
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".pdf",
+        ".txt",
+        ".docx",
+        ".xlsx",
+        ".zip",
+        ".rar",
+        ".7z"
+    ];
+
+    private const long MaxFileSizeBytes =
+        100L * 1024 * 1024;
+
+    private const long MaxTotalSizeBytes =
+        100L * 1024 * 1024;
+
+    private static bool HasValidFileSize(IFormFile file)
+    {
+        return file.Length > 0 &&
+               file.Length <= MaxFileSizeBytes;
+    }
+
+    private static bool HasValidExtension(IFormFile file)
+    {
+        var extension =
+            Path.GetExtension(file.FileName)
+                .ToLowerInvariant();
+
+        return AllowedExtensions.Contains(extension);
+    }
+
     public TicketCreateDtoValidator()
     {
         RuleFor(x => x.TicketTitle)
@@ -26,6 +61,25 @@ public class TicketCreateDtoValidator : AbstractValidator<TicketCreateDto>
         RuleFor(x => x.ImpactLevelId)
             .NotEmpty().WithMessage("Etki seviyesi seçilmesi zorunludur.");
         RuleFor(x => x.UrgencyLevelId)
-            .NotEmpty().WithMessage("Aciliyet seviyesi seçilmesi zorunludur.");
+            .NotEmpty()
+            .WithMessage(
+                "Aciliyet seviyesi seçilmesi zorunludur.");
+        RuleFor(x => x.Attachments)
+            .Must(files => files.Count <= 10)
+            .WithMessage(
+                "Bir ticket'a en fazla 10 dosya yüklenebilir.")
+            .Must(files =>
+                files.Sum(file => file.Length) <=
+                MaxTotalSizeBytes)
+            .WithMessage(
+                "Dosyaların toplam boyutu 100 MB'ı geçemez.");
+
+        RuleForEach(x => x.Attachments)
+            .Must(HasValidFileSize)
+            .WithMessage(
+                "Dosya boş olamaz veya 100 MB'ı geçemez.")
+            .Must(HasValidExtension)
+            .WithMessage(
+                "Desteklenmeyen dosya uzantısı.");
     }
 }

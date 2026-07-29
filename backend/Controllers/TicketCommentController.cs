@@ -26,9 +26,38 @@ public class TicketCommentController : ControllerBase
 
     [HttpPost]
     [Consumes("multipart/form-data")]
-    public async Task<IActionResult> Create(Guid ticketId, [FromForm] TicketCommentCreateDto dto, CancellationToken ct)
-    { var item = await _service.AddCommentAsync(ticketId, dto, UserId, ct); return item is null ? NotFound() : CreatedAtAction(nameof(GetById), new { ticketId, commentId = item.Id }, item); }
+    public async Task<IActionResult> Create(
+        Guid ticketId,
+        [FromForm] TicketCommentCreateDto dto,
+        CancellationToken ct)
+    {
+        if (UserId == Guid.Empty)
+        {
+            return Unauthorized(new
+            {
+                message = "Invalid user identity."
+            });
+        }
 
+        var item = await _service.AddCommentAsync(
+            ticketId,
+            dto,
+            UserId,
+            CanManageAll,
+            ct);
+
+        return item is null
+            ? NotFound()
+            : CreatedAtAction(
+                nameof(GetById),
+                new
+                {
+                    ticketId,
+                    commentId = item.Id
+                },
+                item);
+    }
+    
     [HttpPut("{commentId:guid}")]
     public async Task<IActionResult> Update(Guid ticketId, Guid commentId, [FromBody] TicketCommentUpdateDto dto, CancellationToken ct)
     { var item = await _service.UpdateCommentAsync(ticketId, commentId, dto, UserId, CanManageAll, ct); return item is null ? NotFound() : Ok(item); }

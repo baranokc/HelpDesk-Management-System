@@ -34,7 +34,6 @@ public static class DataSeeder
 
         await context.SaveChangesAsync();
 
-        // Takımlar, Department ID değerlerine ihtiyaç duyar.
         await SeedTeamsAsync(context);
 
         await context.SaveChangesAsync();

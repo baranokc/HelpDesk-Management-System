@@ -9,4 +9,5 @@ public class TicketCreateDto
     public Guid PriorityId {get; set; }
     public Guid ImpactLevelId {get; set; }
     public Guid UrgencyLevelId {get; set; }
+    public List<IFormFile> Attachments { get; set; } = [];
 }

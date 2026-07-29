@@ -78,15 +78,11 @@ public class TicketAssignmentService : ITicketAssignmentService
             Id = Guid.NewGuid(),
             TicketId = ticket.Id,
             TeamId = team.Id,
-
-            // TicketAssignment tablosunda TeamMember.Id saklanır.
             AssignedToId = assignedTo.Id,
             AssignedById = assignedBy.Id,
-
             AssignedAt = DateTime.UtcNow
         };
 
-        // Ticket tablosunda ise atanmış gerçek User.Id saklanır.
         ticket.TeamId = team.Id;
         ticket.AssignedToId = assignedTo.UserId;
 
@@ -95,26 +91,18 @@ public class TicketAssignmentService : ITicketAssignmentService
 
         return new TicketAssignmentResponseDto
         {
-            // Bu ID assignment log kaydının ID’sidir.
             Id = assignment.Id,
-
             TicketId = ticket.Id,
             TeamId = team.Id,
             TeamName = team.Name,
-
-            // Bu ID TeamMember.Id değeridir.
             TeamMemberId = assignedTo.Id,
             TeamMemberName =
                 $"{assignedTo.User.Name} {assignedTo.User.LastName}",
-
-            // Mevcut DTO yapısında bu da TeamMember.Id değeridir.
             AssignedById = assignedBy.Id,
             AssignedByName =
                 $"{assignedBy.User.Name} {assignedBy.User.LastName}",
 
             AssignedAt = assignment.AssignedAt,
-
-            // TicketController endpoint’i Reason kullanıyor.
             Note = assignmentDto.Reason ?? createDto.Note
         };
     }

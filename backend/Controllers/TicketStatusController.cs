@@ -18,9 +18,6 @@ public class TicketStatusController : ControllerBase
     {
         _statusService = statusService;
     }
-    ///<summary>
-    ///
-    ///</summary>
 
     [HttpPost("update")]
     public async Task<IActionResult> UpdateStatus([FromBody] TicketStatusUpdateDto request)
@@ -41,9 +38,6 @@ public class TicketStatusController : ControllerBase
 
         return Ok(new { message = "Ticket status has been successfully updated." });
     }
-    ///<summary>
-    ///
-    ///</summary>
 
     [HttpGet("history/{ticketId}")]
     public async Task<IActionResult> GetTicketHistory(Guid ticketId)

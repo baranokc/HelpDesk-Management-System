@@ -7,6 +7,7 @@ using backend.Services.TicketAssignment;
 using backend.Services.TicketHistory;
 using backend.Services.TicketResolution;
 using backend.Services.TicketUnassignment;
+using backend.Services.TicketAttachment;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using backend.Entities;
@@ -47,6 +48,11 @@ public class TicketController : ControllerBase
             ? userId
             : Guid.Empty;
     }
+        private string GetCurrentUserRole()
+    {
+        return User.FindFirstValue(ClaimTypes.Role)
+               ?? string.Empty;
+    }
 
     [HttpGet]
     [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.User}")]
@@ -55,7 +61,24 @@ public class TicketController : ControllerBase
         [FromQuery] TicketFilterDto filter,
         CancellationToken cancellationToken)
     {
-        var result = await _ticketService.GetTicketAsync(filter, cancellationToken);
+        var currentUserId = GetCurrentUserId();
+        var currentUserRole = GetCurrentUserRole();
+
+        if (currentUserId == Guid.Empty ||
+            string.IsNullOrWhiteSpace(currentUserRole))
+        {
+            return Unauthorized(new
+            {
+                message = "Invalid user identity."
+            });
+        }
+
+        var result = await _ticketService.GetTicketAsync(
+            filter,
+            currentUserId,
+            currentUserRole,
+            cancellationToken);
+
         return Ok(result);
     }
 
@@ -67,7 +90,23 @@ public class TicketController : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
-        var ticket = await _ticketService.GetTicketByAsync(id, cancellationToken);
+        var currentUserId = GetCurrentUserId();
+        var currentUserRole = GetCurrentUserRole();
+
+        if (currentUserId == Guid.Empty ||
+            string.IsNullOrWhiteSpace(currentUserRole))
+        {
+            return Unauthorized(new
+            {
+                message = "Invalid user identity."
+            });
+        }
+
+        var ticket = await _ticketService.GetTicketByAsync(
+            id,
+            currentUserId,
+            currentUserRole,
+            cancellationToken);
 
         if (ticket is null)
             return NotFound(new { message = "Ticket not found." });
@@ -77,6 +116,7 @@ public class TicketController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.User}")]
+    [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(TicketResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateTicket(
@@ -118,16 +158,49 @@ public class TicketController : ControllerBase
         CancellationToken cancellationToken)
     {
         var currentUserId = GetCurrentUserId();
-        var updatedTicket = await _ticketService.UpdateTicketAsync(
-            id,
-            dto,
-            currentUserId,
-            cancellationToken);
+        var currentUserRole = GetCurrentUserRole();
 
-        if (updatedTicket is null)
-            return NotFound(new { message = "Ticket to update was not found." });
+        if (currentUserId == Guid.Empty ||
+            string.IsNullOrWhiteSpace(currentUserRole))
+        {
+            return Unauthorized(new
+            {
+                message = "Invalid user identity."
+            });
+        }
 
-        return Ok(updatedTicket);
+        try
+        {
+            var updatedTicket = await _ticketService.UpdateTicketAsync(
+                id,
+                dto,
+                currentUserId,
+                currentUserRole,
+                cancellationToken);
+
+            if (updatedTicket is null)
+            {
+                return NotFound(new
+                {
+                    message = "Ticket to update was not found."
+                });
+            }
+
+            return Ok(updatedTicket);
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                new { message = exception.Message });
+        }
+        catch (ArgumentException exception)
+        {
+            return BadRequest(new
+            {
+                message = exception.Message
+            });
+        }
     }
 
     [HttpPost("{id:guid}/assign")]
@@ -215,15 +288,45 @@ public class TicketController : ControllerBase
         CancellationToken cancellationToken)
     {
         var currentUserId = GetCurrentUserId();
-        var success = await _ticketResolutionService.ResolveTicketAsync(
-            id,
-            dto,
-            currentUserId,
-            cancellationToken);
 
-        if (!success)
-            return NotFound(new { message = "Ticket not found or could not be resolved." });
-        return Ok(new { message = "Ticket successfully resolved." });
+        if (currentUserId == Guid.Empty)
+        {
+            return Unauthorized(new
+            {
+                message = "Invalid user identity."
+            });
+        }
+
+        try
+        {
+            var success =
+                await _ticketResolutionService.ResolveTicketAsync(
+                    id,
+                    dto,
+                    currentUserId,
+                    cancellationToken);
+
+            if (!success)
+            {
+                return NotFound(new
+                {
+                    message =
+                        "Ticket not found or could not be resolved."
+                });
+            }
+
+            return Ok(new
+            {
+                message = "Ticket successfully resolved."
+            });
+        }
+        catch (InvalidOperationException exception)
+        {
+            return BadRequest(new
+            {
+                message = exception.Message
+            });
+        }
     }
 
     [HttpGet("{id:guid}/history")]

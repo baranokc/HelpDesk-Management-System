@@ -1,26 +1,40 @@
 using backend.Data;
+using backend.Constants;
 using backend.DTO.Common;
 using backend.DTO.Ticket;
 using Microsoft.EntityFrameworkCore;
+using backend.Services.TicketAttachment;
 
 namespace backend.Services.Ticket;
 
 public class TicketService : ITicketService
 {
     private readonly AppDbContext _db;
+    private readonly ITicketAttachmentService _attachmentService;
 
-    public TicketService(AppDbContext db)
+    public TicketService(
+        AppDbContext db,
+        ITicketAttachmentService attachmentService)
     {
         _db = db;
+        _attachmentService = attachmentService;
     }
 
     public async Task<PagedResultDto<TicketListDto>> GetTicketAsync(
         TicketFilterDto filter,
+        Guid currentUserId,
+        string currentUserRole,
         CancellationToken cancellationToken = default)
     {
         var query = _db.Tickets
             .AsNoTracking()
             .Where(t => !t.IsDeleted);
+
+        if (currentUserRole == Roles.User)
+        {
+            query = query.Where(t =>
+                t.CreatedById == currentUserId);
+        }
 
         if (!string.IsNullOrWhiteSpace(filter.Search))
         {
@@ -95,6 +109,8 @@ public class TicketService : ITicketService
 
     public async Task<TicketDetailDto?> GetTicketByAsync(
         Guid ticketId,
+        Guid currentUserId,
+        string currentUserRole,
         CancellationToken cancellationToken = default)
     {
         var ticket = await _db.Tickets
@@ -109,9 +125,8 @@ public class TicketService : ITicketService
             .Include(t => t.ImpactLevel)
             .Include(t => t.UrgencyLevel)
             .FirstOrDefaultAsync(
-                t => t.Id == ticketId && !t.IsDeleted,
-                cancellationToken);
-
+                t => t.Id == ticketId && !t.IsDeleted && (
+                        currentUserRole != Roles.User || t.CreatedById == currentUserId), cancellationToken);
         if (ticket is null)
             return null;
 
@@ -278,8 +293,20 @@ public class TicketService : ITicketService
             CreatedAt = DateTime.UtcNow
         };
 
-    _db.Tickets.Add(ticket);
-    await _db.SaveChangesAsync(cancellationToken);
+        _db.Tickets.Add(ticket);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        if (dto.Attachments.Count > 0)
+        {
+            await _attachmentService.AddAttachmentAsync(
+                ticket.Id,
+                new TicketAttachmentCreateDto
+                {
+                    Files = dto.Attachments
+                },
+                createdBy,
+                cancellationToken);
+        }
 
     return await _db.Tickets
         .AsNoTracking()
@@ -313,6 +340,7 @@ public class TicketService : ITicketService
         Guid ticketId,
         TicketUpdateDto dto,
         Guid changedByUserId,
+        string currentUserRole,
         CancellationToken cancellationToken = default)
     {
         var ticket = await _db.Tickets
@@ -322,6 +350,20 @@ public class TicketService : ITicketService
 
         if (ticket is null)
             return null;
+        if (currentUserRole == Roles.User &&
+            ticket.CreatedById != changedByUserId)
+        {
+            throw new UnauthorizedAccessException(
+                "You can update only your own tickets.");
+        }
+
+        await ValidateTicketLookupsAsync(
+            dto.CategoryId,
+            dto.SubcategoryId,
+            dto.PriorityId,
+            dto.ImpactLevelId,
+            dto.UrgencyLevelId,
+            cancellationToken);
 
         ticket.TicketTitle = dto.TicketTitle.Trim();
         ticket.TicketDescription = dto.TicketDescription.Trim();
@@ -345,6 +387,8 @@ public class TicketService : ITicketService
                 Subject = t.Subject,
                 StatusName = t.Status.Name,
                 PriorityName = t.Priority.Name,
+                ImpactLevelName = t.ImpactLevel.Name,
+                UrgencyLevelName = t.UrgencyLevel.Name,
                 CategoryName = t.Category.Name,
                 CreatedByName = t.CreatedBy.Name + " " + t.CreatedBy.LastName,
                 AssignedToName = t.AssignedTo != null
@@ -372,7 +416,82 @@ public class TicketService : ITicketService
         await _db.SaveChangesAsync(cancellationToken);
         return true;
     }
+    private async Task ValidateTicketLookupsAsync(
+        Guid categoryId,
+        Guid? subcategoryId,
+        Guid priorityId,
+        Guid impactLevelId,
+        Guid urgencyLevelId,
+        CancellationToken cancellationToken)
+    {
+        var categoryExists =
+            await _db.TicketCategories.AnyAsync(
+                category =>
+                    category.Id == categoryId &&
+                    category.IsActive,
+                cancellationToken);
 
+        if (!categoryExists)
+        {
+            throw new ArgumentException(
+                "Selected category was not found.");
+        }
+
+        var priorityExists =
+            await _db.TicketPriorities.AnyAsync(
+                priority => priority.Id == priorityId,
+                cancellationToken);
+
+        if (!priorityExists)
+        {
+            throw new ArgumentException(
+                "Selected priority was not found.");
+        }
+
+        var impactExists =
+            await _db.ImpactLevels.AnyAsync(
+                impact =>
+                    impact.Id == impactLevelId &&
+                    impact.IsActive,
+                cancellationToken);
+
+        if (!impactExists)
+        {
+            throw new ArgumentException(
+                "Selected impact level was not found.");
+        }
+
+        var urgencyExists =
+            await _db.UrgencyLevels.AnyAsync(
+                urgency =>
+                    urgency.Id == urgencyLevelId &&
+                    urgency.IsActive,
+                cancellationToken);
+
+        if (!urgencyExists)
+        {
+            throw new ArgumentException(
+                "Selected urgency level was not found.");
+        }
+
+        if (subcategoryId.HasValue)
+        {
+            var subcategoryExists =
+                await _db.TicketSubCategories.AnyAsync(
+                    subcategory =>
+                        subcategory.Id == subcategoryId.Value &&
+                        subcategory.CategoryId == categoryId &&
+                        subcategory.IsActive,
+                    cancellationToken);
+
+            if (!subcategoryExists)
+            {
+                throw new ArgumentException(
+                    "Selected subcategory was not found " +
+                    "or does not belong to the selected category.");
+            }
+        }
+    }
     private static string FormatTicketNumber(long sequenceValue)
     {
         return $"HD-{sequenceValue:D8}";
