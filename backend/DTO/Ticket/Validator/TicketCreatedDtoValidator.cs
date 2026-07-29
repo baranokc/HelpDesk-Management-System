@@ -18,7 +18,7 @@ public class TicketCreateDtoValidator : AbstractValidator<TicketCreateDto>
     ];
 
     private const long MaxFileSizeBytes =
-        100L * 1024 * 1024;
+        10L * 1024 * 1024;
 
     private const long MaxTotalSizeBytes =
         100L * 1024 * 1024;
@@ -77,7 +77,7 @@ public class TicketCreateDtoValidator : AbstractValidator<TicketCreateDto>
         RuleForEach(x => x.Attachments)
             .Must(HasValidFileSize)
             .WithMessage(
-                "Dosya boş olamaz veya 100 MB'ı geçemez.")
+                "Dosya boş olamaz veya 10 MB'ı geçemez.")
             .Must(HasValidExtension)
             .WithMessage(
                 "Desteklenmeyen dosya uzantısı.");
