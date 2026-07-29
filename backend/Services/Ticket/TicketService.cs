@@ -204,6 +204,54 @@ public class TicketService : ITicketService
         Guid createdBy,
         CancellationToken cancellationToken = default)
     {
+        var categoryExists = await _db.TicketCategories
+    .AnyAsync(
+        x => x.Id == dto.CategoryId && x.IsActive,
+        cancellationToken);
+
+        if (!categoryExists)
+            throw new ArgumentException("Selected category was not found.");
+
+        var priorityExists = await _db.TicketPriorities
+            .AnyAsync(
+                x => x.Id == dto.PriorityId,
+                cancellationToken);
+
+        if (!priorityExists)
+            throw new ArgumentException("Selected priority was not found.");
+
+        var impactLevelExists = await _db.ImpactLevels
+            .AnyAsync(
+                x => x.Id == dto.ImpactLevelId && x.IsActive,
+                cancellationToken);
+
+        if (!impactLevelExists)
+            throw new ArgumentException("Selected impact level was not found.");
+
+        var urgencyLevelExists = await _db.UrgencyLevels
+            .AnyAsync(
+                x => x.Id == dto.UrgencyLevelId && x.IsActive,
+                cancellationToken);
+
+        if (!urgencyLevelExists)
+            throw new ArgumentException("Selected urgency level was not found.");
+
+        if (dto.SubcategoryId.HasValue)
+        {
+            var subcategoryExists = await _db.TicketSubCategories
+                .AnyAsync(
+                    x =>
+                        x.Id == dto.SubcategoryId.Value &&
+                        x.CategoryId == dto.CategoryId &&
+                        x.IsActive,
+                    cancellationToken);
+
+            if (!subcategoryExists)
+                throw new ArgumentException(
+                    "Selected subcategory was not found or does not belong to the selected category.");
+        }
+
+        
         var initialStatus = await _db.TicketStatuses
             .FirstOrDefaultAsync(s => s.IsActive, cancellationToken)
             ?? throw new InvalidOperationException("No active initial state found.");

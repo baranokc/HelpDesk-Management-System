@@ -87,15 +87,25 @@ public class TicketController : ControllerBase
         if (currentUserId == Guid.Empty)
             return Unauthorized(new { message = "Invalid user identity." });
 
-        var createdTicket = await _ticketService.CreateTicketAsync(
-            dto,
-            currentUserId,
-            cancellationToken);
+        try
+        {
+            var createdTicket = await _ticketService.CreateTicketAsync(
+                dto,
+                currentUserId,
+                cancellationToken);
 
-        return CreatedAtAction(
-            nameof(GetTicketById),
-            new { id = createdTicket.Id },
-            createdTicket);
+            return CreatedAtAction(
+                nameof(GetTicketById),
+                new { id = createdTicket.Id },
+                createdTicket);
+        }
+        catch (ArgumentException exception)
+        {
+            return BadRequest(new
+            {
+                message = exception.Message
+            });
+        }
     }
 
     [HttpPut("{id:guid}")]
