@@ -15,8 +15,17 @@ public static class DataSeeder
 
         await context.SaveChangesAsync();
 
-        // Alt kategoriler, kategori ID'lerine ihtiyaç duyduğu için
-        // kategoriler kaydedildikten sonra çalıştırılıyor.
+        var ticketStatuses = await context.TicketStatuses
+            .ToListAsync();
+
+        foreach (var status in ticketStatuses)
+        {
+            status.IsInitial = status.Name == "Open";
+        }
+
+        await context.SaveChangesAsync();
+
+
         await SeedTicketSubCategoriesAsync(context);
 
         await SeedRolesAsync(context);

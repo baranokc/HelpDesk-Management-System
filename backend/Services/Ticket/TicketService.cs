@@ -252,9 +252,9 @@ public class TicketService : ITicketService
         }
 
         
-        var initialStatus = await _db.TicketStatuses
-            .FirstOrDefaultAsync(s => s.IsActive, cancellationToken)
-            ?? throw new InvalidOperationException("No active initial state found.");
+        var initialStatus = await _db.TicketStatuses.SingleOrDefaultAsync(s => s.IsActive && s.IsInitial, cancellationToken)
+            ?? throw new InvalidOperationException(
+                "No active initial status was found.");
 
         var rawSequenceValue = await _db.Database
             .SqlQueryRaw<long>(
@@ -277,18 +277,35 @@ public class TicketService : ITicketService
             CreatedAt = DateTime.UtcNow
         };
 
-        _db.Tickets.Add(ticket);
-        await _db.SaveChangesAsync(cancellationToken);
+    _db.Tickets.Add(ticket);
+    await _db.SaveChangesAsync(cancellationToken);
 
-        return new TicketResponseDto
+    return await _db.Tickets
+        .AsNoTracking()
+        .Where(t => t.Id == ticket.Id)
+        .Select(t => new TicketResponseDto
         {
-            Id = ticket.Id,
-            TicketTitle = ticket.TicketTitle,
-            TicketDescription = ticket.TicketDescription,
-            Subject = ticket.Subject,
-            StatusName = initialStatus.Name,
-            CreatedAt = ticket.CreatedAt
-        };
+            Id = t.Id,
+            TicketTitle = t.TicketTitle,
+            TicketDescription = t.TicketDescription,
+            Subject = t.Subject,
+
+            StatusName = t.Status.Name,
+            PriorityName = t.Priority.Name,
+            ImpactLevelName = t.ImpactLevel.Name,
+            UrgencyLevelName = t.UrgencyLevel.Name,
+            CategoryName = t.Category.Name,
+
+            CreatedByName =
+                t.CreatedBy.Name + " " + t.CreatedBy.LastName,
+
+            AssignedToName = t.AssignedTo != null
+                ? t.AssignedTo.Name + " " + t.AssignedTo.LastName
+                : null,
+
+            CreatedAt = t.CreatedAt
+        })
+        .SingleAsync(cancellationToken);
     }
 
     public async Task<TicketResponseDto?> UpdateTicketAsync(
