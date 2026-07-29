@@ -34,6 +34,39 @@ public class TicketCommentController : ControllerBase
     { var item = await _service.UpdateCommentAsync(ticketId, commentId, dto, UserId, CanManageAll, ct); return item is null ? NotFound() : Ok(item); }
 
     [HttpDelete("{commentId:guid}")]
-    public async Task<IActionResult> Delete(Guid ticketId, Guid commentId, CancellationToken ct) =>
-        await _service.DeleteCommentAsync(ticketId, commentId, UserId, CanManageAll, ct) ? NoContent() : NotFound();
+    public async Task<IActionResult> Delete(
+        Guid ticketId,
+        Guid commentId,
+        CancellationToken ct)
+    {
+        try
+        {
+            var deleted = await _service.DeleteCommentAsync(
+                ticketId,
+                commentId,
+                UserId,
+                CanManageAll,
+                ct);
+
+            if (!deleted)
+            {
+                return NotFound(new
+                {
+                    message =
+                        "Comment was not found or does not belong to the specified ticket."
+                });
+            }
+
+            return NoContent();
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                new
+                {
+                    message = exception.Message
+                });
+        }
+}
 }

@@ -147,7 +147,7 @@ public class TicketService : ITicketService
 
         var attachments = await _db.TicketAttachments
             .AsNoTracking()
-            .Where(a => a.TicketId == ticketId && a.TicketCommentId == null)
+            .Where(a => a.TicketId == ticketId)
             .OrderBy(a => a.UploadedAt)
             .Select(a => new TicketAttachmentDto
             {
@@ -158,7 +158,8 @@ public class TicketService : ITicketService
                 DownloadUrl = a.FilePath,
                 CommentId = a.TicketCommentId,
                 UploadedById = a.UploaderId,
-                UploadedByName = a.Uploader.Name + " " + a.Uploader.LastName,
+                UploadedByName =
+                    a.Uploader.Name + " " + a.Uploader.LastName,
                 UploadedAt = a.UploadedAt
             })
             .ToListAsync(cancellationToken);
