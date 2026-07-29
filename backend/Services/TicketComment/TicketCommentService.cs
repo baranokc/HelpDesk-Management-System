@@ -19,12 +19,23 @@ public class TicketCommentService : ITicketCommentService
         await Query(includeInternal).Where(x => x.TicketId == ticketId && x.Id == commentId)
             .Select(MapExpression).SingleOrDefaultAsync(cancellationToken);
 
-    public async Task<TicketCommentDto?> AddCommentAsync(Guid ticketId, TicketCommentCreateDto dto, Guid userId, CancellationToken cancellationToken = default)
-    {
+    public async Task<TicketCommentDto?> AddCommentAsync(
+        Guid ticketId,
+        TicketCommentCreateDto dto,
+        Guid userId,
+        bool canManageAll,
+        CancellationToken cancellationToken = default)    {
         if (!await _db.Tickets.AnyAsync(x => x.Id == ticketId && !x.IsDeleted, cancellationToken)) return null;
         var user = await _db.Users.AsNoTracking().SingleOrDefaultAsync(x => x.Id == userId, cancellationToken)
             ?? throw new InvalidOperationException("Comment owner was not found.");
-        var entity = new Entities.TicketComment { TicketId = ticketId, UserId = userId, Comment = dto.Comment.Trim(), IsInternal = dto.IsInternal, CreatedAt = DateTime.UtcNow };
+        var entity = new Entities.TicketComment
+        {
+            TicketId = ticketId,
+            UserId = userId,
+            Comment = dto.Comment.Trim(),
+            IsInternal = canManageAll && dto.IsInternal,
+            CreatedAt = DateTime.UtcNow
+        };
         _db.TicketComments.Add(entity);
         await _db.SaveChangesAsync(cancellationToken);
         var attachments = await _attachmentService.AddCommentAttachmentsAsync(ticketId, entity.Id, dto.Attachments, userId, cancellationToken);
