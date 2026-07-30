@@ -2,6 +2,11 @@
 
 import { useState } from "react";
 import type { SubmitEvent } from "react";
+import { ticketAttachmentCreateSchema } from "@/src/schemas/attachmentSchemas";
+import {
+  FormErrors,
+  getFormErrors,
+} from "@/src/lib/validation";
 import { Button } from "@/src/components/ui/Button";
 import { FileInput } from "@/src/components/ui/FileInput";
 import { Input } from "@/src/components/ui/Input";
@@ -18,10 +23,25 @@ export function AttachmentUploader({
 }: AttachmentUploaderProps) {
   const [files, setFiles] = useState<File[]>([]);
   const [description, setDescription] = useState("");
+  const [validationErrors, setValidationErrors] = useState<FormErrors>({});
 
   const submit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    await onUpload({ files, description: description || null });
+
+    const result = ticketAttachmentCreateSchema.safeParse({
+      files,
+      description,
+      commentId: null,
+    });
+
+    if (!result.success) {
+      setValidationErrors(getFormErrors(result.error));
+      return;
+    }
+
+    setValidationErrors({});
+    await onUpload(result.data);
+
     setFiles([]);
     setDescription("");
   };
@@ -30,11 +50,13 @@ export function AttachmentUploader({
     <form className="space-y-4" onSubmit={submit}>
       <FileInput
         accept=".jpg,.jpeg,.png,.pdf,.txt,.docx,.xlsx,.zip,.rar,.7z"
+        error={validationErrors.files}
         files={files}
         maxFileSizeMb={100}
         onChange={setFiles}
       />
       <Input
+        error={validationErrors.description}
         label="File description"
         maxLength={100}
         onChange={(event) => setDescription(event.target.value)}

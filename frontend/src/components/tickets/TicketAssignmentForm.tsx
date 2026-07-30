@@ -8,6 +8,11 @@ import {
   TeamMemberLookupDto,
 } from "@/src/types/common";
 import { TicketAssignmentDto } from "@/src/types/ticket-assignment";
+import { ticketAssignmentSchema } from "@/src/schemas/assignmentSchemas";
+import {
+  FormErrors,
+  getFormErrors,
+} from "@/src/lib/validation";
 import { Button } from "@/src/components/ui/Button";
 import { Select } from "@/src/components/ui/Select";
 import { Textarea } from "@/src/components/ui/Textarea";
@@ -26,6 +31,7 @@ export function TicketAssignmentForm({
   const [teamId, setTeamId] = useState("");
   const [teamMemberId, setTeamMemberId] = useState("");
   const [reason, setReason] = useState("");
+  const [validationErrors, setValidationErrors] = useState<FormErrors>({});
 
   useEffect(() => {
     lookupService.getTeams().then(setTeams);
@@ -38,16 +44,26 @@ export function TicketAssignmentForm({
 
   const submit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    await onSubmit({
+
+    const result = ticketAssignmentSchema.safeParse({
       teamId,
-      teamMemberId: teamMemberId || null,
-      reason: reason || null,
+      teamMemberId,
+      reason,
     });
+
+    if (!result.success) {
+      setValidationErrors(getFormErrors(result.error));
+      return;
+    }
+
+    setValidationErrors({});
+    await onSubmit(result.data);
   };
 
   return (
     <form className="space-y-4" onSubmit={submit}>
       <Select
+        error={validationErrors.teamId}
         label="Support Team"
         onChange={(event) => {
           setTeamId(event.target.value);
@@ -63,17 +79,19 @@ export function TicketAssignmentForm({
       />
       <Select
         disabled={!teamId}
+        error={validationErrors.teamMemberId}
         label="Team Member"
         onChange={(event) => setTeamMemberId(event.target.value)}
         options={members.map((member) => ({
-          value: member.userId,
+          value: member.teamMemberId,
           label: `${member.fullName} — ${member.roleInTeam}`,
         }))}
         placeholder="Only assign to a team member"
         value={teamMemberId}
       />
       <Textarea
-        hint={`${reason.length}/250 karakter`}
+        error={validationErrors.reason}
+        hint={`${reason.length}/250 characters`}
         label="Assignment Reason"
         maxLength={250}
         onChange={(event) => setReason(event.target.value)}

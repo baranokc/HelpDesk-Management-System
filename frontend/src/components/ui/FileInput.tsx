@@ -8,16 +8,18 @@ interface FileInputProps {
   multiple?: boolean;
   maxFiles?: number;
   maxFileSizeMb?: number;
+  error? : string;
 }
 
 export function FileInput({
-  label = "Dosyalar",
+  label = "Files",
   files,
   onChange,
   accept,
   multiple = true,
   maxFiles = 10,
   maxFileSizeMb = 10,
+  error,
 }: FileInputProps) {
   return (
     <div>
@@ -26,15 +28,28 @@ export function FileInput({
       </label>
       <input
         accept={accept}
-        className="file-input w-full"
+        aria-invalid={Boolean(error)}
+        className={`file-input w-full ${
+          error ? "file-input-error" : ""
+        }`}
         multiple={multiple}
         onChange={(event) =>
-          onChange(Array.from(event.target.files ?? []).slice(0, maxFiles))
+          onChange(
+            Array.from(
+              event.target.files ?? [],
+            ).slice(0, maxFiles),
+          )
         }
         type="file"
       />
-      <p className="label">
-        En fazla {maxFiles} dosya; her dosya en fazla {maxFileSizeMb} MB
+
+      <p
+        className={`label ${
+          error ? "text-error" : ""
+        }`}
+      >
+        {error ??
+          `Maximum ${maxFiles} files; each file can be up to ${maxFileSizeMb} MB`}
       </p>
       {files.length > 0 && (
         <ul className="list mt-2 rounded-box border border-base-300 bg-base-100 text-sm">

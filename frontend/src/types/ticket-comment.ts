@@ -6,12 +6,12 @@ export interface TicketCommentDto{
     createdByName : string;
     createdAt: string;
     editedAt : string | null;
-    isInternal : string;
+    isInternal : boolean;
     attachments : TicketAttachmentDto[];
 }
 export interface TicketCommentUpdateDto {
     comment : string;
-    isInternal : string;
+    isInternal : boolean;
 }
 export interface TicketCommentCreateDto {
     comment : string;

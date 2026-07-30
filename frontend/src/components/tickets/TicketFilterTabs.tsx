@@ -5,6 +5,11 @@ import type { SubmitEvent } from "react";
 import { lookupService } from "@/src/services/lookupService";
 import { LookupItemDto } from "@/src/types/common";
 import { TicketFilterDto } from "@/src/types/ticket";
+import { ticketFilterSchema } from "@/src/schemas/ticketSchemas";
+import {
+  FormErrors,
+  getFormErrors,
+} from "@/src/lib/validation";
 import { Button } from "@/src/components/ui/Button";
 import { Input } from "@/src/components/ui/Input";
 import { Select } from "@/src/components/ui/Select";
@@ -16,6 +21,7 @@ interface TicketFiltersProps {
 
 export function TicketFilters({ value, onApply }: TicketFiltersProps) {
   const [form, setForm] = useState(value);
+  const [validationErrors, setValidationErrors] = useState<FormErrors>({});
   const [statuses, setStatuses] = useState<LookupItemDto[]>([]);
   const [categories, setCategories] = useState<LookupItemDto[]>([]);
   const [urgencies, setUrgencies] = useState<LookupItemDto[]>([]);
@@ -44,11 +50,24 @@ export function TicketFilters({ value, onApply }: TicketFiltersProps) {
 
   const submit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    onApply({ ...form, pageNumber: 1 });
+
+    const result = ticketFilterSchema.safeParse({
+      ...form,
+      pageNumber: 1,
+    });
+
+    if (!result.success) {
+      setValidationErrors(getFormErrors(result.error));
+      return;
+    }
+
+    setValidationErrors({});
+    onApply(result.data);
   };
 
   const reset = () => {
     const cleared: TicketFilterDto = { pageNumber: 1, pageSize: 25 };
+    setValidationErrors({});
     setForm(cleared);
     onApply(cleared);
   };
@@ -60,12 +79,14 @@ export function TicketFilters({ value, onApply }: TicketFiltersProps) {
     >
       <Input
         className="xl:col-span-2"
+        error={validationErrors.search}
         label="Search"
         onChange={(event) => setForm({ ...form, search: event.target.value })}
         placeholder="Number or title"
         value={form.search ?? ""}
       />
       <Select
+        error={validationErrors.statusId}
         label="Status"
         onChange={(event) => setForm({ ...form, statusId: event.target.value })}
         options={statuses.map((item) => ({
@@ -75,6 +96,7 @@ export function TicketFilters({ value, onApply }: TicketFiltersProps) {
         value={form.statusId ?? ""}
       />
       <Select
+        error={validationErrors.urgencyLevelId}
         label="Urgency"
         onChange={(event) =>
           setForm({ ...form, urgencyLevelId: event.target.value })
@@ -86,6 +108,7 @@ export function TicketFilters({ value, onApply }: TicketFiltersProps) {
         value={form.urgencyLevelId ?? ""}
       />
       <Select
+        error={validationErrors.impactLevelId}
         label="Impact"
         onChange={(event) =>
           setForm({ ...form, impactLevelId: event.target.value })
@@ -97,6 +120,7 @@ export function TicketFilters({ value, onApply }: TicketFiltersProps) {
         value={form.impactLevelId ?? ""}
       />
       <Input
+        error={validationErrors.createdFrom}
         label="Creation date"
         onChange={(event) =>
           setForm({ ...form, createdFrom: event.target.value || null })
@@ -105,7 +129,8 @@ export function TicketFilters({ value, onApply }: TicketFiltersProps) {
         value={form.createdFrom?.slice(0, 10) ?? ""}
       />
       <Input
-        label="Resolution date"
+        error={validationErrors.createdTo}
+        label="End date"
         onChange={(event) =>
           setForm({ ...form, createdTo: event.target.value || null })
         }
@@ -113,6 +138,7 @@ export function TicketFilters({ value, onApply }: TicketFiltersProps) {
         value={form.createdTo?.slice(0, 10) ?? ""}
       />
       <Select
+        error={validationErrors.pageSize}
         label="Page Size"
         onChange={(event) =>
           setForm({ ...form, pageSize: Number(event.target.value) })
@@ -127,6 +153,7 @@ export function TicketFilters({ value, onApply }: TicketFiltersProps) {
         value={form.pageSize ?? 25}
       />
       <Select
+        error={validationErrors.categoryId}
         label="Category"
         onChange={(event) =>
           setForm({ ...form, categoryId: event.target.value })
@@ -137,9 +164,9 @@ export function TicketFilters({ value, onApply }: TicketFiltersProps) {
         }))}
         value={form.categoryId ?? ""}
       />
-      <Button type="submit">Filtrele</Button>
+      <Button type="submit">Filter</Button>
       <Button onClick={reset} type="button" variant="secondary">
-        Temizle
+        Clear
       </Button>
     </form>
   );

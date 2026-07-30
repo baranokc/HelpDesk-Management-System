@@ -3,6 +3,11 @@
 import { useState } from "react";
 import type { SubmitEvent } from "react";
 import { TicketCommentCreateDto } from "@/src/types/ticket-comment";
+import { ticketCommentCreateSchema } from "@/src/schemas/commentSchemas";
+import {
+  FormErrors,
+  getFormErrors,
+} from "@/src/lib/validation";
 import { Button } from "@/src/components/ui/Button";
 import { Checkbox } from "@/src/components/ui/Checkbox";
 import { FileInput } from "@/src/components/ui/FileInput";
@@ -22,10 +27,25 @@ export function CommentForm({
   const [comment, setComment] = useState("");
   const [attachments, setAttachments] = useState<File[]>([]);
   const [isInternal, setIsInternal] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<FormErrors>({});
 
   const submit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    await onSubmit({ comment, attachments, isInternal });
+
+    const result = ticketCommentCreateSchema.safeParse({
+      comment,
+      attachments,
+      isInternal,
+    });
+
+    if (!result.success) {
+      setValidationErrors(getFormErrors(result.error));
+      return;
+    }
+
+    setValidationErrors({});
+    await onSubmit(result.data);
+
     setComment("");
     setAttachments([]);
     setIsInternal(false);
@@ -34,15 +54,18 @@ export function CommentForm({
   return (
     <form className="space-y-4" onSubmit={submit}>
       <Textarea
-        hint={`${comment.length}/1000 karakter`}
+        error={validationErrors.comment}
+        hint={`${comment.length}/1000 characters`}
         label="New Comment"
         maxLength={1000}
         onChange={(event) => setComment(event.target.value)}
-        placeholder="Yanıtınızı yazın..."
+        placeholder="Write your response..."
         required
         value={comment}
       />
       <FileInput
+        accept=".jpg,.jpeg,.png,.pdf,.txt,.docx,.xlsx,.zip,.rar,.7z"
+        error={validationErrors.attachments}
         files={attachments}
         maxFileSizeMb={100}
         onChange={setAttachments}

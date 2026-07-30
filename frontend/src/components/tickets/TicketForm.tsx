@@ -9,6 +9,14 @@ import {
   TicketDetailDto,
   TicketUpdateDto,
 } from "@/src/types/ticket";
+import {
+  ticketCreateSchema,
+  ticketUpdateSchema,
+} from "@/src/schemas/ticketSchemas";
+import {
+  FormErrors,
+  getFormErrors,
+} from "@/src/lib/validation";
 import { Alert } from "@/src/components/ui/Alert";
 import { Button } from "@/src/components/ui/Button";
 import { FileInput } from "@/src/components/ui/FileInput";
@@ -58,6 +66,8 @@ export function TicketForm({
         }
       : emptyForm,
   );
+  const [validationErrors, setValidationErrors] = useState<FormErrors>({});
+
   const [lookups, setLookups] = useState({
     categories: [] as LookupItemDto[],
     subcategories: [] as LookupItemDto[],
@@ -94,20 +104,31 @@ export function TicketForm({
 
   const submit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (initialTicket) {
-      await onSubmit({
-        ticketTitle: form.ticketTitle,
-        ticketDescription: form.ticketDescription,
-        subject: form.subject,
-        categoryId: form.categoryId,
-        subcategoryId: form.subcategoryId,
-        priorityId: form.priorityId,
-        impactLevelId: form.impactLevelId,
-        urgencyLevelId: form.urgencyLevelId,
-      });
+
+    const candidate = initialTicket
+      ? {
+          ticketTitle: form.ticketTitle,
+          ticketDescription: form.ticketDescription,
+          subject: form.subject,
+          categoryId: form.categoryId,
+          subcategoryId: form.subcategoryId,
+          priorityId: form.priorityId,
+          impactLevelId: form.impactLevelId,
+          urgencyLevelId: form.urgencyLevelId,
+        }
+      : form;
+
+    const result = initialTicket
+      ? ticketUpdateSchema.safeParse(candidate)
+      : ticketCreateSchema.safeParse(candidate);
+
+    if (!result.success) {
+      setValidationErrors(getFormErrors(result.error));
       return;
     }
-    await onSubmit(form);
+
+    setValidationErrors({});
+    await onSubmit(result.data);
   };
 
   const optionList = (items: LookupItemDto[]) =>
@@ -116,8 +137,12 @@ export function TicketForm({
   return (
     <form className="space-y-5" onSubmit={submit}>
       {error && <Alert variant="error">{error}</Alert>}
+      {validationErrors._form && (
+        <Alert variant="error">{validationErrors._form}</Alert>
+      )}
       <div className="grid gap-5 md:grid-cols-2">
         <Input
+          error={validationErrors.ticketTitle}
           label="Ticket title"
           maxLength={50}
           minLength={5}
@@ -128,6 +153,7 @@ export function TicketForm({
           value={form.ticketTitle}
         />
         <Input
+          error={validationErrors.ticketDescription}
           label="Short description"
           maxLength={100}
           minLength={5}
@@ -139,6 +165,7 @@ export function TicketForm({
         />
       </div>
       <Textarea
+        error={validationErrors.subject}
         hint={`${form.subject.length}/10000 characters`}
         label="Detailed explanation"
         maxLength={10000}
@@ -150,26 +177,26 @@ export function TicketForm({
       />
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         <Select
+          error={validationErrors.categoryId}
           label="Category"
-          onChange={(event) =>
-            {
-              setForm({
-                ...form,
-                categoryId: event.target.value,
-                subcategoryId: null,
-              });
-              setLookups((current) => ({
-                ...current,
-                subcategories: [],
-              }));
-            }
-          }
+          onChange={(event) => {
+            setForm({
+              ...form,
+              categoryId: event.target.value,
+              subcategoryId: null,
+            });
+            setLookups((current) => ({
+              ...current,
+              subcategories: [],
+            }));
+          }}
           options={optionList(lookups.categories)}
           required
           value={form.categoryId}
         />
         <Select
           disabled={!form.categoryId}
+          error={validationErrors.subcategoryId}
           label="Subcategory"
           onChange={(event) =>
             setForm({ ...form, subcategoryId: event.target.value || null })
@@ -178,6 +205,7 @@ export function TicketForm({
           value={form.subcategoryId ?? ""}
         />
         <Select
+          error={validationErrors.priorityId}
           label="Priority"
           onChange={(event) =>
             setForm({ ...form, priorityId: event.target.value })
@@ -187,6 +215,7 @@ export function TicketForm({
           value={form.priorityId}
         />
         <Select
+          error={validationErrors.impactLevelId}
           label="Impact level"
           onChange={(event) =>
             setForm({ ...form, impactLevelId: event.target.value })
@@ -196,6 +225,7 @@ export function TicketForm({
           value={form.impactLevelId}
         />
         <Select
+          error={validationErrors.urgencyLevelId}
           label="Urgency level"
           onChange={(event) =>
             setForm({ ...form, urgencyLevelId: event.target.value })
@@ -208,6 +238,7 @@ export function TicketForm({
       {!initialTicket && (
         <FileInput
           accept=".jpg,.jpeg,.png,.pdf,.txt,.docx,.xlsx,.zip,.rar,.7z"
+          error={validationErrors.attachments}
           files={form.attachments}
           onChange={(attachments) => setForm({ ...form, attachments })}
         />

@@ -29,5 +29,5 @@ export interface TicketAssignRequestDto{
 }
 export interface TicketUnassignmentDto {
     reason? : string | null;
-    keepTeamAssignment : string;
+    keepTeamAssignment : boolean;
 }

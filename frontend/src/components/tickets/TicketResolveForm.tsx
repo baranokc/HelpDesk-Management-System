@@ -5,6 +5,11 @@ import type { SubmitEvent } from "react";
 import { lookupService } from "@/src/services/lookupService";
 import { LookupItemDto } from "@/src/types/common";
 import { TicketResolveDto } from "@/src/types/ticket-status";
+import { ticketResolveSchema } from "@/src/schemas/statusSchemas";
+import {
+  FormErrors,
+  getFormErrors,
+} from "@/src/lib/validation";
 import { Button } from "@/src/components/ui/Button";
 import { Select } from "@/src/components/ui/Select";
 import { Textarea } from "@/src/components/ui/Textarea";
@@ -22,6 +27,7 @@ export function TicketResolveForm({
   const [resolution, setResolution] = useState("");
   const [resolutionCategoryId, setResolutionCategoryId] = useState("");
   const [internalNote, setInternalNote] = useState("");
+  const [validationErrors, setValidationErrors] = useState<FormErrors>({});
 
   useEffect(() => {
     lookupService.getResolutionCategories().then(setCategories);
@@ -29,16 +35,26 @@ export function TicketResolveForm({
 
   const submit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    await onSubmit({
+
+    const result = ticketResolveSchema.safeParse({
       resolution,
-      resolutionCategoryId: resolutionCategoryId || null,
-      internalNote: internalNote || null,
+      resolutionCategoryId,
+      internalNote,
     });
+
+    if (!result.success) {
+      setValidationErrors(getFormErrors(result.error));
+      return;
+    }
+
+    setValidationErrors({});
+    await onSubmit(result.data);
   };
 
   return (
     <form className="space-y-4" onSubmit={submit}>
       <Textarea
+        error={validationErrors.resolution}
         hint={`${resolution.length}/250 characters`}
         label="Resolution"
         maxLength={250}
@@ -48,6 +64,7 @@ export function TicketResolveForm({
         value={resolution}
       />
       <Select
+        error={validationErrors.resolutionCategoryId}
         label="Resolution category"
         onChange={(event) => setResolutionCategoryId(event.target.value)}
         options={categories.map((category) => ({
@@ -57,6 +74,7 @@ export function TicketResolveForm({
         value={resolutionCategoryId}
       />
       <Textarea
+        error={validationErrors.internalNote}
         hint={`${internalNote.length}/250 characters`}
         label="Internal note"
         maxLength={250}
