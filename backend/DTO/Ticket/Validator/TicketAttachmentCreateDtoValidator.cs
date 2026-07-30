@@ -15,7 +15,11 @@ public class TicketAttachmentCreateDtoValidator : AbstractValidator<TicketAttach
         ".zip", 
         ".rar", 
         ".7z"];
-    private const long MaxFileSizeBytes = 100 * 1024 * 1024;
+    private const long MaxFileSizeBytes =
+        10L * 1024 * 1024;
+
+    private const long MaxTotalSizeBytes =
+        100L * 1024 * 1024;
     private bool ValidFileSize(IFormFile? file)
     {   
         return file is not null && file.Length > 0 && file.Length <= MaxFileSizeBytes;
@@ -30,16 +34,28 @@ public class TicketAttachmentCreateDtoValidator : AbstractValidator<TicketAttach
     public TicketAttachmentCreateDtoValidator()
     {
         RuleFor(x => x.Files)
-            .NotEmpty().WithMessage("En az 1 dosya yüklenmesi gerekmekedir.")
-            .Must(files => files.Count <= 10).WithMessage("Bir yoruma en fazla 10 dosya yükleyenebilir.");
+            .NotEmpty()
+            .WithMessage("At least one file must be selected.")
+            .Must(files => files.Count <= 10)
+            .WithMessage("At most 10 files can be uploaded.")
+            .Must(files =>
+                files.Sum(file => file.Length) <= MaxTotalSizeBytes)
+            .WithMessage("The total attachment size cannot exceed 100 MB.");
+
         RuleForEach(x => x.Files)
-            .Must(ValidFileSize).WithMessage("Dosyalar 100MB boyutunu geçemez")
-            .Must(ValidExtension).WithMessage("Hatalı uzantılı dosya yüklediniz.");
+            .Must(ValidFileSize)
+            .WithMessage("Each file must be between 1 byte and 10 MB.")
+            .Must(ValidExtension)
+            .WithMessage("The selected file type is not supported.");
+
         RuleFor(x => x.CommentId)
-            .NotEqual(Guid.Empty).When(x => x.CommentId.HasValue)
-            .WithMessage("Geçersiz Yorum Id.");
+            .NotEqual(Guid.Empty)
+            .When(x => x.CommentId.HasValue)
+            .WithMessage("Comment ID is invalid.");
+
         RuleFor(x => x.Description)
-            .MaximumLength(100).When(x => !string.IsNullOrWhiteSpace(x.Description))
-            .WithMessage("Dosya açıklaması 100 karakterden uzun olamaz.");
+            .MaximumLength(100)
+            .When(x => !string.IsNullOrWhiteSpace(x.Description))
+            .WithMessage("File description cannot exceed 100 characters.");
     }
 }

@@ -43,7 +43,7 @@ builder.Services.AddControllers();
 
 builder.Services.Configure<FormOptions>(options =>
 {
-    options.MultipartBodyLengthLimit = 10L * 1024 * 1024;
+    options.MultipartBodyLengthLimit = 110L * 1024 * 1024;
 });
 
 builder.Services.AddEndpointsApiExplorer();
