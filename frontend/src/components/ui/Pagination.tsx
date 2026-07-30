@@ -10,26 +10,30 @@ export function Pagination({ page, totalPages, onChange }: PaginationProps) {
   if (totalPages <= 1) return null;
 
   return (
-    <div className="flex items-center justify-between gap-4">
-      <Button
-        disabled={page <= 1}
-        onClick={() => onChange(page - 1)}
-        type="button"
-        variant="secondary"
-      >
-        Önceki
-      </Button>
-      <span className="text-sm text-slate-600">
-        Sayfa {page} / {totalPages}
-      </span>
-      <Button
-        disabled={page >= totalPages}
-        onClick={() => onChange(page + 1)}
-        type="button"
-        variant="secondary"
-      >
-        Sonraki
-      </Button>
+    <div className="flex flex-wrap items-center justify-center gap-4">
+      <div className="join">
+        <Button
+          className="join-item"
+          disabled={page <= 1}
+          onClick={() => onChange(page - 1)}
+          type="button"
+          variant="secondary"
+        >
+          Önceki
+        </Button>
+        <span className="btn join-item pointer-events-none">
+          Sayfa {page} / {totalPages}
+        </span>
+        <Button
+          className="join-item"
+          disabled={page >= totalPages}
+          onClick={() => onChange(page + 1)}
+          type="button"
+          variant="secondary"
+        >
+          Sonraki
+        </Button>
+      </div>
     </div>
   );
 }

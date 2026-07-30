@@ -21,25 +21,28 @@ export function Modal({ open, title, children, onClose }: ModalProps) {
   if (!open) return null;
 
   return (
-    <div
+    <dialog
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"
+      className="modal modal-open"
       role="dialog"
     >
-      <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-          <h2 className="font-semibold text-slate-900">{title}</h2>
+      <div className="modal-box max-w-xl">
+        <div className="flex items-center justify-between border-b border-base-300 pb-4">
+          <h2 className="text-lg font-bold">{title}</h2>
           <button
             aria-label="Pencereyi kapat"
-            className="rounded-md px-2 py-1 text-slate-500 hover:bg-slate-100"
+            className="btn btn-circle btn-ghost btn-sm"
             onClick={onClose}
             type="button"
           >
             ×
           </button>
         </div>
-        <div className="p-5">{children}</div>
+        <div className="pt-5">{children}</div>
       </div>
-    </div>
+      <form className="modal-backdrop" method="dialog">
+        <button onClick={onClose} type="button">kapat</button>
+      </form>
+    </dialog>
   );
 }
