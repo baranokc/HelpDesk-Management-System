@@ -21,10 +21,29 @@ export default function LoginPage() {
     }
   }, [searchParams]);
 
-  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
     setSuccessMessage(null);
+
+    const form = e.currentTarget;
+    let isValid = true;
+
+    Array.from(form.elements).forEach((element) => {
+      const input = element as HTMLInputElement;
+      if (input.hasAttribute('required') && !input.value.trim()) {
+        input.setCustomValidity('Please fill out this field.');
+        isValid = false;
+      } else {
+        input.setCustomValidity('');
+      }
+    });
+
+    if (!isValid) {
+      form.reportValidity();
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -46,33 +65,60 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12">
-      <div className="w-full max-w-md space-y-8 rounded-xl bg-white p-8 shadow-lg border border-slate-100">
-        <div>
-          <h2 className="text-center text-3xl font-extrabold text-slate-900">
-            Sign In to Your Account
-          </h2>
-          <p className="mt-2 text-center text-sm text-slate-600">
-            Log in to manage your support tickets
-          </p>
-        </div>
-
-        {successMessage && (
-          <div className="rounded-md bg-green-50 p-4 text-sm text-green-700 border border-green-200">
-            {successMessage}
+      <div className="card w-full max-w-md bg-white shadow-lg border border-slate-200">
+        <div className="card-body">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold text-slate-900">
+              Sign In to Your Account
+            </h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Log in to manage your support tickets
+            </p>
           </div>
-        )}
 
-        {error && (
-          <div className="rounded-md bg-red-50 p-4 text-sm text-red-700 border border-red-200">
-            {error}
-          </div>
-        )}
+          {successMessage && (
+            <div className="alert alert-success text-sm mt-4 shadow-sm text-white">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="stroke-current shrink-0 h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span>{successMessage}</span>
+            </div>
+          )}
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4 rounded-md">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-700">
-                Email Address
+          {error && (
+            <div className="alert alert-error text-sm mt-4 shadow-sm text-white">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="stroke-current shrink-0 h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span>{error}</span>
+            </div>
+          )}
+
+          <form className="mt-4 space-y-4" onSubmit={handleSubmit} noValidate>
+            {/* Email */}
+            <div className="form-control w-full">
+              <label className="label">
+                <span className="label-text font-medium text-slate-700">Email Address</span>
               </label>
               <input
                 id="email"
@@ -80,15 +126,19 @@ export default function LoginPage() {
                 type="email"
                 required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  e.target.setCustomValidity('');
+                }}
+                className="input input-bordered w-full bg-white text-slate-900 focus:input-primary text-sm"
                 placeholder="name@example.com"
               />
             </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700">
-                Password
+            {/* Password */}
+            <div className="form-control w-full">
+              <label className="label">
+                <span className="label-text font-medium text-slate-700">Password</span>
               </label>
               <input
                 id="password"
@@ -96,29 +146,40 @@ export default function LoginPage() {
                 type="password"
                 required
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  e.target.setCustomValidity('');
+                }}
+                className="input input-bordered w-full bg-white text-slate-900 focus:input-primary text-sm"
                 placeholder="••••••••"
               />
             </div>
-          </div>
 
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative flex w-full justify-center rounded-md border border-transparent bg-indigo-600 py-2.5 px-4 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 transition-colors"
-            >
-              {loading ? 'Signing In...' : 'Sign In'}
-            </button>
-          </div>
-        </form>
+            {/* Submit Button */}
+            <div className="form-control mt-6">
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn btn-primary w-full text-white"
+              >
+                {loading ? (
+                  <>
+                    <span className="loading loading-spinner loading-sm"></span>
+                    Signing In...
+                  </>
+                ) : (
+                  'Sign In'
+                )}
+              </button>
+            </div>
+          </form>
 
-        <div className="text-center text-sm">
-          <span className="text-slate-600">Don't have an account? </span>
-          <Link href="/register" className="font-medium text-indigo-600 hover:text-indigo-500">
-            Sign Up
-          </Link>
+          <div className="text-center text-sm mt-4">
+            <span className="text-slate-600">Don't have an account? </span>
+            <Link href="/register" className="link link-primary font-medium">
+              Sign Up
+            </Link>
+          </div>
         </div>
       </div>
     </div>
