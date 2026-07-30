@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { error } from 'console';
 import { config } from 'process';
 
 export const api = axios.create({
@@ -13,4 +14,6 @@ api.interceptors.request.use((config) => {
         }
     }
     return config;
-});
+},
+    (error) => Promise.reject(error)
+);
