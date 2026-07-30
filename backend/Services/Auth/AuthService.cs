@@ -73,6 +73,16 @@ public class AuthService : IAuthService
         {
             return false;
         }
+        var departmentExists = await _context.Departments
+            .AnyAsync(department =>
+                department.Id == dto.DepartmentId &&
+                department.IsActive);
+
+        if (!departmentExists)
+        {
+            throw new ArgumentException(
+                "Selected department was not found or is inactive.");
+        }
         string passwordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
 
         var newUser = new User

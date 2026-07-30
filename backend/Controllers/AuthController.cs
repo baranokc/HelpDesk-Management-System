@@ -27,15 +27,33 @@ public class AuthController : ControllerBase
         return Ok(result);
     }
     [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] UserCreate dto)
+    public async Task<IActionResult> Register(
+        [FromBody] UserCreate dto)
     {
-        var result = await _authService.RegisterAsync(dto);
-        
-        if (!result)
+        try
         {
-            return BadRequest(new {message = "Email adress is already in use."});
+            var result = await _authService.RegisterAsync(dto);
+
+            if (!result)
+            {
+                return BadRequest(new
+                {
+                    message = "Email address is already in use."
+                });
+            }
+
+            return Ok(new
+            {
+                message = "User registered successfully."
+            });
         }
-        return Ok(new { message = "User registered successfully." });
+        catch (ArgumentException exception)
+        {
+            return BadRequest(new
+            {
+                message = exception.Message
+            });
+        }
     }
 }
 
