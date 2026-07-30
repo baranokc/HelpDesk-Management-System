@@ -32,8 +32,11 @@ export default function TicketsLayout({
   if (!isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <div className="text-sm font-medium text-slate-500">
-          Checking authentication...
+        <div className="flex flex-col items-center gap-2">
+          <span className="loading loading-spinner loading-lg text-primary"></span>
+          <span className="text-sm font-medium text-slate-500">
+            Checking authentication...
+          </span>
         </div>
       </div>
     );
@@ -41,16 +44,16 @@ export default function TicketsLayout({
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* 🧭 TOP NAVBAR */}
+      {/* 🧭 TOP NAVBAR (DaisyUI Navbar) */}
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white shadow-sm">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          {/* Logo & Brand */}
-          <div className="flex items-center space-x-3">
+        <div className="navbar max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Brand / Logo */}
+          <div className="flex-1">
             <Link
               href="/tickets"
-              className="flex items-center space-x-2 text-xl font-bold text-slate-900"
+              className="btn btn-ghost text-xl normal-case font-bold gap-2 text-slate-900 hover:bg-slate-100"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white font-black text-sm">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-content font-black text-sm">
                 HD
               </div>
               <span>HelpDesk</span>
@@ -58,34 +61,34 @@ export default function TicketsLayout({
           </div>
 
           {/* Navigation Links */}
-          <nav className="hidden md:flex items-center space-x-1">
+          <div className="hidden md:flex items-center gap-2 mr-4">
             <Link
               href="/tickets"
-              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`btn btn-sm text-sm font-medium normal-case ${
                 pathname === '/tickets'
-                  ? 'bg-indigo-50 text-indigo-700'
-                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  ? 'btn-primary text-white'
+                  : 'btn-ghost text-slate-600 hover:bg-slate-100'
               }`}
             >
               All Tickets
             </Link>
             <Link
               href="/tickets/new"
-              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`btn btn-sm text-sm font-medium normal-case ${
                 pathname === '/tickets/new'
-                  ? 'bg-indigo-50 text-indigo-700'
-                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  ? 'btn-primary text-white'
+                  : 'btn-ghost text-slate-600 hover:bg-slate-100'
               }`}
             >
               Create Ticket
             </Link>
-          </nav>
+          </div>
 
           {/* User Actions */}
-          <div className="flex items-center space-x-4">
+          <div className="flex-none gap-2">
             <button
               onClick={handleLogout}
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+              className="btn btn-outline btn-error btn-sm font-medium text-xs normal-case"
             >
               Sign Out
             </button>
