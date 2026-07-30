@@ -3,7 +3,7 @@ export interface TicketListDto {
     ticketNumber : string;
     ticketTitle : string;
     statusName : string;
-    priortyName : string;
+    priorityName : string;
     categoryName : string;
     subcategoryName? : string | null;
     createdByName : string;
@@ -35,7 +35,7 @@ export interface TicketDetailDto {
     createdById : string;
     createdByName : string;
     assignedToId? : string | null;
-    assignedtoName? : string | null;
+    assignedToName? : string | null;
     createdAt : string;
     firstResponseAt? : string | null;
     resolvedAt? : string | null;
@@ -52,7 +52,10 @@ export interface TicketCreateDto {
     priorityId : string;
     impactLevelId : string;
     urgencyLevelId : string;
+    attachments: File[];
+
 }
+
 export interface TicketFilterDto {
     search? : string | null;
     statusId? : string | null;
@@ -61,8 +64,8 @@ export interface TicketFilterDto {
     createdById? : string | null;
     urgencyLevelId? : string | null;
     impactLevelId? : string | null;
-    createdFrom : string | null;
-    createdTo : string | null;
+    createdFrom? : string | null;
+    createdTo? : string | null;
     pageNumber? : number;
     pageSize? : number;
 }

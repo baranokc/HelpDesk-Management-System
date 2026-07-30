@@ -3,11 +3,11 @@ export interface TicketCommentDto{
     id : string;
     comment : string;
     createdById : string;
-    createdBName : string;
+    createdByName : string;
     createdAt: string;
     editedAt : string | null;
-    isEternal : string;
-    attachments : TicketAttachmentDto;
+    isInternal : string;
+    attachments : TicketAttachmentDto[];
 }
 export interface TicketCommentUpdateDto {
     comment : string;
@@ -16,5 +16,5 @@ export interface TicketCommentUpdateDto {
 export interface TicketCommentCreateDto {
     comment : string;
     attachments : File[];
-    isInternal : string;
+    isInternal : boolean;
 }
