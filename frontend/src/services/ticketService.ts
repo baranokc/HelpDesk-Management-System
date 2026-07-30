@@ -5,6 +5,7 @@ import {
   TicketCreateDto,
   TicketUpdateDto,
   TicketFilterDto,
+  TicketResponseDto,
 } from '@/src/types/ticket';
 
 // 🧪 TEST İÇİN GEÇİCİ VERİLER (Mock Data)
@@ -14,7 +15,7 @@ const MOCK_TICKETS: TicketListDto[] = [
     ticketNumber: 'TCK-1001',
     ticketTitle: 'VPN Connection Fails on macOS Sequoia',
     statusName: 'Open',
-    priortyName: 'High',
+    priorityName: 'High',
     categoryName: 'Network & Security',
     subcategoryName: 'VPN Access',
     createdByName: 'Süleyman Okçuoğlu',
@@ -26,7 +27,7 @@ const MOCK_TICKETS: TicketListDto[] = [
     ticketNumber: 'TCK-1002',
     ticketTitle: 'Database Connection Timeout on Peak Hours',
     statusName: 'In Progress',
-    priortyName: 'Critical',
+    priorityName: 'Critical',
     categoryName: 'Infrastructure',
     subcategoryName: 'Database Server',
     createdByName: 'Zeynep Kaya',
@@ -38,7 +39,7 @@ const MOCK_TICKETS: TicketListDto[] = [
     ticketNumber: 'TCK-1003',
     ticketTitle: 'Request for New License Key (Figma Pro)',
     statusName: 'Resolved',
-    priortyName: 'Medium',
+    priorityName: 'Medium',
     categoryName: 'Software Request',
     subcategoryName: null,
     createdByName: 'Burak Şahin',
@@ -50,7 +51,7 @@ const MOCK_TICKETS: TicketListDto[] = [
     ticketNumber: 'TCK-1004',
     ticketTitle: 'Printer Driver Installation Issue',
     statusName: 'Closed',
-    priortyName: 'Low',
+    priorityName: 'Low',
     categoryName: 'Hardware',
     subcategoryName: 'Printer Maintenance',
     createdByName: 'Elif Arslan',
@@ -71,10 +72,46 @@ export const ticketService = {
     return response.data;
   },
 
-  create: async (dto: TicketCreateDto): Promise<string> => {
-    const response = await api.post<string>('/tickets', dto);
-    return response.data;
-  },
+create: async (
+  dto: TicketCreateDto,
+): Promise<TicketResponseDto> => {
+  const formData = new FormData();
+
+  formData.append("TicketTitle", dto.ticketTitle);
+  formData.append(
+    "TicketDescription",
+    dto.ticketDescription,
+  );
+  formData.append("Subject", dto.subject);
+  formData.append("CategoryId", dto.categoryId);
+  formData.append("PriorityId", dto.priorityId);
+  formData.append(
+    "ImpactLevelId",
+    dto.impactLevelId,
+  );
+  formData.append(
+    "UrgencyLevelId",
+    dto.urgencyLevelId,
+  );
+
+  if (dto.subcategoryId) {
+    formData.append(
+      "SubcategoryId",
+      dto.subcategoryId,
+    );
+  }
+
+  dto.attachments.forEach((file) => {
+    formData.append("Attachments", file);
+  });
+
+  const response = await api.post<TicketResponseDto>(
+    "/tickets",
+    formData,
+  );
+
+  return response.data;
+},
 
   update: async (id: string, dto: TicketUpdateDto): Promise<void> => {
     await api.put(`/tickets/${id}`, dto);

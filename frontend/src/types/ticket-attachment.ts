@@ -2,12 +2,12 @@ export interface TicketAttachmentDto {
     id : string;
     fileName : string;
     contentType : string;
-    fileSize : string;
+    fileSize : number;
     downloadUrl : string;
     description? : string | null;
     commentId? : string | null;
     uploadedById : string;
-    uploadedbyName : string;
+    uploadedByName : string;
     uploadedAt : string;
 }
 export interface TicketAttachmentCreateDto {

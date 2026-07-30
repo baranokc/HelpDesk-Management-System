@@ -120,7 +120,7 @@ public class TicketController : ControllerBase
     [ProducesResponseType(typeof(TicketResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateTicket(
-        [FromBody] TicketCreateDto dto,
+        [FromForm] TicketCreateDto dto,
         CancellationToken cancellationToken)
     {
         var currentUserId = GetCurrentUserId();
