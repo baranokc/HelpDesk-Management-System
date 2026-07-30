@@ -1,5 +1,6 @@
 using backend.Entities;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace backend.Data;
 
@@ -13,561 +14,524 @@ public static class DataSeeder
         await SeedUrgencyLevelsAsync(context);
         await SeedTicketCategoriesAsync(context);
 
-        await context.SaveChangesAsync();
+        await SafeSaveChangesAsync(context);
 
-        var ticketStatuses = await context.TicketStatuses
-            .ToListAsync();
-
-        foreach (var status in ticketStatuses)
+        try
         {
-            status.IsInitial = status.Name == "Open";
+            var ticketStatuses = await context.TicketStatuses.ToListAsync();
+
+            foreach (var status in ticketStatuses)
+            {
+                status.IsInitial = status.Name == "Open";
+            }
+
+            await SafeSaveChangesAsync(context);
+        }
+        catch (PostgresException ex) when (ex.SqlState == "42P01")
+        {
+            Console.WriteLine("[DataSeeder Warning] TicketStatuses tablosu bulunamadı, işlem atlandı.");
         }
 
-        await context.SaveChangesAsync();
-
-
         await SeedTicketSubCategoriesAsync(context);
-
         await SeedRolesAsync(context);
         await SeedResolutionCategoriesAsync(context);
         await SeedDepartmentsAsync(context);
 
-        await context.SaveChangesAsync();
+        await SafeSaveChangesAsync(context);
 
         await SeedTeamsAsync(context);
 
-        await context.SaveChangesAsync();
+        await SafeSaveChangesAsync(context);
+    }
+
+    private static async Task SafeSaveChangesAsync(AppDbContext context)
+    {
+        try
+        {
+            await context.SaveChangesAsync();
+        }
+        catch (PostgresException ex) when (ex.SqlState == "42P01")
+        {
+            Console.WriteLine($"[DataSeeder Warning] Tablo henüz mevcut değil: {ex.MessageText}");
+        }
     }
 
     private static async Task SeedTicketStatusesAsync(AppDbContext context)
     {
-        var existingNames = await context.TicketStatuses
-            .Select(x => x.Name)
-            .ToListAsync();
-
-        var statuses = new List<TicketStatus>();
-
-        if (!existingNames.Contains("Open"))
+        try
         {
-            statuses.Add(new TicketStatus
+            var existingNames = await context.TicketStatuses
+                .Select(x => x.Name)
+                .ToListAsync();
+
+            var statuses = new List<TicketStatus>();
+
+            if (!existingNames.Contains("Open"))
             {
-                Id = Guid.NewGuid(),
-                Name = "Open",
-                Description = "The ticket has been created and is awaiting processing.",
-                IsInitial = true,
-                IsClosed = false,
-                IsActive = true
-            });
-        }
+                statuses.Add(new TicketStatus
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Open",
+                    Description = "The ticket has been created and is awaiting processing.",
+                    IsInitial = true,
+                    IsClosed = false,
+                    IsActive = true
+                });
+            }
 
-        if (!existingNames.Contains("In Progress"))
-        {
-            statuses.Add(new TicketStatus
+            if (!existingNames.Contains("In Progress"))
             {
-                Id = Guid.NewGuid(),
-                Name = "In Progress",
-                Description = "Work on the ticket is currently in progress.",
-                IsInitial = false,
-                IsClosed = false,
-                IsActive = true
-            });
-        }
+                statuses.Add(new TicketStatus
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "In Progress",
+                    Description = "Work on the ticket is currently in progress.",
+                    IsInitial = false,
+                    IsClosed = false,
+                    IsActive = true
+                });
+            }
 
-        if (!existingNames.Contains("Waiting for User"))
-        {
-            statuses.Add(new TicketStatus
+            if (!existingNames.Contains("Waiting for User"))
             {
-                Id = Guid.NewGuid(),
-                Name = "Waiting for User",
-                Description = "Additional information or action is required from the user.",
-                IsInitial = false,
-                IsClosed = false,
-                IsActive = true
-            });
-        }
+                statuses.Add(new TicketStatus
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Waiting for User",
+                    Description = "Additional information or action is required from the user.",
+                    IsInitial = false,
+                    IsClosed = false,
+                    IsActive = true
+                });
+            }
 
-        if (!existingNames.Contains("On Hold"))
-        {
-            statuses.Add(new TicketStatus
+            if (!existingNames.Contains("On Hold"))
             {
-                Id = Guid.NewGuid(),
-                Name = "On Hold",
-                Description = "Work on the ticket has been temporarily suspended.",
-                IsInitial = false,
-                IsClosed = false,
-                IsActive = true
-            });
-        }
+                statuses.Add(new TicketStatus
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "On Hold",
+                    Description = "Work on the ticket has been temporarily suspended.",
+                    IsInitial = false,
+                    IsClosed = false,
+                    IsActive = true
+                });
+            }
 
-        if (!existingNames.Contains("Resolved"))
-        {
-            statuses.Add(new TicketStatus
+            if (!existingNames.Contains("Resolved"))
             {
-                Id = Guid.NewGuid(),
-                Name = "Resolved",
-                Description = "A resolution has been provided for the ticket.",
-                IsInitial = false,
-                IsClosed = false,
-                IsActive = true
-            });
-        }
+                statuses.Add(new TicketStatus
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Resolved",
+                    Description = "A resolution has been provided for the ticket.",
+                    IsInitial = false,
+                    IsClosed = false,
+                    IsActive = true
+                });
+            }
 
-        if (!existingNames.Contains("Closed"))
-        {
-            statuses.Add(new TicketStatus
+            if (!existingNames.Contains("Closed"))
             {
-                Id = Guid.NewGuid(),
-                Name = "Closed",
-                Description = "The ticket has been closed.",
-                IsInitial = false,
-                IsClosed = true,
-                IsActive = true
-            });
-        }
+                statuses.Add(new TicketStatus
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Closed",
+                    Description = "The ticket has been closed.",
+                    IsInitial = false,
+                    IsClosed = true,
+                    IsActive = true
+                });
+            }
 
-        if (!existingNames.Contains("Cancelled"))
-        {
-            statuses.Add(new TicketStatus
+            if (!existingNames.Contains("Cancelled"))
             {
-                Id = Guid.NewGuid(),
-                Name = "Cancelled",
-                Description = "The ticket has been cancelled.",
-                IsInitial = false,
-                IsClosed = true,
-                IsActive = true
-            });
-        }
+                statuses.Add(new TicketStatus
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Cancelled",
+                    Description = "The ticket has been cancelled.",
+                    IsInitial = false,
+                    IsClosed = true,
+                    IsActive = true
+                });
+            }
 
-        if (statuses.Count > 0)
+            if (statuses.Count > 0)
+            {
+                await context.TicketStatuses.AddRangeAsync(statuses);
+            }
+        }
+        catch (PostgresException ex) when (ex.SqlState == "42P01")
         {
-            await context.TicketStatuses.AddRangeAsync(statuses);
+            Console.WriteLine("[DataSeeder Warning] TicketStatuses tablosu bulunamadı.");
         }
     }
 
     private static async Task SeedTicketPrioritiesAsync(AppDbContext context)
     {
-        var existingNames = await context.TicketPriorities
-            .Select(x => x.Name)
-            .ToListAsync();
-
-        var priorities = new List<TicketPriority>();
-
-        if (!existingNames.Contains("Low"))
+        try
         {
-            priorities.Add(new TicketPriority
+            var existingNames = await context.TicketPriorities
+                .Select(x => x.Name)
+                .ToListAsync();
+
+            var priorities = new List<TicketPriority>();
+
+            if (!existingNames.Contains("Low"))
             {
-                Id = Guid.NewGuid(),
-                Name = "Low",
-                ResponseTime = TimeSpan.FromHours(8),
-                ResolutionTime = TimeSpan.FromDays(3)
-            });
-        }
+                priorities.Add(new TicketPriority
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Low",
+                    ResponseTime = TimeSpan.FromHours(8),
+                    ResolutionTime = TimeSpan.FromDays(3)
+                });
+            }
 
-        if (!existingNames.Contains("Medium"))
-        {
-            priorities.Add(new TicketPriority
+            if (!existingNames.Contains("Medium"))
             {
-                Id = Guid.NewGuid(),
-                Name = "Medium",
-                ResponseTime = TimeSpan.FromHours(4),
-                ResolutionTime = TimeSpan.FromDays(2)
-            });
-        }
+                priorities.Add(new TicketPriority
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Medium",
+                    ResponseTime = TimeSpan.FromHours(4),
+                    ResolutionTime = TimeSpan.FromDays(2)
+                });
+            }
 
-        if (!existingNames.Contains("High"))
-        {
-            priorities.Add(new TicketPriority
+            if (!existingNames.Contains("High"))
             {
-                Id = Guid.NewGuid(),
-                Name = "High",
-                ResponseTime = TimeSpan.FromHours(2),
-                ResolutionTime = TimeSpan.FromHours(12)
-            });
-        }
+                priorities.Add(new TicketPriority
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "High",
+                    ResponseTime = TimeSpan.FromHours(2),
+                    ResolutionTime = TimeSpan.FromHours(12)
+                });
+            }
 
-        if (!existingNames.Contains("Critical"))
-        {
-            priorities.Add(new TicketPriority
+            if (!existingNames.Contains("Critical"))
             {
-                Id = Guid.NewGuid(),
-                Name = "Critical",
-                ResponseTime = TimeSpan.FromMinutes(30),
-                ResolutionTime = TimeSpan.FromHours(4)
-            });
-        }
+                priorities.Add(new TicketPriority
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Critical",
+                    ResponseTime = TimeSpan.FromMinutes(30),
+                    ResolutionTime = TimeSpan.FromHours(4)
+                });
+            }
 
-        if (priorities.Count > 0)
+            if (priorities.Count > 0)
+            {
+                await context.TicketPriorities.AddRangeAsync(priorities);
+            }
+        }
+        catch (PostgresException ex) when (ex.SqlState == "42P01")
         {
-            await context.TicketPriorities.AddRangeAsync(priorities);
+            Console.WriteLine("[DataSeeder Warning] TicketPriorities tablosu bulunamadı.");
         }
     }
 
     private static async Task SeedImpactLevelsAsync(AppDbContext context)
     {
-        var existingNames = await context.ImpactLevels
-            .Select(x => x.Name)
-            .ToListAsync();
-
-        var impactLevels = new List<ImpactLevel>();
-
-        if (!existingNames.Contains("Individual"))
+        try
         {
-            impactLevels.Add(new ImpactLevel
+            var existingNames = await context.ImpactLevels
+                .Select(x => x.Name)
+                .ToListAsync();
+
+            var impactLevels = new List<ImpactLevel>();
+
+            if (!existingNames.Contains("Individual"))
             {
-                Id = Guid.NewGuid(),
-                Name = "Individual",
-                Order = 1,
-                IsActive = true
-            });
-        }
+                impactLevels.Add(new ImpactLevel
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Individual",
+                    Order = 1,
+                    IsActive = true
+                });
+            }
 
-        if (!existingNames.Contains("Departmental"))
-        {
-            impactLevels.Add(new ImpactLevel
+            if (!existingNames.Contains("Departmental"))
             {
-                Id = Guid.NewGuid(),
-                Name = "Departmental",
-                Order = 2,
-                IsActive = true
-            });
-        }
+                impactLevels.Add(new ImpactLevel
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Departmental",
+                    Order = 2,
+                    IsActive = true
+                });
+            }
 
-        if (!existingNames.Contains("Multiple Departments"))
-        {
-            impactLevels.Add(new ImpactLevel
+            if (!existingNames.Contains("Multiple Departments"))
             {
-                Id = Guid.NewGuid(),
-                Name = "Multiple Departments",
-                Order = 3,
-                IsActive = true
-            });
-        }
+                impactLevels.Add(new ImpactLevel
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Multiple Departments",
+                    Order = 3,
+                    IsActive = true
+                });
+            }
 
-        if (!existingNames.Contains("Organization-Wide"))
-        {
-            impactLevels.Add(new ImpactLevel
+            if (!existingNames.Contains("Organization-Wide"))
             {
-                Id = Guid.NewGuid(),
-                Name = "Organization-Wide",
-                Order = 4,
-                IsActive = true
-            });
-        }
+                impactLevels.Add(new ImpactLevel
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Organization-Wide",
+                    Order = 4,
+                    IsActive = true
+                });
+            }
 
-        if (impactLevels.Count > 0)
+            if (impactLevels.Count > 0)
+            {
+                await context.ImpactLevels.AddRangeAsync(impactLevels);
+            }
+        }
+        catch (PostgresException ex) when (ex.SqlState == "42P01")
         {
-            await context.ImpactLevels.AddRangeAsync(impactLevels);
+            Console.WriteLine("[DataSeeder Warning] ImpactLevels tablosu bulunamadı.");
         }
     }
 
     private static async Task SeedUrgencyLevelsAsync(AppDbContext context)
     {
-        var existingNames = await context.UrgencyLevels
-            .Select(x => x.Name)
-            .ToListAsync();
-
-        var urgencyLevels = new List<UrgencyLevel>();
-
-        if (!existingNames.Contains("Low"))
+        try
         {
-            urgencyLevels.Add(new UrgencyLevel
+            var existingNames = await context.UrgencyLevels
+                .Select(x => x.Name)
+                .ToListAsync();
+
+            var urgencyLevels = new List<UrgencyLevel>();
+
+            if (!existingNames.Contains("Low"))
             {
-                Id = Guid.NewGuid(),
-                Name = "Low",
-                Order = 1,
-                IsActive = true
-            });
-        }
+                urgencyLevels.Add(new UrgencyLevel
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Low",
+                    Order = 1,
+                    IsActive = true
+                });
+            }
 
-        if (!existingNames.Contains("Normal"))
-        {
-            urgencyLevels.Add(new UrgencyLevel
+            if (!existingNames.Contains("Normal"))
             {
-                Id = Guid.NewGuid(),
-                Name = "Normal",
-                Order = 2,
-                IsActive = true
-            });
-        }
+                urgencyLevels.Add(new UrgencyLevel
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Normal",
+                    Order = 2,
+                    IsActive = true
+                });
+            }
 
-        if (!existingNames.Contains("High"))
-        {
-            urgencyLevels.Add(new UrgencyLevel
+            if (!existingNames.Contains("High"))
             {
-                Id = Guid.NewGuid(),
-                Name = "High",
-                Order = 3,
-                IsActive = true
-            });
-        }
+                urgencyLevels.Add(new UrgencyLevel
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "High",
+                    Order = 3,
+                    IsActive = true
+                });
+            }
 
-        if (!existingNames.Contains("Urgent"))
-        {
-            urgencyLevels.Add(new UrgencyLevel
+            if (!existingNames.Contains("Urgent"))
             {
-                Id = Guid.NewGuid(),
-                Name = "Urgent",
-                Order = 4,
-                IsActive = true
-            });
-        }
+                urgencyLevels.Add(new UrgencyLevel
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Urgent",
+                    Order = 4,
+                    IsActive = true
+                });
+            }
 
-        if (urgencyLevels.Count > 0)
+            if (urgencyLevels.Count > 0)
+            {
+                await context.UrgencyLevels.AddRangeAsync(urgencyLevels);
+            }
+        }
+        catch (PostgresException ex) when (ex.SqlState == "42P01")
         {
-            await context.UrgencyLevels.AddRangeAsync(urgencyLevels);
+            Console.WriteLine("[DataSeeder Warning] UrgencyLevels tablosu bulunamadı.");
         }
     }
 
     private static async Task SeedTicketCategoriesAsync(AppDbContext context)
     {
-        var existingNames = await context.TicketCategories
-            .Select(x => x.Name)
-            .ToListAsync();
-
-        var categories = new List<TicketCategory>();
-
-        if (!existingNames.Contains("Software"))
+        try
         {
-            categories.Add(new TicketCategory
+            var existingNames = await context.TicketCategories
+                .Select(x => x.Name)
+                .ToListAsync();
+
+            var categories = new List<TicketCategory>();
+
+            if (!existingNames.Contains("Software"))
             {
-                Id = Guid.NewGuid(),
-                Name = "Software",
-                Description = "Software and application-related issues.",
-                IsActive = true
-            });
-        }
+                categories.Add(new TicketCategory
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Software",
+                    Description = "Software and application-related issues.",
+                    IsActive = true
+                });
+            }
 
-        if (!existingNames.Contains("Hardware"))
-        {
-            categories.Add(new TicketCategory
+            if (!existingNames.Contains("Hardware"))
             {
-                Id = Guid.NewGuid(),
-                Name = "Hardware",
-                Description = "Computer and hardware-related issues.",
-                IsActive = true
-            });
-        }
+                categories.Add(new TicketCategory
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Hardware",
+                    Description = "Computer and hardware-related issues.",
+                    IsActive = true
+                });
+            }
 
-        if (!existingNames.Contains("Network / Internet"))
-        {
-            categories.Add(new TicketCategory
+            if (!existingNames.Contains("Network / Internet"))
             {
-                Id = Guid.NewGuid(),
-                Name = "Network / Internet",
-                Description = "Network, internet, and connectivity-related issues.",
-                IsActive = true
-            });
-        }
+                categories.Add(new TicketCategory
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Network / Internet",
+                    Description = "Network, internet, and connectivity-related issues.",
+                    IsActive = true
+                });
+            }
 
-        if (!existingNames.Contains("Email / Account Access"))
-        {
-            categories.Add(new TicketCategory
+            if (!existingNames.Contains("Email / Account Access"))
             {
-                Id = Guid.NewGuid(),
-                Name = "Email / Account Access",
-                Description = "Email, password, and account access-related issues.",
-                IsActive = true
-            });
-        }
+                categories.Add(new TicketCategory
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Email / Account Access",
+                    Description = "Email, password, and account access-related issues.",
+                    IsActive = true
+                });
+            }
 
-        if (!existingNames.Contains("Printer / Peripheral"))
-        {
-            categories.Add(new TicketCategory
+            if (!existingNames.Contains("Printer / Peripheral"))
             {
-                Id = Guid.NewGuid(),
-                Name = "Printer / Peripheral",
-                Description = "Printer, scanner, and peripheral device-related issues.",
-                IsActive = true
-            });
-        }
+                categories.Add(new TicketCategory
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Printer / Peripheral",
+                    Description = "Printer, scanner, and peripheral device-related issues.",
+                    IsActive = true
+                });
+            }
 
-        if (!existingNames.Contains("Access Request"))
-        {
-            categories.Add(new TicketCategory
+            if (!existingNames.Contains("Access Request"))
             {
-                Id = Guid.NewGuid(),
-                Name = "Access Request",
-                Description = "Requests for access to systems, applications, and folders.",
-                IsActive = true
-            });
-        }
+                categories.Add(new TicketCategory
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Access Request",
+                    Description = "Requests for access to systems, applications, and folders.",
+                    IsActive = true
+                });
+            }
 
-        if (!existingNames.Contains("Other"))
-        {
-            categories.Add(new TicketCategory
+            if (!existingNames.Contains("Other"))
             {
-                Id = Guid.NewGuid(),
-                Name = "Other",
-                Description = "Other technical support requests.",
-                IsActive = true
-            });
-        }
+                categories.Add(new TicketCategory
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Other",
+                    Description = "Other technical support requests.",
+                    IsActive = true
+                });
+            }
 
-        if (categories.Count > 0)
+            if (categories.Count > 0)
+            {
+                await context.TicketCategories.AddRangeAsync(categories);
+            }
+        }
+        catch (PostgresException ex) when (ex.SqlState == "42P01")
         {
-            await context.TicketCategories.AddRangeAsync(categories);
+            Console.WriteLine("[DataSeeder Warning] TicketCategories tablosu bulunamadı.");
         }
     }
 
-    private static async Task SeedTicketSubCategoriesAsync(
-        AppDbContext context)
+    private static async Task SeedTicketSubCategoriesAsync(AppDbContext context)
     {
         await AddSubCategoriesAsync(
             context,
             "Software",
             [
-                (
-                    "Installation",
-                    "A request to install new software."
-                ),
-                (
-                    "Application Error",
-                    "An application error, malfunction, or crash."
-                ),
-                (
-                    "Update",
-                    "A request to update installed software."
-                ),
-                (
-                    "License",
-                    "A software activation or licensing issue."
-                )
+                ("Installation", "A request to install new software."),
+                ("Application Error", "An application error, malfunction, or crash."),
+                ("Update", "A request to update installed software."),
+                ("License", "A software activation or licensing issue.")
             ]);
 
         await AddSubCategoriesAsync(
             context,
             "Hardware",
             [
-                (
-                    "Desktop Computer",
-                    "An issue affecting a desktop computer."
-                ),
-                (
-                    "Laptop",
-                    "An issue affecting a laptop computer."
-                ),
-                (
-                    "Monitor",
-                    "A monitor or display-related issue."
-                ),
-                (
-                    "Keyboard / Mouse",
-                    "A keyboard or mouse-related issue."
-                ),
-                (
-                    "Storage",
-                    "A disk, drive, or storage-related issue."
-                )
+                ("Desktop Computer", "An issue affecting a desktop computer."),
+                ("Laptop", "An issue affecting a laptop computer."),
+                ("Monitor", "A monitor or display-related issue."),
+                ("Keyboard / Mouse", "A keyboard or mouse-related issue."),
+                ("Storage", "A disk, drive, or storage-related issue.")
             ]);
 
         await AddSubCategoriesAsync(
             context,
             "Network / Internet",
             [
-                (
-                    "No Connection",
-                    "No network or internet connection is available."
-                ),
-                (
-                    "Slow Connection",
-                    "The network or internet connection is unusually slow."
-                ),
-                (
-                    "Wi-Fi",
-                    "A wireless network connection issue."
-                ),
-                (
-                    "VPN",
-                    "A virtual private network connection issue."
-                ),
-                (
-                    "Shared Folder",
-                    "An issue accessing a shared network folder."
-                )
+                ("No Connection", "No network or internet connection is available."),
+                ("Slow Connection", "The network or internet connection is unusually slow."),
+                ("Wi-Fi", "A wireless network connection issue."),
+                ("VPN", "A virtual private network connection issue."),
+                ("Shared Folder", "An issue accessing a shared network folder.")
             ]);
 
         await AddSubCategoriesAsync(
             context,
             "Email / Account Access",
             [
-                (
-                    "Password Reset",
-                    "A request to reset a user password."
-                ),
-                (
-                    "Account Locked",
-                    "The user account has been locked."
-                ),
-                (
-                    "Email Delivery",
-                    "An issue sending or receiving email messages."
-                ),
-                (
-                    "Mailbox",
-                    "A mailbox capacity, availability, or access issue."
-                ),
-                (
-                    "Multi-Factor Authentication",
-                    "A multi-factor authentication issue."
-                )
+                ("Password Reset", "A request to reset a user password."),
+                ("Account Locked", "The user account has been locked."),
+                ("Email Delivery", "An issue sending or receiving email messages."),
+                ("Mailbox", "A mailbox capacity, availability, or access issue."),
+                ("Multi-Factor Authentication", "A multi-factor authentication issue.")
             ]);
 
         await AddSubCategoriesAsync(
             context,
             "Printer / Peripheral",
             [
-                (
-                    "Printer Offline",
-                    "The printer appears to be offline or unavailable."
-                ),
-                (
-                    "Print Quality",
-                    "An issue affecting the quality of printed documents."
-                ),
-                (
-                    "Scanner",
-                    "A scanner-related issue."
-                ),
-                (
-                    "Driver",
-                    "A device driver installation or compatibility issue."
-                )
+                ("Printer Offline", "The printer appears to be offline or unavailable."),
+                ("Print Quality", "An issue affecting the quality of printed documents."),
+                ("Scanner", "A scanner-related issue."),
+                ("Driver", "A device driver installation or compatibility issue.")
             ]);
 
         await AddSubCategoriesAsync(
             context,
             "Access Request",
             [
-                (
-                    "Application Access",
-                    "A request for access to an application."
-                ),
-                (
-                    "Folder Access",
-                    "A request for access to a file or folder."
-                ),
-                (
-                    "Permission Change",
-                    "A request to modify an existing permission."
-                ),
-                (
-                    "New Account",
-                    "A request to create a new user account."
-                )
+                ("Application Access", "A request for access to an application."),
+                ("Folder Access", "A request for access to a file or folder."),
+                ("Permission Change", "A request to modify an existing permission."),
+                ("New Account", "A request to create a new user account.")
             ]);
 
         await AddSubCategoriesAsync(
             context,
             "Other",
             [
-                (
-                    "General Support",
-                    "A general technical support request."
-                ),
-                (
-                    "Information Request",
-                    "A request for technical information or guidance."
-                )
+                ("General Support", "A general technical support request."),
+                ("Information Request", "A request for technical information or guidance.")
             ]);
     }
 
@@ -576,138 +540,158 @@ public static class DataSeeder
         string categoryName,
         IEnumerable<(string Name, string Description)> subCategories)
     {
-        var category = await context.TicketCategories
-            .FirstOrDefaultAsync(x => x.Name == categoryName);
-
-        if (category is null)
+        try
         {
-            return;
-        }
+            var category = await context.TicketCategories
+                .FirstOrDefaultAsync(x => x.Name == categoryName);
 
-        var existingNames = await context.TicketSubCategories
-            .Where(x => x.CategoryId == category.Id)
-            .Select(x => x.Name)
-            .ToListAsync();
-
-        var records = subCategories
-            .Where(x => !existingNames.Contains(x.Name))
-            .Select(x => new TicketSubCategory
+            if (category is null)
             {
-                Id = Guid.NewGuid(),
-                CategoryId = category.Id,
-                Name = x.Name,
-                Description = x.Description,
-                IsActive = true
-            })
-            .ToList();
+                return;
+            }
 
-        if (records.Count > 0)
+            var existingNames = await context.TicketSubCategories
+                .Where(x => x.CategoryId == category.Id)
+                .Select(x => x.Name)
+                .ToListAsync();
+
+            var records = subCategories
+                .Where(x => !existingNames.Contains(x.Name))
+                .Select(x => new TicketSubCategory
+                {
+                    Id = Guid.NewGuid(),
+                    CategoryId = category.Id,
+                    Name = x.Name,
+                    Description = x.Description,
+                    IsActive = true
+                })
+                .ToList();
+
+            if (records.Count > 0)
+            {
+                await context.TicketSubCategories.AddRangeAsync(records);
+            }
+        }
+        catch (PostgresException ex) when (ex.SqlState == "42P01")
         {
-            await context.TicketSubCategories.AddRangeAsync(records);
+            Console.WriteLine("[DataSeeder Warning] TicketSubCategories tablosu bulunamadı.");
         }
     }
 
     private static async Task SeedRolesAsync(AppDbContext context)
     {
-        var existingNames = await context.Roles
-            .Select(x => x.Name)
-            .ToListAsync();
-
-        var roles = new List<Role>();
-
-        if (!existingNames.Contains("Admin"))
+        try
         {
-            roles.Add(new Role
+            var existingNames = await context.Roles
+                .Select(x => x.Name)
+                .ToListAsync();
+
+            var roles = new List<Role>();
+
+            if (!existingNames.Contains("Admin"))
             {
-                Id = Guid.NewGuid(),
-                Name = "Admin",
-                Description = "Has full administrative access to the system.",
-                IsActive = true
-            });
-        }
+                roles.Add(new Role
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Admin",
+                    Description = "Has full administrative access to the system.",
+                    IsActive = true
+                });
+            }
 
-        if (!existingNames.Contains("SupportAgent"))
-        {
-            roles.Add(new Role
+            if (!existingNames.Contains("SupportAgent"))
             {
-                Id = Guid.NewGuid(),
-                Name = "SupportAgent",
-                Description = "Can assign, update, process, and resolve tickets.",
-                IsActive = true
-            });
-        }
+                roles.Add(new Role
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "SupportAgent",
+                    Description = "Can assign, update, process, and resolve tickets.",
+                    IsActive = true
+                });
+            }
 
-        if (!existingNames.Contains("User"))
-        {
-            roles.Add(new Role
+            if (!existingNames.Contains("User"))
             {
-                Id = Guid.NewGuid(),
-                Name = "User",
-                Description = "Can create tickets and track their own requests.",
-                IsActive = true
-            });
-        }
+                roles.Add(new Role
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "User",
+                    Description = "Can create tickets and track their own requests.",
+                    IsActive = true
+                });
+            }
 
-        if (roles.Count > 0)
+            if (roles.Count > 0)
+            {
+                await context.Roles.AddRangeAsync(roles);
+            }
+        }
+        catch (PostgresException ex) when (ex.SqlState == "42P01")
         {
-            await context.Roles.AddRangeAsync(roles);
+            Console.WriteLine("[DataSeeder Warning] Roles tablosu bulunamadı.");
         }
     }
 
-    private static async Task SeedResolutionCategoriesAsync(
-        AppDbContext context)
+    private static async Task SeedResolutionCategoriesAsync(AppDbContext context)
     {
-        var existingNames = await context.ResolutionCategories
-            .Select(x => x.Name)
-            .ToListAsync();
-
-        var categories = new List<ResolutionCategory>();
-
-    AddResolutionCategory(
-        categories,
-        existingNames,
-        "Fixed",
-        "The underlying cause of the issue was successfully fixed."
-    );
-
-    AddResolutionCategory(
-        categories,
-        existingNames,
-        "Workaround",
-        "A temporary workaround was provided."
-    );
-
-    AddResolutionCategory(
-        categories,
-        existingNames,
-        "User Error",
-        "The issue was caused by an incorrect user action."
-    );
-
-    AddResolutionCategory(
-        categories,
-        existingNames,
-        "Duplicate",
-        "The ticket reports the same issue as another existing ticket."
-    );
-
-    AddResolutionCategory(
-        categories,
-        existingNames,
-        "Cannot Reproduce",
-        "The reported issue could not be reproduced."
-    );
-
-    AddResolutionCategory(
-        categories,
-        existingNames,
-        "No Action Required",
-        "No technical action was required to resolve the ticket."
-    );
-
-        if (categories.Count > 0)
+        try
         {
-            await context.ResolutionCategories.AddRangeAsync(categories);
+            var existingNames = await context.ResolutionCategories
+                .Select(x => x.Name)
+                .ToListAsync();
+
+            var categories = new List<ResolutionCategory>();
+
+            AddResolutionCategory(
+                categories,
+                existingNames,
+                "Fixed",
+                "The underlying cause of the issue was successfully fixed."
+            );
+
+            AddResolutionCategory(
+                categories,
+                existingNames,
+                "Workaround",
+                "A temporary workaround was provided."
+            );
+
+            AddResolutionCategory(
+                categories,
+                existingNames,
+                "User Error",
+                "The issue was caused by an incorrect user action."
+            );
+
+            AddResolutionCategory(
+                categories,
+                existingNames,
+                "Duplicate",
+                "The ticket reports the same issue as another existing ticket."
+            );
+
+            AddResolutionCategory(
+                categories,
+                existingNames,
+                "Cannot Reproduce",
+                "The reported issue could not be reproduced."
+            );
+
+            AddResolutionCategory(
+                categories,
+                existingNames,
+                "No Action Required",
+                "No technical action was required to resolve the ticket."
+            );
+
+            if (categories.Count > 0)
+            {
+                await context.ResolutionCategories.AddRangeAsync(categories);
+            }
+        }
+        catch (PostgresException ex) when (ex.SqlState == "42P01")
+        {
+            Console.WriteLine("[DataSeeder Warning] ResolutionCategories tablosu henüz veritabanında yok, atlandı.");
         }
     }
 
@@ -733,63 +717,70 @@ public static class DataSeeder
 
     private static async Task SeedDepartmentsAsync(AppDbContext context)
     {
-        var existingNames = await context.Departments
-            .Select(x => x.Name)
-            .ToListAsync();
-
-        var departments = new List<Department>();
-
-    AddDepartment(
-        departments,
-        existingNames,
-        "Information Technology",
-        "IT",
-        "The department responsible for information technology services."
-    );
-
-    AddDepartment(
-        departments,
-        existingNames,
-        "Software",
-        "SW",
-        "The department responsible for software development."
-    );
-
-    AddDepartment(
-        departments,
-        existingNames,
-        "Human Resources",
-        "HR",
-        "The department responsible for human resources operations."
-    );
-
-    AddDepartment(
-        departments,
-        existingNames,
-        "Finance",
-        "FIN",
-        "The department responsible for finance and accounting."
-    );
-
-    AddDepartment(
-        departments,
-        existingNames,
-        "Sales",
-        "SALES",
-        "The department responsible for sales operations."
-    );
-
-    AddDepartment(
-        departments,
-        existingNames,
-        "Operations",
-        "OPS",
-        "The department responsible for operational processes."
-    );
-
-        if (departments.Count > 0)
+        try
         {
-            await context.Departments.AddRangeAsync(departments);
+            var existingNames = await context.Departments
+                .Select(x => x.Name)
+                .ToListAsync();
+
+            var departments = new List<Department>();
+
+            AddDepartment(
+                departments,
+                existingNames,
+                "Information Technology",
+                "IT",
+                "The department responsible for information technology services."
+            );
+
+            AddDepartment(
+                departments,
+                existingNames,
+                "Software",
+                "SW",
+                "The department responsible for software development."
+            );
+
+            AddDepartment(
+                departments,
+                existingNames,
+                "Human Resources",
+                "HR",
+                "The department responsible for human resources operations."
+            );
+
+            AddDepartment(
+                departments,
+                existingNames,
+                "Finance",
+                "FIN",
+                "The department responsible for finance and accounting."
+            );
+
+            AddDepartment(
+                departments,
+                existingNames,
+                "Sales",
+                "SALES",
+                "The department responsible for sales operations."
+            );
+
+            AddDepartment(
+                departments,
+                existingNames,
+                "Operations",
+                "OPS",
+                "The department responsible for operational processes."
+            );
+
+            if (departments.Count > 0)
+            {
+                await context.Departments.AddRangeAsync(departments);
+            }
+        }
+        catch (PostgresException ex) when (ex.SqlState == "42P01")
+        {
+            Console.WriteLine("[DataSeeder Warning] Departments tablosu bulunamadı.");
         }
     }
 
@@ -817,56 +808,63 @@ public static class DataSeeder
 
     private static async Task SeedTeamsAsync(AppDbContext context)
     {
-        var informationTechnologyDepartment =
-            await context.Departments.FirstOrDefaultAsync(
-                x => x.Name == "Information Technology");
-
-        if (informationTechnologyDepartment is null)
+        try
         {
-            return;
+            var informationTechnologyDepartment =
+                await context.Departments.FirstOrDefaultAsync(
+                    x => x.Name == "Information Technology");
+
+            if (informationTechnologyDepartment is null)
+            {
+                return;
+            }
+
+            var existingNames = await context.Teams
+                .Select(x => x.Name)
+                .ToListAsync();
+
+            var teams = new List<Team>();
+
+            AddTeam(
+                teams,
+                existingNames,
+                informationTechnologyDepartment.Id,
+                "Service Desk",
+                "The first-level team responsible for handling user support requests."
+            );
+
+            AddTeam(
+                teams,
+                existingNames,
+                informationTechnologyDepartment.Id,
+                "Software Support",
+                "The team responsible for software and application support."
+            );
+
+            AddTeam(
+                teams,
+                existingNames,
+                informationTechnologyDepartment.Id,
+                "Hardware Support",
+                "The team responsible for computer and hardware support."
+            );
+
+            AddTeam(
+                teams,
+                existingNames,
+                informationTechnologyDepartment.Id,
+                "Network Support",
+                "The team responsible for network, internet, Wi-Fi, and VPN support."
+            );
+
+            if (teams.Count > 0)
+            {
+                await context.Teams.AddRangeAsync(teams);
+            }
         }
-
-        var existingNames = await context.Teams
-            .Select(x => x.Name)
-            .ToListAsync();
-
-        var teams = new List<Team>();
-
-    AddTeam(
-        teams,
-        existingNames,
-        informationTechnologyDepartment.Id,
-        "Service Desk",
-        "The first-level team responsible for handling user support requests."
-    );
-
-    AddTeam(
-        teams,
-        existingNames,
-        informationTechnologyDepartment.Id,
-        "Software Support",
-        "The team responsible for software and application support."
-    );
-
-    AddTeam(
-        teams,
-        existingNames,
-        informationTechnologyDepartment.Id,
-        "Hardware Support",
-        "The team responsible for computer and hardware support."
-    );
-
-    AddTeam(
-        teams,
-        existingNames,
-        informationTechnologyDepartment.Id,
-        "Network Support",
-        "The team responsible for network, internet, Wi-Fi, and VPN support."
-    );
-
-        if (teams.Count > 0)
+        catch (PostgresException ex) when (ex.SqlState == "42P01")
         {
-            await context.Teams.AddRangeAsync(teams);
+            Console.WriteLine("[DataSeeder Warning] Teams tablosu bulunamadı.");
         }
     }
 

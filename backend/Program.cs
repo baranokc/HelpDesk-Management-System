@@ -19,22 +19,33 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Http.Features;
 
-
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
 
 builder.Services.AddOpenApi();
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<TicketCreateDtoValidator>();
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("DefaultConnection")));
+
 builder.Services.AddControllers();
+
 builder.Services.Configure<FormOptions>(options =>
 {
-    options.MultipartBodyLengthLimit =
-        10L * 1024 * 1024;
+    options.MultipartBodyLengthLimit = 10L * 1024 * 1024;
 });
-builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(options =>
@@ -62,7 +73,6 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 builder.Services.AddScoped<ILookupService, LookupService>();
-
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITicketService, TicketService>();
 builder.Services.AddScoped<ITicketAssignmentService, TicketAssignmentService>();
@@ -98,6 +108,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -106,14 +117,17 @@ if (app.Environment.IsDevelopment())
 
 using (var scope = app.Services.CreateScope())
 {
-    
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await context.Database.MigrateAsync();
     await DataSeeder.SeedAsync(context);
 }
 
-app.UseHttpsRedirection();
+app.UseCors("AllowAll");
+
+
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
+
 app.Run();

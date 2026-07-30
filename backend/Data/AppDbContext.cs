@@ -89,7 +89,9 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Department>().HasData(
             new Department { Id = 1, Name = "Software" },
-            new Department { Id = 2, Name = "Human Resources" }
+            new Department { Id = 2, Name = "Human Resources" },
+            new Department { Id = 3, Name = "Information Technologies(IT)"},
+            new Department { Id = 4, Name = "Customer Services"}
         );
 
     }
