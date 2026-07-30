@@ -13,7 +13,7 @@ export interface UserCreate {
     password : string;
     name : string;
     lastName : string;
-    departmentId : string;
+    departmentId : number;
 }
 export interface UserResponse {
     fullName : string;
