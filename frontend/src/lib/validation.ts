@@ -18,7 +18,7 @@ export function getFormErrors(
         ? firstPath
         : "_form";
 
-    // Show only the first error for each field.
+
     if (!errors[fieldName]) {
       errors[fieldName] = issue.message;
     }
