@@ -35,9 +35,7 @@ export function FileInput({
         multiple={multiple}
         onChange={(event) =>
           onChange(
-            Array.from(
-              event.target.files ?? [],
-            ).slice(0, maxFiles),
+            Array.from(event.target.files ?? []),
           )
         }
         type="file"
