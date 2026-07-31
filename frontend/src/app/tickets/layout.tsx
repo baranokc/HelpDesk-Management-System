@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { authService } from '@/src/services/authService';
+import { useAuth } from '@/src/context/AuthContext'; 
 
 export default function TicketsLayout({
   children,
@@ -12,24 +12,19 @@ export default function TicketsLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  
+ 
+  const { isAuthenticated, loading, logout } = useAuth();
 
   useEffect(() => {
-    const token = authService.getToken();
-
-    if (!token) {
+    
+    if (!loading && !isAuthenticated) {
       router.push('/login');
-    } else {
-      setIsAuthenticated(true);
     }
-  }, [router]);
+  }, [loading, isAuthenticated, router]);
 
-  const handleLogout = () => {
-    authService.logout();
-    router.push('/login');
-  };
-
-  if (!isAuthenticated) {
+ 
+  if (loading || !isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-2">
@@ -86,8 +81,9 @@ export default function TicketsLayout({
 
           {/* User Actions */}
           <div className="flex-none gap-2">
+            {/* 🚀 Logout fonksiyonunu direkt context'ten çağırdık */}
             <button
-              onClick={handleLogout}
+              onClick={logout}
               className="btn btn-outline btn-error btn-sm font-medium text-xs normal-case"
             >
               Sign Out
