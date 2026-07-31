@@ -117,7 +117,15 @@ create: async (
     await api.put(`/tickets/${id}`, dto);
   },
 
-  delete: async (id: string): Promise<void> => {
-    await api.delete(`/tickets/${id}`);
+  delete: async (id: string) => {
+    const response = await api.delete(`/tickets/${id}`);
+    return response.data;
   },
+
+  addComment: async (ticketId: string, comment: string) => {
+    const response = await api.post(`/tickets/${ticketId}/comments`, { 
+      comment: comment 
+    });
+    return response.data;
+  }
 };
