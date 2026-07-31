@@ -98,12 +98,49 @@ export function TicketListContainer() {
       </div>
 
       {loading && (
-        <div className="flex flex-col items-center justify-center gap-2 py-12 text-slate-500">
-          <span className="loading loading-spinner loading-lg text-primary" />
-
-          <span className="text-sm">
-            Loading tickets...
-          </span>
+        <div className="card overflow-hidden border border-slate-200 bg-white shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="table w-full">
+              <thead className="bg-slate-50 text-xs font-semibold uppercase text-slate-700">
+                <tr>
+                  <th>Ticket #</th>
+                  <th>Title</th>
+                  <th>Category</th>
+                  <th>Status</th>
+                  <th>Priority</th>
+                  <th>Created By</th>
+                  <th className="text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {[1, 2, 3, 4, 5].map((item) => (
+                  <tr key={item}>
+                    <td>
+                      <div className="skeleton h-4 w-16 bg-slate-200"></div>
+                    </td>
+                    <td>
+                      <div className="skeleton h-4 w-40 bg-slate-200"></div>
+                    </td>
+                    <td>
+                      <div className="skeleton h-4 w-28 bg-slate-200"></div>
+                    </td>
+                    <td>
+                      <div className="skeleton h-6 w-20 rounded-full bg-slate-200"></div>
+                    </td>
+                    <td>
+                      <div className="skeleton h-6 w-16 rounded-full bg-slate-200"></div>
+                    </td>
+                    <td>
+                      <div className="skeleton h-4 w-24 bg-slate-200"></div>
+                    </td>
+                    <td className="text-right">
+                      <div className="skeleton h-4 w-20 ml-auto bg-slate-200"></div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -130,8 +167,33 @@ export function TicketListContainer() {
       {!loading && !error && (
         <div className="card overflow-hidden border border-slate-200 bg-white shadow-sm">
           {filteredTickets.length === 0 ? (
-            <div className="p-8 text-center text-sm text-slate-500">
-              No tickets found.
+            <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-4">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-8 w-8"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="1.5"
+                    d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"
+                  />
+                </svg>
+              </div>
+
+              <h3 className="text-lg font-semibold text-slate-900 mb-1">
+                No tickets found
+              </h3>
+              
+              <p className="text-slate-500 text-sm max-w-sm">
+                {search || statusFilter !== 'ALL'
+                  ? 'No support tickets match your search filters. Try clearing or changing your filters.'
+                  : 'You have not created any support tickets yet.'}
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
