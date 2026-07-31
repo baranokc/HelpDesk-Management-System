@@ -19,6 +19,7 @@ export * from "./ui/Toast";
 
 export * from "./tickets/AttachmentUploader";
 export * from "./tickets/CommentForm";
+export * from "./tickets/TicketActions";
 export * from "./tickets/TicketAssignmentForm";
 export * from "./tickets/TicketAttachments";
 export * from "./tickets/TicketComments";

@@ -3,11 +3,12 @@
 import { useState } from "react";
 import type { SubmitEvent } from "react";
 import { ticketAttachmentCreateSchema } from "@/src/schemas/attachmentSchemas";
-import { FormErrors, getFormErrors } from "@/src/lib/validation";
+import { getFormErrors } from "@/src/lib/validation";
+import type { FormErrors } from "@/src/lib/validation";
 import { Button } from "@/src/components/ui/Button";
 import { FileInput } from "@/src/components/ui/FileInput";
 import { Input } from "@/src/components/ui/Input";
-import { TicketAttachmentCreateDto } from "@/src/types/ticket-attachment";
+import type { TicketAttachmentCreateDto } from "@/src/types/ticket-attachment";
 
 interface AttachmentUploaderProps {
   loading?: boolean;
@@ -37,7 +38,13 @@ export function AttachmentUploader({
     }
 
     setValidationErrors({});
-    await onUpload(result.data);
+
+    try {
+      await onUpload(result.data);
+    } catch {
+      // The parent displays the API error. Keep the selected files for retrying.
+      return;
+    }
 
     setFiles([]);
     setDescription("");

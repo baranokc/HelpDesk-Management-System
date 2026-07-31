@@ -37,13 +37,14 @@ export const ticketCommentService = {
   },
 
   updateComment: async (
+    ticketId: string,
     commentId: string,
     dto: TicketCommentUpdateDto,
   ): Promise<void> => {
-    await api.put(`/comments/${commentId}`, dto);
+    await api.put(`/tickets/${ticketId}/comments/${commentId}`, dto);
   },
 
-  deleteComment: async (commentId: string): Promise<void> => {
-    await api.delete(`/comments/${commentId}`);
+  deleteComment: async (ticketId: string, commentId: string): Promise<void> => {
+    await api.delete(`/tickets/${ticketId}/comments/${commentId}`);
   },
 };

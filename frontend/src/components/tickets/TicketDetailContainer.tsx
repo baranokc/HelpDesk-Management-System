@@ -13,13 +13,17 @@ import { canManageTicket } from "@/src/lib/ticketPermissions";
 import { ticketAttachmentService } from "@/src/services/ticketAttachmentService";
 import { ticketCommentService } from "@/src/services/ticketCommentService";
 import { ticketService } from "@/src/services/ticketService";
+import { ticketWorkflowService } from "@/src/services/ticketWorkflowService";
 import type { TicketAttachmentDto } from "@/src/types/ticket-attachment";
 import type { TicketCommentCreateDto } from "@/src/types/ticket-comment";
+import type { TicketHistoryDto } from "@/src/types/ticket-status";
 import type { TicketDetailDto } from "@/src/types/ticket";
 import { CommentForm } from "./CommentForm";
+import { TicketActions } from "./TicketActions";
 import { TicketAttachments } from "./TicketAttachments";
 import { TicketComments } from "./TicketComments";
 import { TicketDetail } from "./TicketDetail";
+import { TicketHistory } from "./TicketHistory";
 
 interface TicketDetailContainerProps {
   ticketId: string;
@@ -37,6 +41,8 @@ export function TicketDetailContainer({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [commentError, setCommentError] = useState<string | null>(null);
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
+  const [history, setHistory] = useState<TicketHistoryDto[]>([]);
+  const [historyError, setHistoryError] = useState<string | null>(null);
   const [submittingComment, setSubmittingComment] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -45,27 +51,39 @@ export function TicketDetailContainer({
     string | null
   >(null);
 
-  const loadTicket = useCallback(async () => {
-    setLoading(true);
-    setLoadError(null);
+  const loadTicket = useCallback(
+    async (showLoading = true) => {
+      if (showLoading) setLoading(true);
+      setLoadError(null);
+      setHistoryError(null);
 
-    try {
-      const data = await ticketService.getById(ticketId);
-      setTicket(data);
-    } catch (error: unknown) {
-      setLoadError(
-        getApiErrorMessage(
-          error,
-          "Failed to load ticket details. Please try again later.",
-        ),
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [ticketId]);
+      try {
+        const data = await ticketService.getById(ticketId);
+        setTicket(data);
+
+        try {
+          setHistory(await ticketWorkflowService.getHistory(ticketId));
+        } catch (error: unknown) {
+          setHistoryError(
+            getApiErrorMessage(error, "Ticket history could not be loaded."),
+          );
+        }
+      } catch (error: unknown) {
+        setLoadError(
+          getApiErrorMessage(
+            error,
+            "Failed to load ticket details. Please try again later.",
+          ),
+        );
+      } finally {
+        if (showLoading) setLoading(false);
+      }
+    },
+    [ticketId],
+  );
 
   useEffect(() => {
-    void loadTicket();
+    void loadTicket(true);
   }, [loadTicket]);
 
   const handleAddComment = async (dto: TicketCommentCreateDto) => {
@@ -202,6 +220,12 @@ export function TicketDetailContainer({
 
       <TicketDetail ticket={ticket} />
 
+      <TicketActions
+        onChanged={() => loadTicket(false)}
+        ticket={ticket}
+        userRole={user?.role}
+      />
+
       {attachmentError && <Alert variant="error">{attachmentError}</Alert>}
 
       <Card
@@ -236,6 +260,18 @@ export function TicketDetailContainer({
             onSubmit={handleAddComment}
           />
         </div>
+      </Card>
+
+      <Card
+        description={`${history.length} history record(s)`}
+        title="Ticket history"
+      >
+        {historyError && (
+          <div className="mb-4">
+            <Alert variant="error">{historyError}</Alert>
+          </div>
+        )}
+        <TicketHistory history={history} />
       </Card>
 
       <ConfirmModal

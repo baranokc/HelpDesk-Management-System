@@ -1,5 +1,5 @@
-import { api } from '../lib/api';
-import type { PagedResultDto } from '@/src/types/common';
+import { api } from "../lib/api";
+import type { PagedResultDto } from "@/src/types/common";
 import type {
   TicketListDto,
   TicketDetailDto,
@@ -7,33 +7,26 @@ import type {
   TicketUpdateDto,
   TicketFilterDto,
   TicketResponseDto,
-} from '@/src/types/ticket';
+} from "@/src/types/ticket";
 
 export const ticketService = {
   getAll: async (
     filterDto?: TicketFilterDto,
   ): Promise<PagedResultDto<TicketListDto>> => {
-    const response = await api.get<PagedResultDto<TicketListDto>>(
-      '/tickets',
-      {
-        params: filterDto,
-      },
-    );
+    const response = await api.get<PagedResultDto<TicketListDto>>("/tickets", {
+      params: filterDto,
+    });
 
     return response.data;
   },
 
   getById: async (id: string): Promise<TicketDetailDto> => {
-    const response = await api.get<TicketDetailDto>(
-      `/tickets/${id}`,
-    );
+    const response = await api.get<TicketDetailDto>(`/tickets/${id}`);
 
     return response.data;
   },
 
-  create: async (
-    dto: TicketCreateDto,
-  ): Promise<TicketResponseDto> => {
+  create: async (dto: TicketCreateDto): Promise<TicketResponseDto> => {
     const formData = new FormData();
 
     formData.append("TicketTitle", dto.ticketTitle);
@@ -52,10 +45,7 @@ export const ticketService = {
       formData.append("Attachments", file);
     });
 
-    const response = await api.post<TicketResponseDto>(
-      "/tickets",
-      formData,
-    );
+    const response = await api.post<TicketResponseDto>("/tickets", formData);
 
     return response.data;
   },
@@ -68,11 +58,4 @@ export const ticketService = {
     const response = await api.delete(`/tickets/${id}`);
     return response.data;
   },
-
-  addComment: async (ticketId: string, comment: string) => {
-    const response = await api.post(`/tickets/${ticketId}/comments`, { 
-      comment: comment 
-    });
-    return response.data;
-  }
 };
