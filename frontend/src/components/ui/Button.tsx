@@ -1,19 +1,25 @@
-import { ButtonHTMLAttributes } from "react";
+import type { ButtonHTMLAttributes } from "react";
 
-type Variant = "primary" | "secondary" | "danger" | "ghost";
+type Variant =
+  | "primary"
+  | "secondary"
+  | "danger"
+  | "ghost";
+
 type Size = "sm" | "md" | "lg";
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface ButtonProps
+  extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
   size?: Size;
   loading?: boolean;
 }
 
 const variants: Record<Variant, string> = {
-  primary: "btn-primary",
-  secondary: "btn-outline",
-  danger: "btn-error",
-  ghost: "btn-ghost",
+  primary: "btn-outline btn-primary",
+  secondary: "btn-outline btn-secondary",
+  danger: "btn-outline btn-error",
+  ghost: "btn-outline btn-neutral",
 };
 
 const sizes: Record<Size, string> = {
@@ -29,17 +35,30 @@ export function Button({
   className = "",
   disabled,
   children,
+  type = "button",
   ...props
 }: ButtonProps) {
   return (
     <button
-      className={`btn ${variants[variant]} ${sizes[size]} ${className}`}
+      className={[
+        "btn",
+        variants[variant],
+        sizes[size],
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
       disabled={disabled || loading}
+      type={type}
       {...props}
     >
       {loading && (
-        <span aria-hidden="true" className="loading loading-spinner loading-sm" />
+        <span
+          aria-hidden="true"
+          className="loading loading-spinner loading-sm"
+        />
       )}
+
       {children}
     </button>
   );
