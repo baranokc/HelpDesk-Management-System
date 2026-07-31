@@ -3,10 +3,7 @@
 import { useState } from "react";
 import type { SubmitEvent } from "react";
 import { ticketAttachmentCreateSchema } from "@/src/schemas/attachmentSchemas";
-import {
-  FormErrors,
-  getFormErrors,
-} from "@/src/lib/validation";
+import { FormErrors, getFormErrors } from "@/src/lib/validation";
 import { Button } from "@/src/components/ui/Button";
 import { FileInput } from "@/src/components/ui/FileInput";
 import { Input } from "@/src/components/ui/Input";
@@ -52,7 +49,9 @@ export function AttachmentUploader({
         accept=".jpg,.jpeg,.png,.pdf,.txt,.docx,.xlsx,.zip,.rar,.7z"
         error={validationErrors.files}
         files={files}
-        maxFileSizeMb={100}
+        maxFiles={10}
+        maxFileSizeMb={10}
+        multiple
         onChange={setFiles}
       />
       <Input

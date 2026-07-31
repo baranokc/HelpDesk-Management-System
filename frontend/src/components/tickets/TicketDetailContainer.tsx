@@ -1,10 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Alert } from "@/src/components/ui/Alert";
 import { Button, LinkButton } from "@/src/components/ui/Button";
 import { Card } from "@/src/components/ui/Card";
+import { ConfirmModal } from "@/src/components/ui/ConfirmModal";
 import { LoadingSpinner } from "@/src/components/ui/LoadingSpinner";
+import { useAuth } from "@/src/context/AuthContext";
+import { getApiErrorMessage } from "@/src/lib/api";
+import { canManageTicket } from "@/src/lib/ticketPermissions";
 import { ticketAttachmentService } from "@/src/services/ticketAttachmentService";
 import { ticketCommentService } from "@/src/services/ticketCommentService";
 import { ticketService } from "@/src/services/ticketService";
@@ -21,23 +26,21 @@ interface TicketDetailContainerProps {
   canCreateInternalComment?: boolean;
 }
 
-function getErrorMessage(error: unknown, fallback: string): string {
-  return (
-    (error as { response?: { data?: { message?: string } } })?.response?.data
-      ?.message ?? fallback
-  );
-}
-
 export function TicketDetailContainer({
   ticketId,
-  canCreateInternalComment = false,
+  canCreateInternalComment,
 }: TicketDetailContainerProps) {
+  const router = useRouter();
+  const { user } = useAuth();
   const [ticket, setTicket] = useState<TicketDetailDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [commentError, setCommentError] = useState<string | null>(null);
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
   const [submittingComment, setSubmittingComment] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [downloadingAttachmentId, setDownloadingAttachmentId] = useState<
     string | null
   >(null);
@@ -51,7 +54,7 @@ export function TicketDetailContainer({
       setTicket(data);
     } catch (error: unknown) {
       setLoadError(
-        getErrorMessage(
+        getApiErrorMessage(
           error,
           "Failed to load ticket details. Please try again later.",
         ),
@@ -85,7 +88,7 @@ export function TicketDetailContainer({
       );
     } catch (error: unknown) {
       setCommentError(
-        getErrorMessage(
+        getApiErrorMessage(
           error,
           "An error occurred while adding the comment.",
         ),
@@ -97,9 +100,7 @@ export function TicketDetailContainer({
     }
   };
 
-  const handleDownloadAttachment = async (
-    attachment: TicketAttachmentDto,
-  ) => {
+  const handleDownloadAttachment = async (attachment: TicketAttachmentDto) => {
     setAttachmentError(null);
     setDownloadingAttachmentId(attachment.id);
 
@@ -107,13 +108,34 @@ export function TicketDetailContainer({
       await ticketAttachmentService.downloadAttachment(ticketId, attachment);
     } catch (error: unknown) {
       setAttachmentError(
-        getErrorMessage(
+        getApiErrorMessage(
           error,
           "The attachment could not be downloaded. Please try again.",
         ),
       );
     } finally {
       setDownloadingAttachmentId(null);
+    }
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    setDeleteError(null);
+
+    try {
+      await ticketService.delete(ticketId);
+      setDeleteModalOpen(false);
+      router.replace("/tickets");
+      router.refresh();
+    } catch (error: unknown) {
+      setDeleteError(
+        getApiErrorMessage(
+          error,
+          "An error occurred while deleting the ticket.",
+        ),
+      );
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -144,20 +166,43 @@ export function TicketDetailContainer({
   const ticketLevelAttachments = (ticket.attachments ?? []).filter(
     (attachment) => !attachment.commentId,
   );
+  const canManage = canManageTicket(user, ticket);
+  const canCreateInternal =
+    canCreateInternalComment ??
+    (user?.role === "Admin" || user?.role === "SupportAgent");
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <div className="flex justify-end">
+      <div className="flex flex-wrap justify-end gap-3">
         <LinkButton href="/tickets" size="sm" variant="secondary">
           ← Back to tickets
         </LinkButton>
+
+        {canManage && (
+          <>
+            <LinkButton
+              href={`/tickets/${ticket.id}/edit`}
+              size="sm"
+              variant="primary"
+            >
+              Edit ticket
+            </LinkButton>
+            <Button
+              onClick={() => setDeleteModalOpen(true)}
+              size="sm"
+              variant="danger"
+            >
+              Delete ticket
+            </Button>
+          </>
+        )}
       </div>
+
+      {deleteError && <Alert variant="error">{deleteError}</Alert>}
 
       <TicketDetail ticket={ticket} />
 
-      {attachmentError && (
-        <Alert variant="error">{attachmentError}</Alert>
-      )}
+      {attachmentError && <Alert variant="error">{attachmentError}</Alert>}
 
       <Card
         description={`${ticketLevelAttachments.length} attachment(s)`}
@@ -186,12 +231,23 @@ export function TicketDetailContainer({
           {commentError && <Alert variant="error">{commentError}</Alert>}
 
           <CommentForm
-            canCreateInternal={canCreateInternalComment}
+            canCreateInternal={canCreateInternal}
             loading={submittingComment}
             onSubmit={handleAddComment}
           />
         </div>
       </Card>
+
+      <ConfirmModal
+        confirmLabel="Delete ticket"
+        danger
+        description="This ticket will be removed from active ticket lists. This action cannot be undone from the interface."
+        loading={deleting}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={handleDelete}
+        open={deleteModalOpen}
+        title="Delete this ticket?"
+      />
     </div>
   );
 }

@@ -33,7 +33,8 @@ export * from "./tickets/TicketStatusBadge";
 export * from "./tickets/TicketStatusForm";
 export * from "./tickets/TicketTable";
 export * from "./tickets/TicketDetailContainer";
-export * from './tickets/TicketListContainer';
+export * from "./tickets/TicketEditContainer";
+export * from "./tickets/TicketListContainer";
 
 export * from "./auth/AuthCard";
 export * from "./auth/AuthMessage";
