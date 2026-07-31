@@ -31,46 +31,44 @@ export const ticketService = {
     return response.data;
   },
 
-create: async (
-  dto: TicketCreateDto,
-): Promise<TicketResponseDto> => {
-  const formData = new FormData();
+  create: async (
+    dto: TicketCreateDto,
+  ): Promise<TicketResponseDto> => {
+    const formData = new FormData();
 
-  formData.append("TicketTitle", dto.ticketTitle);
-  formData.append(
-    "TicketDescription",
-    dto.ticketDescription,
-  );
-  formData.append("Subject", dto.subject);
-  formData.append("CategoryId", dto.categoryId);
-  formData.append("PriorityId", dto.priorityId);
-  formData.append(
-    "ImpactLevelId",
-    dto.impactLevelId,
-  );
-  formData.append(
-    "UrgencyLevelId",
-    dto.urgencyLevelId,
-  );
+    formData.append("ticketTitle", dto.ticketTitle);
+    formData.append("subject", dto.subject);
+    formData.append("ticketDescription", dto.ticketDescription);
+    formData.append("categoryId", dto.categoryId);
+    formData.append("priorityId", dto.priorityId);
+    formData.append("impactLevelId", dto.impactLevelId);
+    formData.append("urgencyLevelId", dto.urgencyLevelId);
 
-  if (dto.subcategoryId) {
-    formData.append(
-      "SubcategoryId",
-      dto.subcategoryId,
-    );
-  }
+    if (dto.subcategoryId) {
+      formData.append("subcategoryId", dto.subcategoryId);
+    }
 
-  dto.attachments.forEach((file) => {
-    formData.append("Attachments", file);
-  });
+    dto.attachments?.forEach((file) => {
+      formData.append("attachments", file);
+    });
 
-  const response = await api.post<TicketResponseDto>(
-    "/tickets",
-    formData,
-  );
-
-  return response.data;
-},
+    try {
+      const response = await api.post<TicketResponseDto>(
+        "/tickets",
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          transformRequest: [(data) => data],
+        }
+      );
+      return response.data;
+    } catch (err: any) {
+      console.error("🔥 C# Backend 400 Detayı:", err.response?.data);
+      throw err;
+    }
+  },
 
   update: async (id: string, dto: TicketUpdateDto): Promise<void> => {
     await api.put(`/tickets/${id}`, dto);
