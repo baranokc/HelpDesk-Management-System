@@ -18,17 +18,23 @@ export default function TicketsPage() {
     fetchTickets();
   }, []);
 
-  const fetchTickets = async () => {
-    try {
-      setLoading(true);
-      const data = await ticketService.getAll();
-      setTickets(data);
-    } catch (err: unknown) {
-      setError('Failed to load tickets. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+const fetchTickets = async () => {
+  try {
+    setLoading(true);
+    setError(null);
+
+    const result = await ticketService.getAll({
+      pageNumber: 1,
+      pageSize: 25,
+    });
+
+    setTickets(result.items);
+  } catch (err: unknown) {
+    setError('Failed to load tickets. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const filteredTickets = tickets.filter((ticket) => {
     const matchesSearch =

@@ -1,5 +1,6 @@
 import { api } from '../lib/api';
-import {
+import type { PagedResultDto } from '@/src/types/common';
+import type {
   TicketListDto,
   TicketDetailDto,
   TicketCreateDto,
@@ -8,67 +9,25 @@ import {
   TicketResponseDto,
 } from '@/src/types/ticket';
 
-// 🧪 TEST İÇİN GEÇİCİ VERİLER (Mock Data)
-const MOCK_TICKETS: TicketListDto[] = [
-  {
-    id: '1',
-    ticketNumber: 'TCK-1001',
-    ticketTitle: 'VPN Connection Fails on macOS Sequoia',
-    statusName: 'Open',
-    priorityName: 'High',
-    categoryName: 'Network & Security',
-    subcategoryName: 'VPN Access',
-    createdByName: 'Süleyman Okçuoğlu',
-    assignedToName: 'Ahmet Yılmaz',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    ticketNumber: 'TCK-1002',
-    ticketTitle: 'Database Connection Timeout on Peak Hours',
-    statusName: 'In Progress',
-    priorityName: 'Critical',
-    categoryName: 'Infrastructure',
-    subcategoryName: 'Database Server',
-    createdByName: 'Zeynep Kaya',
-    assignedToName: 'Caner Demir',
-    createdAt: new Date(Date.now() - 86400000).toISOString(),
-  },
-  {
-    id: '3',
-    ticketNumber: 'TCK-1003',
-    ticketTitle: 'Request for New License Key (Figma Pro)',
-    statusName: 'Resolved',
-    priorityName: 'Medium',
-    categoryName: 'Software Request',
-    subcategoryName: null,
-    createdByName: 'Burak Şahin',
-    assignedToName: 'Ayşe Tekin',
-    createdAt: new Date(Date.now() - 172800000).toISOString(),
-  },
-  {
-    id: '4',
-    ticketNumber: 'TCK-1004',
-    ticketTitle: 'Printer Driver Installation Issue',
-    statusName: 'Closed',
-    priorityName: 'Low',
-    categoryName: 'Hardware',
-    subcategoryName: 'Printer Maintenance',
-    createdByName: 'Elif Arslan',
-    assignedToName: null,
-    createdAt: new Date(Date.now() - 259200000).toISOString(),
-  },
-];
-
 export const ticketService = {
-  getAll: async (filterDto?: TicketFilterDto): Promise<TicketListDto[]> => {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    return MOCK_TICKETS;
+  getAll: async (
+    filterDto?: TicketFilterDto,
+  ): Promise<PagedResultDto<TicketListDto>> => {
+    const response = await api.get<PagedResultDto<TicketListDto>>(
+      '/tickets',
+      {
+        params: filterDto,
+      },
+    );
 
+    return response.data;
   },
 
   getById: async (id: string): Promise<TicketDetailDto> => {
-    const response = await api.get<TicketDetailDto>(`/tickets/${id}`);
+    const response = await api.get<TicketDetailDto>(
+      `/tickets/${id}`,
+    );
+
     return response.data;
   },
 
