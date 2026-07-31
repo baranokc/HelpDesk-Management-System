@@ -82,7 +82,7 @@ export default function TicketsPage() {
         </div>
         <Link
           href="/tickets/new"
-          className="btn btn-primary text-white"
+          className="btn btn-outline btn-primary"
         >
           + Create New Ticket
         </Link>

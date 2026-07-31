@@ -316,7 +316,7 @@ export default function RegisterPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="btn btn-primary w-full text-white"
+                className="btn btn-outline btn-primary w-full"
               >
                 {loading ? (
                   <>
