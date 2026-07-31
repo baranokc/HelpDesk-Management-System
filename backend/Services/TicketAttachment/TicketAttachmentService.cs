@@ -10,17 +10,26 @@ public class TicketAttachmentService : ITicketAttachmentService
     private readonly IWebHostEnvironment _environment;
     public TicketAttachmentService(AppDbContext db, IWebHostEnvironment environment) { _db = db; _environment = environment; }
 
-    public async Task<IReadOnlyCollection<TicketAttachmentDto>> GetAttachmentsAsync(Guid ticketId, Guid? commentId = null, CancellationToken cancellationToken = default) =>
-        await _db.TicketAttachments.AsNoTracking().Where(x => x.TicketId == ticketId && (!commentId.HasValue || x.TicketCommentId == commentId))
+    public async Task<IReadOnlyCollection<TicketAttachmentDto>> GetAttachmentsAsync(Guid ticketId, Guid? commentId = null, bool includeInternal = false, CancellationToken cancellationToken = default) =>
+        await _db.TicketAttachments.AsNoTracking().Where(x =>
+                x.TicketId == ticketId &&
+                (!commentId.HasValue || x.TicketCommentId == commentId) &&
+                (includeInternal || x.TicketCommentId == null || !x.TicketComment!.IsInternal))
             .OrderBy(x => x.UploadedAt).Select(MapExpression).ToListAsync(cancellationToken);
 
-    public async Task<TicketAttachmentDto?> GetAttachmentByIdAsync(Guid ticketId, Guid attachmentId, CancellationToken cancellationToken = default) =>
-        await _db.TicketAttachments.AsNoTracking().Where(x => x.TicketId == ticketId && x.Id == attachmentId)
+    public async Task<TicketAttachmentDto?> GetAttachmentByIdAsync(Guid ticketId, Guid attachmentId, bool includeInternal = false, CancellationToken cancellationToken = default) =>
+        await _db.TicketAttachments.AsNoTracking().Where(x =>
+                x.TicketId == ticketId &&
+                x.Id == attachmentId &&
+                (includeInternal || x.TicketCommentId == null || !x.TicketComment!.IsInternal))
             .Select(MapExpression).SingleOrDefaultAsync(cancellationToken);
 
-    public async Task<TicketAttachmentDownloadDto?> GetDownloadAsync(Guid ticketId, Guid attachmentId, CancellationToken cancellationToken = default)
+    public async Task<TicketAttachmentDownloadDto?> GetDownloadAsync(Guid ticketId, Guid attachmentId, bool includeInternal = false, CancellationToken cancellationToken = default)
     {
-        var item = await _db.TicketAttachments.AsNoTracking().SingleOrDefaultAsync(x => x.TicketId == ticketId && x.Id == attachmentId, cancellationToken);
+        var item = await _db.TicketAttachments.AsNoTracking().SingleOrDefaultAsync(x =>
+            x.TicketId == ticketId &&
+            x.Id == attachmentId &&
+            (includeInternal || x.TicketCommentId == null || !x.TicketComment!.IsInternal), cancellationToken);
         if (item is null) return null;
         var fileName = Path.GetFileName(item.FilePath);
         var physicalPath = Path.Combine(_environment.ContentRootPath, "uploads", fileName);
