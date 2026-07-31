@@ -2,6 +2,7 @@ using System.Security.Claims;
 using backend.Constants;
 using backend.DTO.Ticket;
 using backend.Services.TicketComment;
+using backend.Services.Ticket;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,16 +14,51 @@ namespace backend.Controllers;
 public class TicketCommentController : ControllerBase
 {
     private readonly ITicketCommentService _service;
-    public TicketCommentController(ITicketCommentService service) => _service = service;
+    private readonly ITicketService _ticketService;
+
+    public TicketCommentController(
+        ITicketCommentService service,
+        ITicketService ticketService)
+    {
+        _service = service;
+        _ticketService = ticketService;
+    }
+
     private Guid UserId => Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub"), out var id) ? id : Guid.Empty;
+    private string UserRole => User.FindFirstValue(ClaimTypes.Role) ?? string.Empty;
     private bool CanManageAll => User.IsInRole(Roles.Admin) || User.IsInRole(Roles.SupportAgent);
 
     [HttpGet]
-    public async Task<IActionResult> GetAll(Guid ticketId, CancellationToken ct) => Ok(await _service.GetCommentsAsync(ticketId, CanManageAll, ct));
+    public async Task<IActionResult> GetAll(
+        Guid ticketId,
+        CancellationToken ct)
+    {
+        if (!await CanAccessTicketAsync(ticketId, ct))
+            return NotFound(new { message = "Ticket not found." });
+
+        return Ok(await _service.GetCommentsAsync(
+            ticketId,
+            CanManageAll,
+            ct));
+    }
 
     [HttpGet("{commentId:guid}")]
-    public async Task<IActionResult> GetById(Guid ticketId, Guid commentId, CancellationToken ct)
-    { var item = await _service.GetCommentByIdAsync(ticketId, commentId, CanManageAll, ct); return item is null ? NotFound() : Ok(item); }
+    public async Task<IActionResult> GetById(
+        Guid ticketId,
+        Guid commentId,
+        CancellationToken ct)
+    {
+        if (!await CanAccessTicketAsync(ticketId, ct))
+            return NotFound(new { message = "Ticket not found." });
+
+        var item = await _service.GetCommentByIdAsync(
+            ticketId,
+            commentId,
+            CanManageAll,
+            ct);
+
+        return item is null ? NotFound() : Ok(item);
+    }
 
     [HttpPost]
     [Consumes("multipart/form-data")]
@@ -38,6 +74,9 @@ public class TicketCommentController : ControllerBase
                 message = "Invalid user identity."
             });
         }
+
+        if (!await CanAccessTicketAsync(ticketId, ct))
+            return NotFound(new { message = "Ticket not found." });
 
         var item = await _service.AddCommentAsync(
             ticketId,
@@ -59,8 +98,25 @@ public class TicketCommentController : ControllerBase
     }
     
     [HttpPut("{commentId:guid}")]
-    public async Task<IActionResult> Update(Guid ticketId, Guid commentId, [FromBody] TicketCommentUpdateDto dto, CancellationToken ct)
-    { var item = await _service.UpdateCommentAsync(ticketId, commentId, dto, UserId, CanManageAll, ct); return item is null ? NotFound() : Ok(item); }
+    public async Task<IActionResult> Update(
+        Guid ticketId,
+        Guid commentId,
+        [FromBody] TicketCommentUpdateDto dto,
+        CancellationToken ct)
+    {
+        if (!await CanAccessTicketAsync(ticketId, ct))
+            return NotFound(new { message = "Ticket not found." });
+
+        var item = await _service.UpdateCommentAsync(
+            ticketId,
+            commentId,
+            dto,
+            UserId,
+            CanManageAll,
+            ct);
+
+        return item is null ? NotFound() : Ok(item);
+    }
 
     [HttpDelete("{commentId:guid}")]
     public async Task<IActionResult> Delete(
@@ -68,6 +124,9 @@ public class TicketCommentController : ControllerBase
         Guid commentId,
         CancellationToken ct)
     {
+        if (!await CanAccessTicketAsync(ticketId, ct))
+            return NotFound(new { message = "Ticket not found." });
+
         try
         {
             var deleted = await _service.DeleteCommentAsync(
@@ -97,5 +156,19 @@ public class TicketCommentController : ControllerBase
                     message = exception.Message
                 });
         }
-}
+    }
+
+    private Task<bool> CanAccessTicketAsync(
+        Guid ticketId,
+        CancellationToken cancellationToken)
+    {
+        if (UserId == Guid.Empty || string.IsNullOrWhiteSpace(UserRole))
+            return Task.FromResult(false);
+
+        return _ticketService.CanAccessTicketAsync(
+            ticketId,
+            UserId,
+            UserRole,
+            cancellationToken);
+    }
 }

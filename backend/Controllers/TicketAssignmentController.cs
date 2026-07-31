@@ -1,6 +1,7 @@
 using backend.DTO.Ticket;
 using backend.Constants;
 using backend.Services.TicketAssignment;
+using backend.Services.Ticket;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -16,10 +17,14 @@ namespace backend.Controllers;
 public class TicketAssignmentController : ControllerBase
 {
     private readonly ITicketAssignmentService _assignmentService;
+    private readonly ITicketService _ticketService;
 
-    public TicketAssignmentController(ITicketAssignmentService assignmentService)
+    public TicketAssignmentController(
+        ITicketAssignmentService assignmentService,
+        ITicketService ticketService)
     {
         _assignmentService = assignmentService;
+        _ticketService = ticketService;
     }
 
     [HttpPost]
@@ -28,7 +33,8 @@ public class TicketAssignmentController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> AssignTicket(
-        [FromBody] TicketAssignRequestDto request)
+        [FromBody] TicketAssignRequestDto request,
+        CancellationToken cancellationToken)
     {
         var currentUserIdClaim =
             User.FindFirst(ClaimTypes.NameIdentifier)?.Value
@@ -40,6 +46,18 @@ public class TicketAssignmentController : ControllerBase
             {
                 message = "Invalid user identity."
             });
+        }
+
+        var currentUserRole =
+            User.FindFirstValue(ClaimTypes.Role) ?? string.Empty;
+
+        if (!await _ticketService.CanAccessTicketAsync(
+                request.TicketId,
+                currentUserId,
+                currentUserRole,
+                cancellationToken))
+        {
+            return NotFound(new { message = "Ticket not found." });
         }
 
         var createDto = new TicketAssignmentCreateDto

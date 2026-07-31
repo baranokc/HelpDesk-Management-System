@@ -17,6 +17,12 @@ public interface ITicketService
         string currentUserRole,
         CancellationToken cancellationToken = default);
 
+    Task<bool> CanAccessTicketAsync(
+        Guid ticketId,
+        Guid currentUserId,
+        string currentUserRole,
+        CancellationToken cancellationToken = default);
+
     Task<TicketResponseDto> CreateTicketAsync(
         TicketCreateDto dto,
         Guid createdBy,
@@ -32,6 +38,7 @@ public interface ITicketService
     Task<bool> DeleteTicketAsync(
         Guid ticketId,
         Guid deletedById,
+        string currentUserRole,
         CancellationToken cancellationToken = default);
 
 }

@@ -2,6 +2,7 @@ using System.Security.Claims;
 using backend.Constants;
 using backend.DTO.Ticket;
 using backend.Services.TicketAttachment;
+using backend.Services.Ticket;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,20 +14,76 @@ namespace backend.Controllers;
 public class TicketAttachmentController : ControllerBase
 {
     private readonly ITicketAttachmentService _service;
-    public TicketAttachmentController(ITicketAttachmentService service) => _service = service;
+    private readonly ITicketService _ticketService;
+
+    public TicketAttachmentController(
+        ITicketAttachmentService service,
+        ITicketService ticketService)
+    {
+        _service = service;
+        _ticketService = ticketService;
+    }
+
     private Guid UserId => Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub"), out var id) ? id : Guid.Empty;
+    private string UserRole => User.FindFirstValue(ClaimTypes.Role) ?? string.Empty;
     private bool CanManageAll => User.IsInRole(Roles.Admin) || User.IsInRole(Roles.SupportAgent);
 
     [HttpGet]
-    public async Task<IActionResult> GetAll(Guid ticketId, [FromQuery] Guid? commentId, CancellationToken ct) => Ok(await _service.GetAttachmentsAsync(ticketId, commentId, ct));
+    public async Task<IActionResult> GetAll(
+        Guid ticketId,
+        [FromQuery] Guid? commentId,
+        CancellationToken ct)
+    {
+        if (!await CanAccessTicketAsync(ticketId, ct))
+            return NotFound(new { message = "Ticket not found." });
+
+        return Ok(await _service.GetAttachmentsAsync(
+            ticketId,
+            commentId,
+            CanManageAll,
+            ct));
+    }
 
     [HttpGet("{attachmentId:guid}")]
-    public async Task<IActionResult> GetById(Guid ticketId, Guid attachmentId, CancellationToken ct)
-    { var item = await _service.GetAttachmentByIdAsync(ticketId, attachmentId, ct); return item is null ? NotFound() : Ok(item); }
+    public async Task<IActionResult> GetById(
+        Guid ticketId,
+        Guid attachmentId,
+        CancellationToken ct)
+    {
+        if (!await CanAccessTicketAsync(ticketId, ct))
+            return NotFound(new { message = "Ticket not found." });
+
+        var item = await _service.GetAttachmentByIdAsync(
+            ticketId,
+            attachmentId,
+            CanManageAll,
+            ct);
+
+        return item is null ? NotFound() : Ok(item);
+    }
 
     [HttpGet("{attachmentId:guid}/download")]
-    public async Task<IActionResult> Download(Guid ticketId, Guid attachmentId, CancellationToken ct)
-    { var item = await _service.GetDownloadAsync(ticketId, attachmentId, ct); return item is null ? NotFound() : PhysicalFile(item.PhysicalPath, item.ContentType, item.FileName); }
+    public async Task<IActionResult> Download(
+        Guid ticketId,
+        Guid attachmentId,
+        CancellationToken ct)
+    {
+        if (!await CanAccessTicketAsync(ticketId, ct))
+            return NotFound(new { message = "Ticket not found." });
+
+        var item = await _service.GetDownloadAsync(
+            ticketId,
+            attachmentId,
+            CanManageAll,
+            ct);
+
+        return item is null
+            ? NotFound()
+            : PhysicalFile(
+                item.PhysicalPath,
+                item.ContentType,
+                item.FileName);
+    }
 
     [HttpPost]
     [Consumes("multipart/form-data")]
@@ -35,6 +92,9 @@ public class TicketAttachmentController : ControllerBase
         [FromForm] TicketAttachmentCreateDto dto,
         CancellationToken ct)
     {
+        if (!await CanAccessTicketAsync(ticketId, ct))
+            return NotFound(new { message = "Ticket not found." });
+
         try
         {
             var items = await _service.AddAttachmentAsync(
@@ -63,8 +123,25 @@ public class TicketAttachmentController : ControllerBase
     }
 
     [HttpPatch("{attachmentId:guid}")]
-    public async Task<IActionResult> Update(Guid ticketId, Guid attachmentId, [FromBody] TicketAttachmentUpdateDto dto, CancellationToken ct)
-    { var item = await _service.UpdateAttachmentAsync(ticketId, attachmentId, dto, UserId, CanManageAll, ct); return item is null ? NotFound() : Ok(item); }
+    public async Task<IActionResult> Update(
+        Guid ticketId,
+        Guid attachmentId,
+        [FromBody] TicketAttachmentUpdateDto dto,
+        CancellationToken ct)
+    {
+        if (!await CanAccessTicketAsync(ticketId, ct))
+            return NotFound(new { message = "Ticket not found." });
+
+        var item = await _service.UpdateAttachmentAsync(
+            ticketId,
+            attachmentId,
+            dto,
+            UserId,
+            CanManageAll,
+            ct);
+
+        return item is null ? NotFound() : Ok(item);
+    }
 
     [HttpDelete("{attachmentId:guid}")]
     public async Task<IActionResult> Delete(
@@ -72,6 +149,9 @@ public class TicketAttachmentController : ControllerBase
         Guid attachmentId,
         CancellationToken ct)
     {
+        if (!await CanAccessTicketAsync(ticketId, ct))
+            return NotFound(new { message = "Ticket not found." });
+
         var deleted = await _service.DeleteAttachmentAsync(
             ticketId,
             attachmentId,
@@ -89,5 +169,19 @@ public class TicketAttachmentController : ControllerBase
         }
 
         return NoContent();
+    }
+
+    private Task<bool> CanAccessTicketAsync(
+        Guid ticketId,
+        CancellationToken cancellationToken)
+    {
+        if (UserId == Guid.Empty || string.IsNullOrWhiteSpace(UserRole))
+            return Task.FromResult(false);
+
+        return _ticketService.CanAccessTicketAsync(
+            ticketId,
+            UserId,
+            UserRole,
+            cancellationToken);
     }
 }

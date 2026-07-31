@@ -215,13 +215,24 @@ public class TicketController : ControllerBase
         CancellationToken cancellationToken)
     {
         var currentUserId = GetCurrentUserId();
+        var currentUserRole = GetCurrentUserRole();
 
-        if (currentUserId == Guid.Empty)
+        if (currentUserId == Guid.Empty ||
+            string.IsNullOrWhiteSpace(currentUserRole))
         {
             return Unauthorized(new
             {
                 message = "Invalid user identity."
             });
+        }
+
+        if (!await _ticketService.CanAccessTicketAsync(
+                id,
+                currentUserId,
+                currentUserRole,
+                cancellationToken))
+        {
+            return NotFound(new { message = "Ticket not found." });
         }
 
         var createDto = new TicketAssignmentCreateDto
@@ -266,6 +277,23 @@ public class TicketController : ControllerBase
         CancellationToken cancellationToken)
     {
         var currentUserId = GetCurrentUserId();
+        var currentUserRole = GetCurrentUserRole();
+
+        if (currentUserId == Guid.Empty ||
+            string.IsNullOrWhiteSpace(currentUserRole))
+        {
+            return Unauthorized(new { message = "Invalid user identity." });
+        }
+
+        if (!await _ticketService.CanAccessTicketAsync(
+                id,
+                currentUserId,
+                currentUserRole,
+                cancellationToken))
+        {
+            return NotFound(new { message = "Ticket not found." });
+        }
+
         var success = await _ticketUnassignmentService.UnassignTicketAsync(
             id,
             dto,
@@ -288,13 +316,24 @@ public class TicketController : ControllerBase
         CancellationToken cancellationToken)
     {
         var currentUserId = GetCurrentUserId();
+        var currentUserRole = GetCurrentUserRole();
 
-        if (currentUserId == Guid.Empty)
+        if (currentUserId == Guid.Empty ||
+            string.IsNullOrWhiteSpace(currentUserRole))
         {
             return Unauthorized(new
             {
                 message = "Invalid user identity."
             });
+        }
+
+        if (!await _ticketService.CanAccessTicketAsync(
+                id,
+                currentUserId,
+                currentUserRole,
+                cancellationToken))
+        {
+            return NotFound(new { message = "Ticket not found." });
         }
 
         try
@@ -336,6 +375,24 @@ public class TicketController : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
+        var currentUserId = GetCurrentUserId();
+        var currentUserRole = GetCurrentUserRole();
+
+        if (currentUserId == Guid.Empty ||
+            string.IsNullOrWhiteSpace(currentUserRole))
+        {
+            return Unauthorized(new { message = "Invalid user identity." });
+        }
+
+        if (!await _ticketService.CanAccessTicketAsync(
+                id,
+                currentUserId,
+                currentUserRole,
+                cancellationToken))
+        {
+            return NotFound(new { message = "Ticket not found." });
+        }
+
         var history = await _ticketHistoryService.GetHistoryAsync(
             id,
             cancellationToken);
@@ -343,22 +400,46 @@ public class TicketController : ControllerBase
         return Ok(history);
     }
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = Roles.Admin)]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.User}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> DeleteTicket(
         Guid id,
         CancellationToken cancellationToken)
     {
         var currentUserId = GetCurrentUserId();
-        var success = await _ticketService.DeleteTicketAsync(
-            id,
-            currentUserId,
-            cancellationToken);
+        var currentUserRole = GetCurrentUserRole();
 
-        if (!success)
-            return NotFound(new { message = "Ticket to delete was not found." });
+        if (currentUserId == Guid.Empty ||
+            string.IsNullOrWhiteSpace(currentUserRole))
+        {
+            return Unauthorized(new { message = "Invalid user identity." });
+        }
 
-        return Ok(new { message = "Ticket successfully deleted." });
+        try
+        {
+            var success = await _ticketService.DeleteTicketAsync(
+                id,
+                currentUserId,
+                currentUserRole,
+                cancellationToken);
+
+            if (!success)
+            {
+                return NotFound(new
+                {
+                    message = "Ticket to delete was not found."
+                });
+            }
+
+            return Ok(new { message = "Ticket successfully deleted." });
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                new { message = exception.Message });
+        }
     }
 }

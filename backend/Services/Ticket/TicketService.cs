@@ -30,11 +30,10 @@ public class TicketService : ITicketService
             .AsNoTracking()
             .Where(t => !t.IsDeleted);
 
-        if (currentUserRole == Roles.User)
-        {
-            query = query.Where(t =>
-                t.CreatedById == currentUserId);
-        }
+        query = ApplyAccessScope(
+            query,
+            currentUserId,
+            currentUserRole);
 
         if (!string.IsNullOrWhiteSpace(filter.Search))
         {
@@ -113,8 +112,12 @@ public class TicketService : ITicketService
         string currentUserRole,
         CancellationToken cancellationToken = default)
     {
-        var ticket = await _db.Tickets
-            .AsNoTracking()
+        var ticketQuery = ApplyAccessScope(
+            _db.Tickets.AsNoTracking(),
+            currentUserId,
+            currentUserRole);
+
+        var ticket = await ticketQuery
             .Include(t => t.CreatedBy)
             .Include(t => t.AssignedTo)
             .Include(t => t.Team)
@@ -125,14 +128,16 @@ public class TicketService : ITicketService
             .Include(t => t.ImpactLevel)
             .Include(t => t.UrgencyLevel)
             .FirstOrDefaultAsync(
-                t => t.Id == ticketId && !t.IsDeleted && (
-                        currentUserRole != Roles.User || t.CreatedById == currentUserId), cancellationToken);
+                t => t.Id == ticketId && !t.IsDeleted,
+                cancellationToken);
         if (ticket is null)
             return null;
 
         var comments = await _db.TicketComments
             .AsNoTracking()
-            .Where(c => c.TicketId == ticketId)
+            .Where(c =>
+                c.TicketId == ticketId &&
+                (currentUserRole != Roles.User || !c.IsInternal))
             .OrderBy(c => c.CreatedAt)
             .Select(c => new TicketCommentDto
             {
@@ -162,7 +167,11 @@ public class TicketService : ITicketService
 
         var attachments = await _db.TicketAttachments
             .AsNoTracking()
-            .Where(a => a.TicketId == ticketId)
+            .Where(a =>
+                a.TicketId == ticketId &&
+                (currentUserRole != Roles.User ||
+                 a.TicketCommentId == null ||
+                 !a.TicketComment!.IsInternal))
             .OrderBy(a => a.UploadedAt)
             .Select(a => new TicketAttachmentDto
             {
@@ -213,6 +222,22 @@ public class TicketService : ITicketService
             Comments = comments,
             Attachments = attachments
         };
+    }
+
+    public async Task<bool> CanAccessTicketAsync(
+        Guid ticketId,
+        Guid currentUserId,
+        string currentUserRole,
+        CancellationToken cancellationToken = default)
+    {
+        var query = ApplyAccessScope(
+            _db.Tickets.AsNoTracking().Where(t => !t.IsDeleted),
+            currentUserId,
+            currentUserRole);
+
+        return await query.AnyAsync(
+            t => t.Id == ticketId,
+            cancellationToken);
     }
 
     public async Task<TicketResponseDto> CreateTicketAsync(
@@ -350,11 +375,13 @@ public class TicketService : ITicketService
 
         if (ticket is null)
             return null;
-        if (currentUserRole == Roles.User &&
-            ticket.CreatedById != changedByUserId)
+        if (!CanAccessTicket(
+                ticket,
+                changedByUserId,
+                currentUserRole))
         {
             throw new UnauthorizedAccessException(
-                "You can update only your own tickets.");
+                "You do not have permission to update this ticket.");
         }
 
         await ValidateTicketLookupsAsync(
@@ -402,6 +429,7 @@ public class TicketService : ITicketService
     public async Task<bool> DeleteTicketAsync(
         Guid ticketId,
         Guid deletedById,
+        string currentUserRole,
         CancellationToken cancellationToken = default)
     {
         var ticket = await _db.Tickets
@@ -411,6 +439,15 @@ public class TicketService : ITicketService
 
         if (ticket is null)
             return false;
+
+        if (!CanAccessTicket(
+                ticket,
+                deletedById,
+                currentUserRole))
+        {
+            throw new UnauthorizedAccessException(
+                "You do not have permission to delete this ticket.");
+        }
 
         ticket.IsDeleted = true;
         await _db.SaveChangesAsync(cancellationToken);
@@ -495,5 +532,38 @@ public class TicketService : ITicketService
     private static string FormatTicketNumber(long sequenceValue)
     {
         return $"HD-{sequenceValue:D8}";
+    }
+
+    private static IQueryable<Entities.Ticket> ApplyAccessScope(
+        IQueryable<Entities.Ticket> query,
+        Guid currentUserId,
+        string currentUserRole)
+    {
+        return currentUserRole switch
+        {
+            Roles.Admin => query,
+            Roles.SupportAgent => query.Where(ticket =>
+                ticket.CreatedById == currentUserId ||
+                ticket.AssignedToId == currentUserId),
+            Roles.User => query.Where(ticket =>
+                ticket.CreatedById == currentUserId),
+            _ => query.Where(_ => false)
+        };
+    }
+
+    private static bool CanAccessTicket(
+        Entities.Ticket ticket,
+        Guid currentUserId,
+        string currentUserRole)
+    {
+        return currentUserRole switch
+        {
+            Roles.Admin => true,
+            Roles.SupportAgent =>
+                ticket.CreatedById == currentUserId ||
+                ticket.AssignedToId == currentUserId,
+            Roles.User => ticket.CreatedById == currentUserId,
+            _ => false
+        };
     }
 }
