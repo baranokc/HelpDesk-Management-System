@@ -3,6 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import {
+  Button,
+  LinkButton,
+} from '@/src/components/ui/Button';
 import { ticketService } from '@/src/services/ticketService';
 
 export default function CreateTicketPage() {
@@ -65,7 +69,7 @@ export default function CreateTicketPage() {
     }
   };
 
-  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
 
@@ -317,19 +321,20 @@ export default function CreateTicketPage() {
 
             {/* Submit & Cancel Buttons */}
             <div className="flex items-center justify-end gap-3 pt-4">
-              <Link href="/tickets" className="btn btn-ghost text-slate-600 font-normal">
+              <LinkButton
+                href="/tickets"
+                variant="secondary"
+                className="font-normal"
+              >
                 Cancel
-              </Link>
-              <button type="submit" disabled={loading} className="btn btn-primary text-white">
-                {loading ? (
-                  <>
-                    <span className="loading loading-spinner loading-sm"></span>
-                    Submitting...
-                  </>
-                ) : (
-                  'Submit Ticket'
-                )}
-              </button>
+              </LinkButton>
+
+              <Button
+                type="submit"
+                loading={loading}
+              >
+                {loading ? 'Submitting...' : 'Submit Ticket'}
+              </Button>
             </div>
           </form>
         </div>

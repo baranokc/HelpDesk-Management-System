@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { Button } from '@/src/components/ui/Button';
 import { authService } from '@/src/services/authService';
 import { loginSchema } from '@/src/schemas/authSchemas';
 import {
@@ -224,20 +225,13 @@ function LoginContent() {
 
             {/* Submit Button */}
             <div className="form-control mt-6">
-              <button
+              <Button
                 type="submit"
-                disabled={loading}
-                className="btn btn-outline btn-primary w-full"
+                loading={loading}
+                className="w-full"
               >
-                {loading ? (
-                  <>
-                    <span className="loading loading-spinner loading-sm" />
-                    Signing In...
-                  </>
-                ) : (
-                  'Sign In'
-                )}
-              </button>
+                {loading ? 'Signing In...' : 'Sign In'}
+              </Button>
             </div>
           </form>
 

@@ -3,9 +3,13 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Button } from '@/src/components/ui/Button';
 import { authService } from '@/src/services/authService';
 import { registerSchema } from '@/src/schemas/authSchemas';
-import { FormErrors, getFormErrors,} from '@/src/lib/validation';
+import {
+  type FormErrors,
+  getFormErrors,
+} from '@/src/lib/validation';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -313,20 +317,13 @@ export default function RegisterPage() {
 
             {/* Submit Button */}
             <div className="form-control mt-6">
-              <button
+              <Button
                 type="submit"
-                disabled={loading}
-                className="btn btn-outline btn-primary w-full"
+                loading={loading}
+                className="w-full"
               >
-                {loading ? (
-                  <>
-                    <span className="loading loading-spinner loading-sm"></span>
-                    Creating Account...
-                  </>
-                ) : (
-                  'Register'
-                )}
-              </button>
+                {loading ? 'Creating Account...' : 'Register'}
+              </Button>
             </div>
           </form>
 

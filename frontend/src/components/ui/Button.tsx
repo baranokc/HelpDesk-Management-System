@@ -1,23 +1,27 @@
-import type { ButtonHTMLAttributes } from "react";
+import Link, { type LinkProps } from "next/link";
+import type {
+  AnchorHTMLAttributes,
+  ButtonHTMLAttributes,
+} from "react";
 
-type Variant =
-  | "primary"
-  | "secondary"
-  | "danger"
-  | "ghost";
-
+type Variant = "primary" | "secondary" | "danger" | "ghost";
 type Size = "sm" | "md" | "lg";
 
-interface ButtonProps
-  extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface ButtonStyleProps {
   variant?: Variant;
   size?: Size;
+  className?: string;
+}
+
+interface ButtonProps
+  extends ButtonHTMLAttributes<HTMLButtonElement>,
+    ButtonStyleProps {
   loading?: boolean;
 }
 
 const variants: Record<Variant, string> = {
   primary: "btn-outline btn-primary",
-  secondary: "btn-outline btn-secondary",
+  secondary: "btn-outline btn-neutral",
   danger: "btn-outline btn-error",
   ghost: "btn-outline btn-neutral",
 };
@@ -27,6 +31,21 @@ const sizes: Record<Size, string> = {
   md: "",
   lg: "btn-lg",
 };
+
+function getButtonClassName({
+  variant = "primary",
+  size = "md",
+  className = "",
+}: ButtonStyleProps): string {
+  return [
+    "btn",
+    variants[variant],
+    sizes[size],
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
 
 export function Button({
   variant = "primary",
@@ -40,26 +59,49 @@ export function Button({
 }: ButtonProps) {
   return (
     <button
-      className={[
-        "btn",
-        variants[variant],
-        sizes[size],
+      className={getButtonClassName({
+        variant,
+        size,
         className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
+      })}
       disabled={disabled || loading}
       type={type}
       {...props}
     >
       {loading && (
-        <span
-          aria-hidden="true"
-          className="loading loading-spinner loading-sm"
-        />
+        <span aria-hidden="true" className="loading loading-spinner loading-sm" />
       )}
-
       {children}
     </button>
+  );
+}
+
+type LinkButtonProps = LinkProps &
+  Omit<
+    AnchorHTMLAttributes<HTMLAnchorElement>,
+    "href"
+  > &
+  ButtonStyleProps;
+
+export function LinkButton({
+  variant = "primary",
+  size = "md",
+  className = "",
+  children,
+  href,
+  ...props
+}: LinkButtonProps) {
+  return (
+    <Link
+      className={getButtonClassName({
+        variant,
+        size,
+        className,
+      })}
+      href={href}
+      {...props}
+    >
+      {children}
+    </Link>
   );
 }

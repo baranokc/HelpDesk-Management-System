@@ -1,9 +1,13 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '@/src/context/AuthContext'; 
+import {
+  Button,
+  LinkButton,
+} from '@/src/components/ui/Button';
+import { authService } from '@/src/services/authService';
 
 export default function TicketsLayout({
   children,
@@ -12,19 +16,24 @@ export default function TicketsLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  
- 
-  const { isAuthenticated, loading, logout } = useAuth();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    
-    if (!loading && !isAuthenticated) {
-      router.push('/login');
-    }
-  }, [loading, isAuthenticated, router]);
+    const token = authService.getToken();
 
- 
-  if (loading || !isAuthenticated) {
+    if (!token) {
+      router.push('/login');
+    } else {
+      setIsAuthenticated(true);
+    }
+  }, [router]);
+
+  const handleLogout = () => {
+    authService.logout();
+    router.push('/login');
+  };
+
+  if (!isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-2">
@@ -46,7 +55,7 @@ export default function TicketsLayout({
           <div className="flex-1">
             <Link
               href="/tickets"
-              className="btn btn-ghost text-xl normal-case font-bold gap-2 text-slate-900 hover:bg-slate-100"
+              className="inline-flex items-center gap-2 text-xl font-bold text-slate-900"
             >
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-content font-black text-sm">
                 HD
@@ -57,37 +66,43 @@ export default function TicketsLayout({
 
           {/* Navigation Links */}
           <div className="hidden md:flex items-center gap-2 mr-4">
-            <Link
+            <LinkButton
               href="/tickets"
-              className={`btn btn-sm text-sm font-medium normal-case ${
+              size="sm"
+              variant={
                 pathname === '/tickets'
-                  ? 'btn-primary text-white'
-                  : 'btn-ghost text-slate-600 hover:bg-slate-100'
-              }`}
+                  ? 'primary'
+                  : 'secondary'
+              }
+              className="text-sm font-medium normal-case"
             >
               All Tickets
-            </Link>
-            <Link
+            </LinkButton>
+
+            <LinkButton
               href="/tickets/new"
-              className={`btn btn-sm text-sm font-medium normal-case ${
+              size="sm"
+              variant={
                 pathname === '/tickets/new'
-                  ? 'btn-primary text-white'
-                  : 'btn-ghost text-slate-600 hover:bg-slate-100'
-              }`}
+                  ? 'primary'
+                  : 'secondary'
+              }
+              className="text-sm font-medium normal-case"
             >
               Create Ticket
-            </Link>
+            </LinkButton>
           </div>
 
           {/* User Actions */}
           <div className="flex-none gap-2">
-            {/* 🚀 Logout fonksiyonunu direkt context'ten çağırdık */}
-            <button
-              onClick={logout}
-              className="btn btn-outline btn-error btn-sm font-medium text-xs normal-case"
+            <Button
+              onClick={handleLogout}
+              size="sm"
+              variant="danger"
+              className="text-xs font-medium normal-case"
             >
               Sign Out
-            </button>
+            </Button>
           </div>
         </div>
       </header>

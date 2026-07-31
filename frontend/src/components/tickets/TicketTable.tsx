@@ -2,6 +2,7 @@ import Link from "next/link";
 import { TicketListDto } from "@/src/types/ticket";
 import { EmptyState } from "@/src/components/ui/EmptyState";
 import { TicketStatusBadge } from "./TicketStatusBadge";
+import { TicketPriorityBadge } from "./TicketPriorityBadge";
 
 export function TicketTable({ tickets }: { tickets: TicketListDto[] }) {
   if (tickets.length === 0) {
@@ -44,7 +45,9 @@ export function TicketTable({ tickets }: { tickets: TicketListDto[] }) {
                 <TicketStatusBadge status={ticket.statusName} />
               </td>
               <td>
-                {ticket.priorityName}
+                <TicketPriorityBadge
+                  priority={ticket.priorityName}
+                />
               </td>
               <td>
                 {ticket.categoryName}

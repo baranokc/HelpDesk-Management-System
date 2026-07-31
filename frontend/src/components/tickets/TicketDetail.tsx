@@ -2,6 +2,7 @@ import { TicketDetailDto } from "@/src/types/ticket";
 import { Badge } from "@/src/components/ui/Badge";
 import { Card } from "@/src/components/ui/Card";
 import { TicketStatusBadge } from "./TicketStatusBadge";
+import { TicketPriorityBadge } from "./TicketPriorityBadge";
 
 function DetailItem({
   label,
@@ -32,7 +33,7 @@ export function TicketDetail({ ticket }: { ticket: TicketDetailDto }) {
               {ticket.ticketNumber}
             </span>
             <TicketStatusBadge status={ticket.statusName} />
-            <Badge tone="purple">{ticket.priorityName}</Badge>
+            <TicketPriorityBadge priority={ticket.priorityName}/>
           </div>
           <h1 className="mt-2 text-2xl font-bold">
             {ticket.ticketTitle}

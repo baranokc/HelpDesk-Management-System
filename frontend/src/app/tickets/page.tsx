@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ticketService } from '@/src/services/ticketService';
 import { TicketListDto } from '@/src/types/ticket';
+import { TicketStatusBadge } from "@/src/components/tickets/TicketStatusBadge";
+import { TicketPriorityBadge } from "@/src/components/tickets/TicketPriorityBadge";
 
 export default function TicketsPage() {
   const [tickets, setTickets] = useState<TicketListDto[]>([]);
@@ -40,37 +42,6 @@ export default function TicketsPage() {
 
     return matchesSearch && matchesStatus;
   });
-
-  const getStatusBadgeClass = (statusName: string) => {
-    const status = statusName?.toLowerCase() || '';
-    if (status.includes('open') || status.includes('açık')) {
-      return 'badge-info';
-    }
-    if (status.includes('progress') || status.includes('devam')) {
-      return 'badge-warning';
-    }
-    if (status.includes('resolved') || status.includes('çözüldü')) {
-      return 'badge-success text-white';
-    }
-    if (status.includes('closed') || status.includes('kapatıldı')) {
-      return 'badge-neutral';
-    }
-    return 'badge-ghost';
-  };
-
-  const getPriorityBadgeClass = (priortyName: string) => {
-    const priority = priortyName?.toLowerCase() || '';
-    if (priority.includes('critical') || priority.includes('kritik')) {
-      return 'badge-error text-white font-bold';
-    }
-    if (priority.includes('high') || priority.includes('yüksek')) {
-      return 'badge-warning font-semibold';
-    }
-    if (priority.includes('medium') || priority.includes('orta')) {
-      return 'badge-info font-medium';
-    }
-    return 'badge-ghost';
-  };
 
   return (
     <div className="space-y-6">
@@ -165,34 +136,44 @@ export default function TicketsPage() {
                 {/* Table Body */}
                 <tbody className="divide-y divide-slate-100 text-sm">
                   {filteredTickets.map((ticket) => (
-                    <tr key={ticket.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="font-mono text-xs text-slate-500 font-semibold">
+                    <tr
+                      key={ticket.id}
+                      className="transition-colors hover:bg-slate-50/80"
+                    >
+                      <td className="font-mono text-xs font-semibold text-slate-500">
                         {ticket.ticketNumber}
                       </td>
+
                       <td className="font-medium text-slate-900">
                         {ticket.ticketTitle}
                       </td>
+
                       <td className="text-slate-600">
                         {ticket.categoryName}
+
                         {ticket.subcategoryName && (
-                          <span className="text-xs text-slate-400 block">
+                          <span className="block text-xs text-slate-400">
                             {ticket.subcategoryName}
                           </span>
                         )}
                       </td>
+
                       <td>
-                        <span className={`badge ${getStatusBadgeClass(ticket.statusName)} gap-1`}>
-                          {ticket.statusName}
-                        </span>
+                        <TicketStatusBadge
+                          status={ticket.statusName}
+                        />
                       </td>
+
                       <td>
-                        <span className={`badge ${getPriorityBadgeClass(ticket.priorityName)}`}>
-                          {ticket.priorityName}
-                        </span>
+                        <TicketPriorityBadge
+                          priority={ticket.priorityName}
+                        />
                       </td>
+
                       <td className="text-slate-600">
                         {ticket.createdByName}
                       </td>
+
                       <td className="text-right">
                         <Link
                           href={`/tickets/${ticket.id}`}
