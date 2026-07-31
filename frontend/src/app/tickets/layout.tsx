@@ -1,13 +1,11 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import Link from 'next/link';
-import {
-  Button,
-  LinkButton,
-} from '@/src/components/ui/Button';
-import { authService } from '@/src/services/authService';
+import { useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
+import { Button, LinkButton } from "@/src/components/ui/Button";
+import { useAuth } from "@/src/context/AuthContext";
+import { getTicketViewLabel } from "@/src/lib/ticketPermissions";
 
 export default function TicketsLayout({
   children,
@@ -16,24 +14,20 @@ export default function TicketsLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { user, isAuthenticated, loading, logout } = useAuth();
+  const viewLabel = getTicketViewLabel(user?.role);
 
   useEffect(() => {
-    const token = authService.getToken();
-
-    if (!token) {
-      router.push('/login');
-    } else {
-      setIsAuthenticated(true);
+    if (!loading && !isAuthenticated) {
+      router.replace("/login");
     }
-  }, [router]);
+  }, [isAuthenticated, loading, router]);
 
   const handleLogout = () => {
-    authService.logout();
-    router.push('/login');
+    logout();
   };
 
-  if (!isAuthenticated) {
+  if (loading || !isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-2">
@@ -69,24 +63,16 @@ export default function TicketsLayout({
             <LinkButton
               href="/tickets"
               size="sm"
-              variant={
-                pathname === '/tickets'
-                  ? 'primary'
-                  : 'secondary'
-              }
+              variant={pathname === "/tickets" ? "primary" : "secondary"}
               className="text-sm font-medium normal-case"
             >
-              All Tickets
+              {viewLabel.navigationLabel}
             </LinkButton>
 
             <LinkButton
               href="/tickets/new"
               size="sm"
-              variant={
-                pathname === '/tickets/new'
-                  ? 'primary'
-                  : 'secondary'
-              }
+              variant={pathname === "/tickets/new" ? "primary" : "secondary"}
               className="text-sm font-medium normal-case"
             >
               Create Ticket
