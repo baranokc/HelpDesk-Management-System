@@ -15,6 +15,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   loading: boolean;
+  login: (token: string) => void;
   logout: () => void;
 }
 
@@ -22,6 +23,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   isAuthenticated: false,
   loading: true,
+  login: () => {},
   logout: () => {},
 });
 
@@ -29,9 +31,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const token = authService.getToken();
-
+  const processToken = (token: string) => {
     if (token && !isTokenExpired(token)) {
       const payload = decodeJwt(token);
       if (payload) {
@@ -47,12 +47,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           role: role || 'User',
         });
       }
-    } else if (token) {
+    } else {
       authService.logout();
+      setUser(null);
     }
+  };
 
+  useEffect(() => {
+    const token = authService.getToken();
+    if (token) {
+      processToken(token);
+    }
     setLoading(false);
   }, []);
+
+  const login = (token: string) => {
+    processToken(token);
+  };
 
   const logout = () => {
     authService.logout();
@@ -66,6 +77,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         user,
         isAuthenticated: !!user,
         loading,
+        login,
         logout,
       }}
     >
