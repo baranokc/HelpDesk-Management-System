@@ -11,11 +11,12 @@ function DetailItem({
   value?: string | null;
 }) {
   return (
-    <div className="flex flex-col border-b border-base-200 py-3 last:border-0 dark:border-slate-700">
-      <dt className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+    <div className="flex flex-col border-b border-slate-200 py-3 last:border-0">
+      <dt className="text-xs font-bold uppercase tracking-wider text-slate-500">
         {label}
       </dt>
-      <dd className="mt-1 text-sm font-medium text-slate-900 dark:text-slate-100">
+      {/* Yazıları simsiyah ve bold yaparak okunurluğu maksimuma çıkardık */}
+      <dd className="mt-1 text-sm font-semibold text-slate-900">
         {value || "—"}
       </dd>
     </div>
@@ -26,7 +27,7 @@ export function TicketHeader({ ticket }: { ticket: TicketDetailDto }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        <span className="rounded-md bg-blue-50 px-2.5 py-1 text-sm font-bold tracking-wide text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+        <span className="rounded-md bg-blue-100 px-2.5 py-1 text-sm font-bold tracking-wide text-blue-700">
           #{ticket.ticketNumber}
         </span>
         <TicketStatusBadge status={ticket.statusName} />
@@ -34,17 +35,18 @@ export function TicketHeader({ ticket }: { ticket: TicketDetailDto }) {
       </div>
 
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
+        {/* Ana başlık artık kapkara (text-slate-900) ve tam okunuyor */}
+        <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
           {ticket.ticketTitle}
         </h1>
         {ticket.ticketDescription && (
-          <p className="mt-2 text-base text-slate-500 dark:text-slate-400">
+          <p className="mt-2 text-base font-medium text-slate-600">
             {ticket.ticketDescription}
           </p>
         )}
       </div>
 
-      <div className="text-xs text-slate-400">
+      <div className="text-xs font-medium text-slate-500">
         {new Intl.DateTimeFormat("tr-TR", {
           dateStyle: "long",
           timeStyle: "short",
@@ -56,9 +58,10 @@ export function TicketHeader({ ticket }: { ticket: TicketDetailDto }) {
 
 export function TicketSubject({ ticket }: { ticket: TicketDetailDto }) {
   return (
-    <Card className="shadow-sm" title="Detailed explanation">
-      <div className="prose prose-sm max-w-none dark:prose-invert">
-        <p className="whitespace-pre-wrap leading-relaxed text-slate-700 dark:text-slate-300">
+    <Card className="shadow-sm border border-slate-200" title="Detailed explanation">
+      <div className="prose prose-sm max-w-none">
+        {/* Detaylı açıklama metni net koyu gri yapıldı */}
+        <p className="whitespace-pre-wrap leading-relaxed text-slate-800 font-medium">
           {ticket.subject}
         </p>
       </div>
@@ -68,7 +71,7 @@ export function TicketSubject({ ticket }: { ticket: TicketDetailDto }) {
 
 export function TicketMetadata({ ticket }: { ticket: TicketDetailDto }) {
   return (
-    <Card className="shadow-sm" title="Ticket information">
+    <Card className="shadow-sm border border-slate-200" title="Ticket information">
       <dl className="flex flex-col">
         <DetailItem label="Created by" value={ticket.createdByName} />
         <DetailItem label="Assigned team" value={ticket.teamName} />

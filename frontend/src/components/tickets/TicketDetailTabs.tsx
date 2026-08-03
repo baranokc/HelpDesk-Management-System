@@ -27,19 +27,19 @@ export function TicketDetailTabs({
   const tabs: TabItem<TicketTab>[] = [
     {
       id: "comments",
-      label: "Yorumlar",
+      label: "Comments",
       content: comments,
       badge: commentCount,
     },
     {
       id: "attachments",
-      label: "Dosyalar",
+      label: "Attachments",
       content: attachments,
       badge: attachmentCount,
     },
     {
       id: "history",
-      label: "Geçmiş",
+      label: "History",
       content: history,
     },
   ];
