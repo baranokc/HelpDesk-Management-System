@@ -5,7 +5,7 @@ namespace backend.Services.Ticket;
 
 public interface ITicketService
 {
-    Task<PagedResultDto<TicketListDto>> GetTicketAsync(
+    Task<TicketPagedResultDto> GetTicketAsync(
         TicketFilterDto filter,
         Guid currentUserId,
         string currentUserRole,

@@ -35,8 +35,16 @@ public class TicketCommentService : ITicketCommentService
         TicketCommentCreateDto dto,
         Guid userId,
         bool canManageAll,
-        CancellationToken cancellationToken = default)    {
-        if (!await _db.Tickets.AnyAsync(x => x.Id == ticketId && !x.IsDeleted, cancellationToken)) return null;
+        CancellationToken cancellationToken = default)
+    {
+        var ticket = await _db.Tickets
+            .Include(x => x.Status)
+            .SingleOrDefaultAsync(
+                x => x.Id == ticketId && !x.IsDeleted,
+                cancellationToken);
+
+        if (ticket is null) return null;
+
         var user = await _db.Users.AsNoTracking().SingleOrDefaultAsync(x => x.Id == userId, cancellationToken)
             ?? throw new InvalidOperationException("Comment owner was not found.");
         var entity = new Entities.TicketComment
@@ -47,7 +55,56 @@ public class TicketCommentService : ITicketCommentService
             IsInternal = canManageAll && dto.IsInternal,
             CreatedAt = DateTime.UtcNow
         };
+
         _db.TicketComments.Add(entity);
+
+        var isAssignedTeamMember =
+            ticket.AssignedToId.HasValue &&
+            ticket.AssignedToId.Value == userId;
+
+        var keepsCurrentStatus =
+            ticket.Status.Name.Equals(
+                "On Hold",
+                StringComparison.OrdinalIgnoreCase) ||
+            ticket.Status.Name.Equals(
+                "Resolved",
+                StringComparison.OrdinalIgnoreCase) ||
+            ticket.Status.IsClosed ||
+            ticket.ResolvedAt.HasValue ||
+            ticket.ClosedAt.HasValue;
+
+        if (isAssignedTeamMember &&
+            !entity.IsInternal &&
+            !keepsCurrentStatus &&
+            !ticket.Status.Name.Equals(
+                "Waiting for User",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            var waitingForUserStatus = await _db.TicketStatuses
+                .SingleOrDefaultAsync(
+                    status =>
+                        status.Name == "Waiting for User" &&
+                        status.IsActive,
+                    cancellationToken)
+                ?? throw new InvalidOperationException(
+                    "The active Waiting for User status was not found.");
+
+            ticket.StatusId = waitingForUserStatus.Id;
+
+            _db.TicketHistories.Add(new Entities.TicketHistory
+            {
+                TicketId = ticket.Id,
+                ActionType = Entities.TicketHistoryActionType.StatusChanged,
+                FieldName = "Status",
+                OldValue = ticket.Status.Name,
+                NewValue = waitingForUserStatus.Name,
+                Description =
+                    "Automatically changed after the assigned team member replied.",
+                ChangedById = userId,
+                ChangedAt = entity.CreatedAt
+            });
+        }
+
         await _db.SaveChangesAsync(cancellationToken);
         var attachments = await _attachmentService.AddCommentAttachmentsAsync(ticketId, entity.Id, dto.Attachments, userId, cancellationToken);
         await _notificationService.NotifyCommentAddedAsync(

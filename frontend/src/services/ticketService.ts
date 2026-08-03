@@ -1,7 +1,6 @@
 import { api } from "../lib/api";
-import type { PagedResultDto } from "@/src/types/common";
 import type {
-  TicketListDto,
+  TicketPagedResultDto,
   TicketDetailDto,
   TicketCreateDto,
   TicketUpdateDto,
@@ -12,8 +11,8 @@ import type {
 export const ticketService = {
   getAll: async (
     filterDto?: TicketFilterDto,
-  ): Promise<PagedResultDto<TicketListDto>> => {
-    const response = await api.get<PagedResultDto<TicketListDto>>("/tickets", {
+  ): Promise<TicketPagedResultDto> => {
+    const response = await api.get<TicketPagedResultDto>("/tickets", {
       params: filterDto,
     });
 

@@ -1,6 +1,5 @@
 using backend.Data;
 using backend.Constants;
-using backend.DTO.Common;
 using backend.DTO.Ticket;
 using Microsoft.EntityFrameworkCore;
 using backend.Services.TicketAttachment;
@@ -24,7 +23,7 @@ public class TicketService : ITicketService
         _notificationService = notificationService;
     }
 
-    public async Task<PagedResultDto<TicketListDto>> GetTicketAsync(
+    public async Task<TicketPagedResultDto> GetTicketAsync(
         TicketFilterDto filter,
         Guid currentUserId,
         string currentUserRole,
@@ -85,10 +84,38 @@ public class TicketService : ITicketService
 
         var pageNumber = Math.Max(filter.PageNumber, 1);
         var pageSize = Math.Clamp(filter.PageSize, 1, 100);
-        var totalCount = await query.CountAsync(cancellationToken);
+        var statusCounts = await query
+            .GroupBy(t => t.Status.Name)
+            .Select(group => new
+            {
+                StatusName = group.Key,
+                Count = group.Count()
+            })
+            .ToListAsync(cancellationToken);
+
+        int CountStatuses(params string[] names)
+        {
+            return statusCounts
+                .Where(status => names.Contains(
+                    status.StatusName,
+                    StringComparer.OrdinalIgnoreCase))
+                .Sum(status => status.Count);
+        }
+
+        var totalCount = statusCounts.Sum(status => status.Count);
+        var openCount = CountStatuses("Open", "New");
+        var inProgressCount = CountStatuses(
+            "In Progress",
+            "On Hold",
+            "Waiting for User");
+        var completedCount = CountStatuses(
+            "Resolved",
+            "Closed",
+            "Cancelled");
 
         var items = await query
-            .OrderByDescending(t => t.CreatedAt)
+            .OrderByDescending(t => t.TicketNumber)
+            .ThenByDescending(t => t.CreatedAt)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .Select(t => new TicketListDto
@@ -112,12 +139,15 @@ public class TicketService : ITicketService
             ? 0
             : (int)Math.Ceiling(totalCount / (double)pageSize);
 
-        return new PagedResultDto<TicketListDto>(
+        return new TicketPagedResultDto(
             items,
             pageNumber,
             pageSize,
             totalCount,
-            totalPages);
+            totalPages,
+            openCount,
+            inProgressCount,
+            completedCount);
     }
 
     public async Task<TicketDetailDto?> GetTicketByAsync(
@@ -359,9 +389,17 @@ public class TicketService : ITicketService
         }
 
         
-        var initialStatus = await _db.TicketStatuses.SingleOrDefaultAsync(s => s.IsActive && s.IsInitial, cancellationToken)
+        var initialStatus = await _db.TicketStatuses.SingleOrDefaultAsync(
+            s => s.IsActive && s.IsInitial,
+            cancellationToken)
             ?? throw new InvalidOperationException(
                 "No active initial status was found.");
+
+        var inProgressStatus = await _db.TicketStatuses.SingleOrDefaultAsync(
+            s => s.IsActive && s.Name == "In Progress",
+            cancellationToken)
+            ?? throw new InvalidOperationException(
+                "The active In Progress status was not found.");
 
         var rawSequenceValue = await _db.Database
             .SqlQueryRaw<long>(
@@ -378,7 +416,7 @@ public class TicketService : ITicketService
             TeamId = category.DefaultTeamId,
             CategoryId = dto.CategoryId,
             SubcategoryId = dto.SubcategoryId,
-            StatusId = initialStatus.Id,
+            StatusId = inProgressStatus.Id,
             PriorityId = dto.PriorityId,
             ImpactLevelId = dto.ImpactLevelId,
             UrgencyLevelId = dto.UrgencyLevelId,
@@ -386,6 +424,18 @@ public class TicketService : ITicketService
         };
 
         _db.Tickets.Add(ticket);
+        _db.TicketHistories.Add(new Entities.TicketHistory
+        {
+            TicketId = ticket.Id,
+            ActionType = Entities.TicketHistoryActionType.StatusChanged,
+            FieldName = "Status",
+            OldValue = initialStatus.Name,
+            NewValue = inProgressStatus.Name,
+            Description =
+                "Automatically changed because the ticket was assigned to a team.",
+            ChangedById = createdBy,
+            ChangedAt = ticket.CreatedAt
+        });
         await _db.SaveChangesAsync(cancellationToken);
 
         if (dto.Attachments.Count > 0)

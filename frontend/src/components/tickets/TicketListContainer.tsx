@@ -8,8 +8,10 @@ import { useAuth } from "@/src/context/AuthContext";
 import { getApiErrorMessage } from "@/src/lib/api";
 import { getTicketViewLabel } from "@/src/lib/ticketPermissions";
 import { ticketService } from "@/src/services/ticketService";
-import type { PagedResultDto } from "@/src/types/common";
-import type { TicketFilterDto, TicketListDto } from "@/src/types/ticket";
+import type {
+  TicketFilterDto,
+  TicketPagedResultDto,
+} from "@/src/types/ticket";
 import { TicketFilters } from "./TicketFilterTabs";
 import { TicketPriorityBadge } from "./TicketPriorityBadge";
 import { TicketStatusBadge } from "./TicketStatusBadge";
@@ -22,7 +24,7 @@ const initialFilter: TicketFilterDto = {
 
 function createEmptyResult(
   filter: TicketFilterDto,
-): PagedResultDto<TicketListDto> {
+): TicketPagedResultDto {
   return {
     items: [],
     pageNumber: filter.pageNumber ?? 1,
@@ -31,13 +33,16 @@ function createEmptyResult(
     totalPages: 0,
     hasPreviousPage: false,
     hasNextPage: false,
+    openCount: 0,
+    inProgressCount: 0,
+    completedCount: 0,
   };
 }
 
 export function TicketListContainer() {
   const { user } = useAuth();
   const [filter, setFilter] = useState<TicketFilterDto>(initialFilter);
-  const [result, setResult] = useState<PagedResultDto<TicketListDto>>(() =>
+  const [result, setResult] = useState<TicketPagedResultDto>(() =>
     createEmptyResult(initialFilter),
   );
   const [loading, setLoading] = useState(true);
@@ -95,31 +100,6 @@ export function TicketListContainer() {
       pageNumber,
     }));
   };
-
-
-  const openCount = result.items.filter((t) => {
-    const status = t.statusName?.toLowerCase() || "";
-    return status === "open";
-  }).length;
-
-  const inProgressCount = result.items.filter((t) => {
-    const status = t.statusName?.toLowerCase() || "";
-    return (
-      status === "in progress" ||
-      status === "on hold" ||
-      status === "waiting for user"
-    );
-  }).length;
-
-  const completedCount = result.items.filter((t) => {
-    const status = t.statusName?.toLowerCase() || "";
-    return (
-      status === "resolved" ||
-      status === "closed" ||
-      status === "cancelled"
-    );
-  }).length;
-
   const hasActiveFilters = Boolean(
     filter.search ||
       filter.statusId ||
@@ -149,9 +129,9 @@ export function TicketListContainer() {
       {/* KPI / İÇERİK KARTLARI */}
       <TicketStatsCards
         loading={loading}
-        openCount={openCount}
-        inProgressCount={inProgressCount}
-        completedCount={completedCount}
+        openCount={result.openCount}
+        inProgressCount={result.inProgressCount}
+        completedCount={result.completedCount}
         totalCount={result.totalCount}
       />
 
