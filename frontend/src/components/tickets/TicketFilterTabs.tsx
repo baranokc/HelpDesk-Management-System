@@ -149,7 +149,7 @@ export function TicketFilters({ value, onApply }: TicketFiltersProps) {
           { value: 50, label: "50 tickets" },
           { value: 100, label: "100 tickets" },
         ]}
-        placeholder="25 tickets"
+        placeholder=""
         value={form.pageSize ?? 25}
       />
       <Select
