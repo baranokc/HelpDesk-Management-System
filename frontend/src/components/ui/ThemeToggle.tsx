@@ -11,6 +11,18 @@ export function ThemeToggle() {
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    if (!mounted || !resolvedTheme) return;
+
+    if (resolvedTheme === "dark") {
+      document.documentElement.classList.add("dark");
+      document.documentElement.setAttribute("data-theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      document.documentElement.setAttribute("data-theme", "light");
+    }
+  }, [resolvedTheme, mounted]);
+
   if (!mounted) {
     return <div className="w-8 h-8" />;
   }
@@ -18,16 +30,7 @@ export function ThemeToggle() {
   const isDark = resolvedTheme === "dark";
 
   const toggleTheme = () => {
-    const nextTheme = isDark ? "light" : "dark";
-    setTheme(nextTheme);
-
-    if (nextTheme === "dark") {
-      document.documentElement.classList.add("dark");
-      document.documentElement.setAttribute("data-theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      document.documentElement.setAttribute("data-theme", "light");
-    }
+    setTheme(isDark ? "light" : "dark");
   };
 
   return (
