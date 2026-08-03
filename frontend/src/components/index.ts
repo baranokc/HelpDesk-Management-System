@@ -16,6 +16,8 @@ export * from "./ui/Skeleton";
 export * from "./ui/Tabs";
 export * from "./ui/Textarea";
 export * from "./ui/Toast";
+export * from "./ui/NotificationBell";
+
 
 export * from "./tickets/AttachmentUploader";
 export * from "./tickets/CommentForm";

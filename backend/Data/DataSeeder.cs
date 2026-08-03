@@ -921,7 +921,7 @@ public static class DataSeeder
                 ["Hardware"] = "Hardware Support",
                 ["Network / Internet"] = "Network Support",
                 ["Email / Account Access"] = "Service Desk",
-                ["Printer / Peripheral"] = "Service Desk",
+                ["Printer / Peripheral"] = "Hardware Support",
                 ["Access Request"] = "Service Desk",
                 ["Other"] = "Service Desk"
             };

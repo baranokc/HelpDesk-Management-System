@@ -11,6 +11,8 @@ using backend.Services.TicketStatus;
 using backend.Services.TicketUnassignment;
 using backend.Services.TicketAssignment;
 using backend.Services.Lookup;
+using backend.Hubs;
+using backend.Services.Notification;
 using Microsoft.OpenApi;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -40,6 +42,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 
 builder.Services.Configure<FormOptions>(options =>
 {
@@ -82,6 +85,7 @@ builder.Services.AddScoped<ITicketAttachmentService, TicketAttachmentService>();
 builder.Services.AddScoped<ITicketUnassignmentService, TicketUnassignmentService>();
 builder.Services.AddScoped<ITicketResolutionService, TicketResolutionService>();
 builder.Services.AddScoped<ITicketHistoryService, TicketHistoryService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = Encoding.UTF8.GetBytes(jwtSettings["Secret"]!);
@@ -102,6 +106,23 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = jwtSettings["Issuer"],
         ValidAudience = jwtSettings["Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(secretKey)
+    };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+
+            if (!string.IsNullOrWhiteSpace(accessToken) &&
+                path.StartsWithSegments("/hubs/notifications"))
+            {
+                context.Token = accessToken;
+            }
+
+            return Task.CompletedTask;
+        }
     };
 });
 
@@ -130,5 +151,6 @@ app.UseAuthorization();
 
 
 app.MapControllers();
+app.MapHub<NotificationHub>("/hubs/notifications");
 
 app.Run();

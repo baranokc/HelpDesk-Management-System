@@ -303,12 +303,21 @@ public class TicketService : ITicketService
             .Select(item => new
             {
                 item.Id,
-                item.DefaultTeamId
+                item.DefaultTeamId,
+                HasActiveDefaultTeam =
+                    item.DefaultTeam != null && item.DefaultTeam.IsActive
             })
             .SingleOrDefaultAsync(cancellationToken);
 
         if (category is null)
             throw new ArgumentException("Selected category was not found.");
+
+        if (!category.DefaultTeamId.HasValue ||
+            !category.HasActiveDefaultTeam)
+        {
+            throw new InvalidOperationException(
+                "The selected category is not assigned to an active support team.");
+        }
 
         var priorityExists = await _db.TicketPriorities
             .AnyAsync(
