@@ -110,7 +110,7 @@ export function TicketComments({
           <article className="chat chat-start" key={comment.id}>
             <div className="chat-header mb-1.5 flex items-center gap-2">
               {/* KULLANICI ADI SİMSİYAH (text-slate-900) */}
-              <span className="font-bold text-slate-900">
+              <span className="font-bold text-slate-900 dark:text-white">
                 {comment.createdByName}
               </span>
 

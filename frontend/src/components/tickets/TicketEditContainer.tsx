@@ -26,6 +26,9 @@ export function TicketEditContainer({ ticketId }: TicketEditContainerProps) {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
 
+  const secondaryBtnStyle =
+    "dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 hover:!bg-slate-900 hover:!text-white dark:hover:!bg-white dark:hover:!text-slate-900 transition-all shadow-sm";
+
   const loadTicket = useCallback(async () => {
     setLoading(true);
     setLoadError(null);
@@ -76,7 +79,7 @@ export function TicketEditContainer({ ticketId }: TicketEditContainerProps) {
     return (
       <div className="mx-auto max-w-3xl space-y-4">
         <Alert variant="error">{loadError ?? "Ticket not found."}</Alert>
-        <LinkButton href="/tickets" variant="secondary">
+        <LinkButton href="/tickets" variant="secondary" className={secondaryBtnStyle}>
           Back to tickets
         </LinkButton>
       </div>
@@ -89,7 +92,7 @@ export function TicketEditContainer({ ticketId }: TicketEditContainerProps) {
         <Alert variant="error">
           You do not have permission to edit this ticket.
         </Alert>
-        <LinkButton href="/tickets" variant="secondary">
+        <LinkButton href="/tickets" variant="secondary" className={secondaryBtnStyle}>
           Back to tickets
         </LinkButton>
       </div>
@@ -99,12 +102,18 @@ export function TicketEditContainer({ ticketId }: TicketEditContainerProps) {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div className="flex justify-end">
-        <LinkButton href={`/tickets/${ticketId}`} size="sm" variant="secondary">
+        <LinkButton
+          href={`/tickets/${ticketId}`}
+          size="sm"
+          variant="secondary"
+          className={secondaryBtnStyle}
+        >
           Cancel
         </LinkButton>
       </div>
 
       <Card
+        className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 transition-colors shadow-sm"
         description={`${ticket.ticketNumber} — update the ticket details below.`}
         title="Edit ticket"
       >
