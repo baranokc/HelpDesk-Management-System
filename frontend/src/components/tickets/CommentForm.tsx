@@ -1,105 +1,96 @@
 "use client";
 
 import { useState } from "react";
-import type { SubmitEvent } from "react";
 import { Button } from "@/src/components/ui/Button";
-import { Checkbox } from "@/src/components/ui/Checkbox";
-import { FileInput } from "@/src/components/ui/FileInput";
-import { Textarea } from "@/src/components/ui/Textarea";
-import { getFormErrors, type FormErrors } from "@/src/lib/validation";
-import { ticketCommentCreateSchema } from "@/src/schemas/commentSchemas";
 import type { TicketCommentCreateDto } from "@/src/types/ticket-comment";
 
 interface CommentFormProps {
-  canCreateInternal?: boolean;
-  loading?: boolean;
   onSubmit: (dto: TicketCommentCreateDto) => Promise<void>;
+  loading?: boolean;
+  canCreateInternal?: boolean;
 }
 
 export function CommentForm({
-  canCreateInternal = false,
-  loading = false,
   onSubmit,
+  loading = false,
+  canCreateInternal = false,
 }: CommentFormProps) {
-  const [comment, setComment] = useState("");
-  const [attachments, setAttachments] = useState<File[]>([]);
+  const [commentText, setCommentText] = useState("");
   const [isInternal, setIsInternal] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<FormErrors>({});
+  const [files, setFiles] = useState<FileList | null>(null);
 
-  const submit = async (event: SubmitEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!commentText.trim()) return;
 
-    const result = ticketCommentCreateSchema.safeParse({
-      comment,
-      attachments,
+    await onSubmit({
+      comment: commentText,
       isInternal,
+      attachments: files ? Array.from(files) : [],
     });
 
-    if (!result.success) {
-      setValidationErrors(getFormErrors(result.error));
-      return;
-    }
-
-    setValidationErrors({});
-
-    try {
-      await onSubmit(result.data);
-    } catch {
-      // The container shows the API error. Keep the form values for retrying.
-      return;
-    }
-
-    setComment("");
-    setAttachments([]);
+    setCommentText("");
     setIsInternal(false);
+    setFiles(null);
   };
 
   return (
-    <form className="space-y-4" noValidate onSubmit={submit}>
-      <Textarea
-        error={validationErrors.comment}
-        hint={`${comment.length}/1000 characters`}
-        label="New Comment"
-        maxLength={1000}
-        onChange={(event) => {
-          setComment(event.target.value);
-          setValidationErrors((current) => ({
-            ...current,
-            comment: undefined,
-          }));
-        }}
-        placeholder="Write your response..."
-        required
-        value={comment}
-      />
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-300">
+          New Comment
+        </label>
+        <textarea
+          rows={4}
+          value={commentText}
+          onChange={(e) => setCommentText(e.target.value)}
+          placeholder="Write your response..."
+          maxLength={1000}
+          required
+          className="w-full rounded-lg border border-slate-600 bg-slate-900 p-3 text-sm text-slate-100 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        />
+        <div className="mt-1 text-right text-xs text-slate-400">
+          {commentText.length}/1000 characters
+        </div>
+      </div>
 
-      <FileInput
-        accept=".jpg,.jpeg,.png,.pdf,.txt,.docx,.xlsx,.zip,.rar,.7z"
-        error={validationErrors.attachments}
-        files={attachments}
-        maxFileSizeMb={10}
-        onChange={(files) => {
-          setAttachments(files);
-          setValidationErrors((current) => ({
-            ...current,
-            attachments: undefined,
-          }));
-        }}
-      />
+      <div>
+        <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-300">
+          Files
+        </label>
+        <input
+          type="file"
+          multiple
+          onChange={(e) => setFiles(e.target.files)}
+          className="w-full text-sm text-slate-300 file:mr-4 file:rounded-md file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-blue-700"
+        />
+        <p className="mt-2.5 max-w-full break-words text-xs leading-relaxed text-slate-400">
+          Maximum 10 files; each file can be up to 10 MB. You can select files
+          together or add them in multiple selections.
+        </p>
+      </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
         {canCreateInternal ? (
-          <Checkbox
-            checked={isInternal}
-            label="Support staff only"
-            onChange={(event) => setIsInternal(event.target.checked)}
-          />
+          <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-200">
+            <input
+              type="checkbox"
+              checked={isInternal}
+              onChange={(e) => setIsInternal(e.target.checked)}
+              className="h-4 w-4 rounded border-slate-600 bg-slate-900 text-blue-600 focus:ring-blue-500"
+            />
+            <span>Support staff only</span>
+          </label>
         ) : (
-          <span />
+          <div />
         )}
 
-        <Button loading={loading} type="submit">
-          Add comment
+        <Button
+          type="submit"
+          variant="primary"
+          disabled={loading || !commentText.trim()}
+        >
+          {loading ? "Adding..." : "Add comment"}
         </Button>
       </div>
     </form>

@@ -242,20 +242,21 @@ export function TicketDetailContainer({
                     downloadingAttachmentId={downloadingAttachmentId}
                     onDownloadAttachment={handleDownloadAttachment}
                   />
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800/50">
-                    <h3 className="mb-4 text-sm font-semibold tracking-wide">
-                      Add a comment
-                    </h3>
-                    {commentError && (
-                      <div className="mb-4">
-                        <Alert variant="error">{commentError}</Alert>
-                      </div>
-                    )}
-                    <CommentForm
-                      canCreateInternal={canCreateInternal}
-                      loading={submittingComment}
-                      onSubmit={handleAddComment}
-                    />
+                 <div className="overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+                <h3 className="mb-4 text-sm font-bold text-slate-900 dark:text-white">
+          
+                Add a comment
+               </h3>
+              {commentError && (
+            <div className="mb-4">
+            <Alert variant="error">{commentError}</Alert>
+            </div>
+              )}
+              < CommentForm
+              canCreateInternal={canCreateInternal}
+              loading={submittingComment}
+              onSubmit={handleAddComment}
+                          />
                   </div>
                 </div>
               }
