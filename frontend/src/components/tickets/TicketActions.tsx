@@ -42,11 +42,22 @@ export function TicketActions({
   const [unassignmentReason, setUnassignmentReason] = useState("");
   const [keepTeamAssignment, setKeepTeamAssignment] = useState(false);
 
-  const isStaff = userRole === "Admin" || userRole === "SupportAgent";
-  const isAssigned = Boolean(ticket.assignedToId || ticket.teamId);
-  const normalizedStatus = ticket.statusName.trim().toLowerCase();
-  const canResolve =
-    isStaff && normalizedStatus !== "resolved" && normalizedStatus !== "closed";
+const canManageWorkflow =
+  userRole === "Admin" ||
+  userRole === "SupportAgent" ||
+  userRole === "TeamLeader";
+
+const canAssign =
+  userRole === "Admin" ||
+  userRole === "TeamLeader";
+
+const isAssigned = Boolean(ticket.assignedToId || ticket.teamId);
+const normalizedStatus = ticket.statusName.trim().toLowerCase();
+
+const canResolve =
+  canManageWorkflow &&
+  normalizedStatus !== "resolved" &&
+  normalizedStatus !== "closed";
 
   const secondaryBtnStyle =
     "dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 hover:!bg-slate-900 hover:!text-white dark:hover:!bg-white dark:hover:!text-slate-900 transition-all shadow-sm";
@@ -164,7 +175,7 @@ export function TicketActions({
             Update status
           </Button>
 
-          {isStaff && (
+          {canAssign && (
             <Button
               className={secondaryBtnStyle}
               onClick={() => openAction("assign")}
@@ -175,7 +186,7 @@ export function TicketActions({
             </Button>
           )}
 
-          {isStaff && isAssigned && (
+          {canAssign && isAssigned && (
             <Button
               onClick={() => openAction("unassign")}
               size="sm"

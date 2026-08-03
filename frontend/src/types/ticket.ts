@@ -1,3 +1,7 @@
+import type { PagedResultDto } from "./common";
+import type { TicketAttachmentDto } from "./ticket-attachment";
+import type { TicketCommentDto } from "./ticket-comment";
+
 export interface TicketListDto {
     id : string;
     ticketNumber : string;
@@ -10,8 +14,14 @@ export interface TicketListDto {
     assignedToName? : string | null;
     createdAt : string;
 }
-import { TicketCommentDto } from "./ticket-comment";
-import { TicketAttachmentDto } from './ticket-attachment';
+
+export interface TicketPagedResultDto
+  extends PagedResultDto<TicketListDto> {
+    openCount: number;
+    inProgressCount: number;
+    completedCount: number;
+}
+
 export interface TicketDetailDto {
     id : string;
     ticketNumber : string;

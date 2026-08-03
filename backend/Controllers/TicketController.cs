@@ -1,6 +1,5 @@
 using System.Security.Claims;
 using backend.Constants;
-using backend.DTO.Common;
 using backend.DTO.Ticket;
 using backend.Services.Ticket;
 using backend.Services.TicketAssignment;
@@ -56,7 +55,7 @@ public class TicketController : ControllerBase
 
     [HttpGet]
     [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.TeamLeader},{Roles.User}")]
-    [ProducesResponseType(typeof(PagedResultDto<TicketListDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(TicketPagedResultDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetTickets(
         [FromQuery] TicketFilterDto filter,
         CancellationToken cancellationToken)

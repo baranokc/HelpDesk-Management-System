@@ -1,6 +1,5 @@
 using backend.Data;
 using backend.Constants;
-using backend.DTO.Common;
 using backend.DTO.Ticket;
 using Microsoft.EntityFrameworkCore;
 using backend.Services.TicketAttachment;
@@ -24,7 +23,7 @@ public class TicketService : ITicketService
         _notificationService = notificationService;
     }
 
-    public async Task<PagedResultDto<TicketListDto>> GetTicketAsync(
+    public async Task<TicketPagedResultDto> GetTicketAsync(
         TicketFilterDto filter,
         Guid currentUserId,
         string currentUserRole,
@@ -85,7 +84,34 @@ public class TicketService : ITicketService
 
         var pageNumber = Math.Max(filter.PageNumber, 1);
         var pageSize = Math.Clamp(filter.PageSize, 1, 100);
-        var totalCount = await query.CountAsync(cancellationToken);
+        var statusCounts = await query
+            .GroupBy(t => t.Status.Name)
+            .Select(group => new
+            {
+                StatusName = group.Key,
+                Count = group.Count()
+            })
+            .ToListAsync(cancellationToken);
+
+        int CountStatuses(params string[] names)
+        {
+            return statusCounts
+                .Where(status => names.Contains(
+                    status.StatusName,
+                    StringComparer.OrdinalIgnoreCase))
+                .Sum(status => status.Count);
+        }
+
+        var totalCount = statusCounts.Sum(status => status.Count);
+        var openCount = CountStatuses("Open", "New");
+        var inProgressCount = CountStatuses(
+            "In Progress",
+            "On Hold",
+            "Waiting for User");
+        var completedCount = CountStatuses(
+            "Resolved",
+            "Closed",
+            "Cancelled");
 
         var items = await query
             .OrderByDescending(t => t.TicketNumber)
@@ -113,12 +139,15 @@ public class TicketService : ITicketService
             ? 0
             : (int)Math.Ceiling(totalCount / (double)pageSize);
 
-        return new PagedResultDto<TicketListDto>(
+        return new TicketPagedResultDto(
             items,
             pageNumber,
             pageSize,
             totalCount,
-            totalPages);
+            totalPages,
+            openCount,
+            inProgressCount,
+            completedCount);
     }
 
     public async Task<TicketDetailDto?> GetTicketByAsync(
