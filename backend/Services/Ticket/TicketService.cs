@@ -64,27 +64,18 @@ public class TicketService : ITicketService
             query = query.Where(t => t.ImpactLevelId == filter.ImpactLevelId.Value);
 
         if (filter.CreatedFrom.HasValue)
-        {
-            var createdFromUtc = DateTime.SpecifyKind(
-                filter.CreatedFrom.Value.Date,
-                DateTimeKind.Utc);
-            query = query.Where(t => t.CreatedAt >= createdFromUtc);
-        }
+            query = query.Where(t => t.CreatedAt >= filter.CreatedFrom.Value);
 
         if (filter.CreatedTo.HasValue)
-        {
-            var createdToExclusiveUtc = DateTime.SpecifyKind(
-                filter.CreatedTo.Value.Date.AddDays(1),
-                DateTimeKind.Utc);
-            query = query.Where(t => t.CreatedAt < createdToExclusiveUtc);
-        }
+            query = query.Where(t => t.CreatedAt <= filter.CreatedTo.Value);
 
         var pageNumber = Math.Max(filter.PageNumber, 1);
         var pageSize = Math.Clamp(filter.PageSize, 1, 100);
         var totalCount = await query.CountAsync(cancellationToken);
 
         var items = await query
-            .OrderByDescending(t => t.CreatedAt)
+            .OrderByDescending(t => t.TicketNumber)
+            .ThenByDescending(t => t.CreatedAt)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .Select(t => new TicketListDto
@@ -166,7 +157,6 @@ public class TicketService : ITicketService
                         ContentType = a.ContentType,
                         FileSize = a.FileSize,
                         DownloadUrl = a.FilePath,
-                        Description = a.Description,
                         CommentId = a.TicketCommentId,
                         UploadedById = a.UploaderId,
                         UploadedByName = a.Uploader.Name + " " + a.Uploader.LastName,
@@ -191,7 +181,6 @@ public class TicketService : ITicketService
                 ContentType = a.ContentType,
                 FileSize = a.FileSize,
                 DownloadUrl = a.FilePath,
-                Description = a.Description,
                 CommentId = a.TicketCommentId,
                 UploadedById = a.UploaderId,
                 UploadedByName =
