@@ -15,14 +15,28 @@ interface TicketCommentsProps {
   ) => Promise<void>;
   onEdit?: (comment: TicketCommentDto) => void;
   onDelete?: (comment: TicketCommentDto) => void;
+  canManage?: (comment: TicketCommentDto) => boolean;
+  canManageAttachment?: (attachment: TicketAttachmentDto) => boolean;
+
+  onEditAttachmentDescription?: (
+    attachment: TicketAttachmentDto,
+  ) => void;
+
+  onDeleteAttachment?: (
+    attachment: TicketAttachmentDto,
+  ) => void | Promise<void>;
 }
 
 export function TicketComments({
   comments,
   downloadingAttachmentId = null,
   onDownloadAttachment,
+  canManage,
+  canManageAttachment,
   onEdit,
   onDelete,
+  onEditAttachmentDescription,
+  onDeleteAttachment,
 }: TicketCommentsProps) {
   if (comments.length === 0) {
     return (
@@ -37,6 +51,7 @@ export function TicketComments({
     <div className="space-y-6">
       {comments.map((comment) => {
         const attachments = comment.attachments ?? [];
+        const showActions = canManage?.(comment) ?? false;
 
         return (
           <article className="chat chat-start" key={comment.id}>
@@ -54,7 +69,7 @@ export function TicketComments({
                 <Badge tone="amber">Internal comment</Badge>
               )}
 
-              {(onEdit || onDelete) && (
+              {showActions && (onEdit || onDelete) && (
                 <Dropdown
                   label="•••"
                   items={[
@@ -100,8 +115,11 @@ export function TicketComments({
 
                 <TicketAttachments
                   attachments={attachments}
+                  canManage={canManageAttachment}
                   downloadingAttachmentId={downloadingAttachmentId}
+                  onDelete={onDeleteAttachment}
                   onDownload={onDownloadAttachment}
+                  onEditDescription={onEditAttachmentDescription}
                 />
               </div>
             )}
