@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { LinkButton } from "@/src/components/ui/Button";
+import { NotificationBell } from "@/src/components/ui/NotificationBell";
 import { ThemeToggle } from "@/src/components/ui/ThemeToggle";
 import { useAuth } from "@/src/context/AuthContext";
 import { getTicketViewLabel } from "@/src/lib/ticketPermissions";
@@ -119,8 +120,8 @@ export default function TicketsLayout({
 
           {/* User Actions */}
           <div className="flex-none gap-3 flex items-center">
-            {/* Dark / Light Mode Toggle */}
-            <ThemeToggle />
+            {/* Notifications */}
+            <NotificationBell />
 
             {/* KULLANICI PROFİL MENÜSÜ */}
             <div className="dropdown dropdown-end">
@@ -223,6 +224,9 @@ export default function TicketsLayout({
                 </li>
               </ul>
             </div>
+
+            {/* Dark / Light Mode Toggle */}
+            <ThemeToggle />
           </div>
         </div>
       </header>

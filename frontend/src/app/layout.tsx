@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/src/context/AuthContext';
 import { ThemeProvider } from '@/src/components/providers/ThemeProvider';
+import { NotificationProvider } from '@/src/context/NotificationContext';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -26,7 +27,7 @@ export default function RootLayout({
             enableSystem={false}
             storageKey="helpdesk-theme"
           >
-            {children}
+            <NotificationProvider>{children}</NotificationProvider>
           </ThemeProvider>
         </AuthProvider>
       </body>
