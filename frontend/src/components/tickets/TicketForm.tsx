@@ -205,7 +205,7 @@ export function TicketForm({
         />
         <Input
           error={validationErrors.ticketDescription}
-          label="Short description"
+          label="Subject"
           maxLength={100}
           minLength={5}
           onChange={(event) => {

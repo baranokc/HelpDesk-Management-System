@@ -117,9 +117,6 @@ export function TicketListContainer() {
           <p className="text-sm text-slate-600">{viewLabel.description}</p>
         </div>
 
-        <Link className="btn btn-outline btn-primary" href="/tickets/new">
-          + Create New Ticket
-        </Link>
       </div>
 
       <div className="card border border-slate-200 bg-white shadow-sm">
