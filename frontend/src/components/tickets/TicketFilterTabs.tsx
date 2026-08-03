@@ -165,7 +165,9 @@ export function TicketFilters({ value, onApply }: TicketFiltersProps) {
         value={form.categoryId ?? ""}
       />
       <Button type="submit">Filter</Button>
-      <Button onClick={reset} type="button" variant="secondary">
+      <Button onClick={reset} type="button" variant="secondary"
+      className="dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 hover:!bg-slate-900 hover:!text-white dark:hover:!bg-white dark:hover:!text-slate-900 transition-all shadow-sm">
+        
         Clear
       </Button>
     </form>
