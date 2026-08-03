@@ -13,6 +13,7 @@ import type { TicketFilterDto, TicketListDto } from "@/src/types/ticket";
 import { TicketFilters } from "./TicketFilterTabs";
 import { TicketPriorityBadge } from "./TicketPriorityBadge";
 import { TicketStatusBadge } from "./TicketStatusBadge";
+import { TicketStatsCards } from "./TicketStatsCards"; // <--- BİLEŞEN IMPORT EDİLDİ
 
 const initialFilter: TicketFilterDto = {
   pageNumber: 1,
@@ -95,6 +96,30 @@ export function TicketListContainer() {
     }));
   };
 
+
+  const openCount = result.items.filter((t) => {
+    const status = t.statusName?.toLowerCase() || "";
+    return status === "open";
+  }).length;
+
+  const inProgressCount = result.items.filter((t) => {
+    const status = t.statusName?.toLowerCase() || "";
+    return (
+      status === "in progress" ||
+      status === "on hold" ||
+      status === "waiting for user"
+    );
+  }).length;
+
+  const completedCount = result.items.filter((t) => {
+    const status = t.statusName?.toLowerCase() || "";
+    return (
+      status === "resolved" ||
+      status === "closed" ||
+      status === "cancelled"
+    );
+  }).length;
+
   const hasActiveFilters = Boolean(
     filter.search ||
       filter.statusId ||
@@ -109,6 +134,7 @@ export function TicketListContainer() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
@@ -120,6 +146,16 @@ export function TicketListContainer() {
         </div>
       </div>
 
+      {/* KPI / İÇERİK KARTLARI */}
+      <TicketStatsCards
+        loading={loading}
+        openCount={openCount}
+        inProgressCount={inProgressCount}
+        completedCount={completedCount}
+        totalCount={result.totalCount}
+      />
+
+      {/* Filtre Kartı */}
       <div className="card border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-colors">
         <div className="card-body p-4">
           <TicketFilters onApply={applyFilters} value={filter} />
