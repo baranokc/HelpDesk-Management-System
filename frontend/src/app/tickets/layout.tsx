@@ -16,6 +16,8 @@ export default function TicketsLayout({
   const pathname = usePathname();
   const { user, isAuthenticated, loading, logout } = useAuth();
   const viewLabel = getTicketViewLabel(user?.role);
+  const isCreateTicketPage = pathname === "/tickets/new";
+  const isTicketsSection =  pathname.startsWith("/tickets") && !isCreateTicketPage;
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -92,7 +94,7 @@ export default function TicketsLayout({
             <LinkButton
               href="/tickets"
               size="sm"
-              variant={pathname === "/tickets" ? "primary" : "secondary"}
+              variant={isTicketsSection ? "primary" : "secondary"}
               className="text-sm font-medium normal-case"
             >
               {viewLabel.navigationLabel}
@@ -101,7 +103,7 @@ export default function TicketsLayout({
             <LinkButton
               href="/tickets/new"
               size="sm"
-              variant={pathname === "/tickets/new" ? "primary" : "secondary"}
+              variant={isCreateTicketPage ? "primary" : "secondary"}
               className="text-sm font-medium normal-case"
             >
               Create Ticket
