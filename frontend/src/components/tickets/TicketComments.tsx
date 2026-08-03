@@ -15,6 +15,16 @@ interface TicketCommentsProps {
   ) => Promise<void>;
   onEdit?: (comment: TicketCommentDto) => void;
   onDelete?: (comment: TicketCommentDto) => void;
+  canManage?: (comment: TicketCommentDto) => boolean;
+  canManageAttachment?: (attachment: TicketAttachmentDto) => boolean;
+
+  onEditAttachmentDescription?: (
+    attachment: TicketAttachmentDto,
+  ) => void;
+
+  onDeleteAttachment?: (
+    attachment: TicketAttachmentDto,
+  ) => void | Promise<void>;
 }
 
 function getCommentStyle(comment: TicketCommentDto) {
@@ -73,8 +83,12 @@ export function TicketComments({
   comments,
   downloadingAttachmentId = null,
   onDownloadAttachment,
+  canManage,
+  canManageAttachment,
   onEdit,
   onDelete,
+  onEditAttachmentDescription,
+  onDeleteAttachment,
 }: TicketCommentsProps) {
   if (comments.length === 0) {
     return (
@@ -90,11 +104,12 @@ export function TicketComments({
       {comments.map((comment) => {
         const attachments = comment.attachments ?? [];
         const style = getCommentStyle(comment);
+        const showActions = canManage?.(comment) ?? false;
 
         return (
           <article className="chat chat-start" key={comment.id}>
             <div className="chat-header mb-1.5 flex items-center gap-2">
-              {/* KULLANICI ADI SİMSİYAH (text-slate-900) YAPILDI */}
+              {/* KULLANICI ADI SİMSİYAH (text-slate-900) */}
               <span className="font-bold text-slate-900">
                 {comment.createdByName}
               </span>
@@ -104,13 +119,14 @@ export function TicketComments({
                 <Badge tone={style.badgeTone}>{style.roleLabel}</Badge>
               )}
 
-              {/* TARİH METNİ DE NETLEŞTİRİLDİ */}
+              {/* TARİH METNİ */}
               <time className="text-xs font-medium text-slate-600">
                 {new Date(comment.createdAt).toLocaleString("tr-TR")}
                 {comment.editedAt && " · edited"}
               </time>
 
-              {(onEdit || onDelete) && (
+              {/* DÜZENLEME VE SİLME YETKİ KONTROLÜ (showActions) */}
+              {showActions && (onEdit || onDelete) && (
                 <Dropdown
                   label="•••"
                   items={[
@@ -153,8 +169,11 @@ export function TicketComments({
 
                 <TicketAttachments
                   attachments={attachments}
+                  canManage={canManageAttachment}
                   downloadingAttachmentId={downloadingAttachmentId}
+                  onDelete={onDeleteAttachment}
                   onDownload={onDownloadAttachment}
+                  onEditDescription={onEditAttachmentDescription}
                 />
               </div>
             )}

@@ -14,7 +14,7 @@ import { ticketCommentService } from "@/src/services/ticketCommentService";
 import { ticketService } from "@/src/services/ticketService";
 import { ticketWorkflowService } from "@/src/services/ticketWorkflowService";
 import type { TicketAttachmentDto } from "@/src/types/ticket-attachment";
-import type { TicketCommentCreateDto,  TicketCommentDto,} from "@/src/types/ticket-comment";
+import type { TicketCommentCreateDto } from "@/src/types/ticket-comment";
 import type { TicketHistoryDto } from "@/src/types/ticket-status";
 import type { TicketDetailDto } from "@/src/types/ticket";
 import { CommentForm } from "./CommentForm";
@@ -24,10 +24,6 @@ import { TicketComments } from "./TicketComments";
 import { TicketHeader, TicketMetadata, TicketSubject } from "./TicketDetail";
 import { TicketDetailTabs } from "./TicketDetailTabs";
 import { TicketHistory } from "./TicketHistory";
-import { Checkbox } from "@/src/components/ui/Checkbox";
-import { Input } from "@/src/components/ui/Input";
-import { Modal } from "@/src/components/ui/Modal";
-import { Textarea } from "@/src/components/ui/Textarea";
 
 interface TicketDetailContainerProps {
   ticketId: string;
@@ -193,7 +189,7 @@ export function TicketDetailContainer({
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4 dark:border-slate-700">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-700 pb-4">
         <LinkButton href="/tickets" size="sm" variant="secondary">
           ← Back to tickets
         </LinkButton>
@@ -246,21 +242,21 @@ export function TicketDetailContainer({
                     downloadingAttachmentId={downloadingAttachmentId}
                     onDownloadAttachment={handleDownloadAttachment}
                   />
-                 <div className="overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-                <h3 className="mb-4 text-sm font-bold text-slate-900 dark:text-white">
-          
-                Add a comment
-               </h3>
-              {commentError && (
-            <div className="mb-4">
-            <Alert variant="error">{commentError}</Alert>
-            </div>
-              )}
-              < CommentForm
-              canCreateInternal={canCreateInternal}
-              loading={submittingComment}
-              onSubmit={handleAddComment}
-                          />
+                  {/* Yorum Ekleme Kartının Arka Planı ve Başlık Rengi Düzeltildi */}
+                  <div className="rounded-xl border border-slate-700 bg-slate-800 p-6 shadow-md">
+                    <h3 className="mb-4 text-base font-bold text-white">
+                      Add a comment
+                    </h3>
+                    {commentError && (
+                      <div className="mb-4">
+                        <Alert variant="error">{commentError}</Alert>
+                      </div>
+                    )}
+                    <CommentForm
+                      canCreateInternal={canCreateInternal}
+                      loading={submittingComment}
+                      onSubmit={handleAddComment}
+                    />
                   </div>
                 </div>
               }
