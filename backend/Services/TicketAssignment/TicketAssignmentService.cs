@@ -30,6 +30,7 @@ public class TicketAssignmentService : ITicketAssignmentService
         var ticket = await _context.Tickets
             .Include(x => x.AssignedTo)
             .Include(x => x.Team)
+            .Include(x => x.Status)
             .FirstOrDefaultAsync(
                 x => x.Id == createDto.TicketId &&
                     !x.IsDeleted,
@@ -133,6 +134,35 @@ public class TicketAssignmentService : ITicketAssignmentService
 
         ticket.TeamId = team.Id;
         ticket.AssignedToId = assignedTo.UserId;
+
+        if (ticket.Status.Name.Equals(
+                "Open",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            var inProgressStatus = await _context.TicketStatuses
+                .SingleOrDefaultAsync(
+                    status =>
+                        status.Name == "In Progress" &&
+                        status.IsActive,
+                    cancellationToken)
+                ?? throw new InvalidOperationException(
+                    "The active In Progress status was not found.");
+
+            ticket.StatusId = inProgressStatus.Id;
+
+            _context.TicketHistories.Add(new Entities.TicketHistory
+            {
+                TicketId = ticket.Id,
+                ActionType = Entities.TicketHistoryActionType.StatusChanged,
+                FieldName = "Status",
+                OldValue = ticket.Status.Name,
+                NewValue = inProgressStatus.Name,
+                Description =
+                    "Automatically changed because the ticket was assigned to a team.",
+                ChangedById = createDto.AssignedById,
+                ChangedAt = changedAt
+            });
+        }
 
         await _context.TicketAssignments.AddAsync(
             assignment,
