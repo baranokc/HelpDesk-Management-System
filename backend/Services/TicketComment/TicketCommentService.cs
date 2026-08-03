@@ -1,6 +1,7 @@
 using backend.Data;
 using backend.DTO.Ticket;
 using backend.Services.TicketAttachment;
+using backend.Services.Notification;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.Services.TicketComment;
@@ -9,7 +10,17 @@ public class TicketCommentService : ITicketCommentService
 {
     private readonly AppDbContext _db;
     private readonly ITicketAttachmentService _attachmentService;
-    public TicketCommentService(AppDbContext db, ITicketAttachmentService attachmentService) { _db = db; _attachmentService = attachmentService; }
+    private readonly INotificationService _notificationService;
+
+    public TicketCommentService(
+        AppDbContext db,
+        ITicketAttachmentService attachmentService,
+        INotificationService notificationService)
+    {
+        _db = db;
+        _attachmentService = attachmentService;
+        _notificationService = notificationService;
+    }
 
     public async Task<IReadOnlyCollection<TicketCommentDto>> GetCommentsAsync(Guid ticketId, bool includeInternal, CancellationToken cancellationToken = default) =>
         await Query(includeInternal).Where(x => x.TicketId == ticketId).OrderBy(x => x.CreatedAt)
@@ -39,6 +50,11 @@ public class TicketCommentService : ITicketCommentService
         _db.TicketComments.Add(entity);
         await _db.SaveChangesAsync(cancellationToken);
         var attachments = await _attachmentService.AddCommentAttachmentsAsync(ticketId, entity.Id, dto.Attachments, userId, cancellationToken);
+        await _notificationService.NotifyCommentAddedAsync(
+            ticketId,
+            userId,
+            entity.IsInternal,
+            cancellationToken);
         return new TicketCommentDto { Id = entity.Id, Comment = entity.Comment, CreatedById = userId, CreatedByName = user.Name + " " + user.LastName, CreatedAt = entity.CreatedAt, EditedAt = entity.EditedAt, IsInternal = entity.IsInternal, Attachments = attachments.ToList() };
     }
 

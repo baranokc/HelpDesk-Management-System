@@ -4,6 +4,7 @@ using backend.DTO.Common;
 using backend.DTO.Ticket;
 using Microsoft.EntityFrameworkCore;
 using backend.Services.TicketAttachment;
+using backend.Services.Notification;
 
 namespace backend.Services.Ticket;
 
@@ -11,13 +12,16 @@ public class TicketService : ITicketService
 {
     private readonly AppDbContext _db;
     private readonly ITicketAttachmentService _attachmentService;
+    private readonly INotificationService _notificationService;
 
     public TicketService(
         AppDbContext db,
-        ITicketAttachmentService attachmentService)
+        ITicketAttachmentService attachmentService,
+        INotificationService notificationService)
     {
         _db = db;
         _attachmentService = attachmentService;
+        _notificationService = notificationService;
     }
 
     public async Task<PagedResultDto<TicketListDto>> GetTicketAsync(
@@ -291,12 +295,19 @@ public class TicketService : ITicketService
         Guid createdBy,
         CancellationToken cancellationToken = default)
     {
-        var categoryExists = await _db.TicketCategories
-    .AnyAsync(
-        x => x.Id == dto.CategoryId && x.IsActive,
-        cancellationToken);
+        var category = await _db.TicketCategories
+            .AsNoTracking()
+            .Where(item =>
+                item.Id == dto.CategoryId &&
+                item.IsActive)
+            .Select(item => new
+            {
+                item.Id,
+                item.DefaultTeamId
+            })
+            .SingleOrDefaultAsync(cancellationToken);
 
-        if (!categoryExists)
+        if (category is null)
             throw new ArgumentException("Selected category was not found.");
 
         var priorityExists = await _db.TicketPriorities
@@ -355,6 +366,7 @@ public class TicketService : ITicketService
             TicketDescription = dto.TicketDescription.Trim(),
             Subject = dto.Subject.Trim(),
             CreatedById = createdBy,
+            TeamId = category.DefaultTeamId,
             CategoryId = dto.CategoryId,
             SubcategoryId = dto.SubcategoryId,
             StatusId = initialStatus.Id,
@@ -379,32 +391,35 @@ public class TicketService : ITicketService
                 cancellationToken);
         }
 
-    return await _db.Tickets
-        .AsNoTracking()
-        .Where(t => t.Id == ticket.Id)
-        .Select(t => new TicketResponseDto
-        {
-            Id = t.Id,
-            TicketTitle = t.TicketTitle,
-            TicketDescription = t.TicketDescription,
-            Subject = t.Subject,
+        var response = await _db.Tickets
+            .AsNoTracking()
+            .Where(t => t.Id == ticket.Id)
+            .Select(t => new TicketResponseDto
+            {
+                Id = t.Id,
+                TicketTitle = t.TicketTitle,
+                TicketDescription = t.TicketDescription,
+                Subject = t.Subject,
+                StatusName = t.Status.Name,
+                PriorityName = t.Priority.Name,
+                ImpactLevelName = t.ImpactLevel.Name,
+                UrgencyLevelName = t.UrgencyLevel.Name,
+                CategoryName = t.Category.Name,
+                CreatedByName =
+                    t.CreatedBy.Name + " " + t.CreatedBy.LastName,
+                AssignedToName = t.AssignedTo != null
+                    ? t.AssignedTo.Name + " " + t.AssignedTo.LastName
+                    : null,
+                CreatedAt = t.CreatedAt
+            })
+            .SingleAsync(cancellationToken);
 
-            StatusName = t.Status.Name,
-            PriorityName = t.Priority.Name,
-            ImpactLevelName = t.ImpactLevel.Name,
-            UrgencyLevelName = t.UrgencyLevel.Name,
-            CategoryName = t.Category.Name,
+        await _notificationService.NotifyTeamLeadersOfNewTicketAsync(
+            ticket.Id,
+            createdBy,
+            cancellationToken);
 
-            CreatedByName =
-                t.CreatedBy.Name + " " + t.CreatedBy.LastName,
-
-            AssignedToName = t.AssignedTo != null
-                ? t.AssignedTo.Name + " " + t.AssignedTo.LastName
-                : null,
-
-            CreatedAt = t.CreatedAt
-        })
-        .SingleAsync(cancellationToken);
+        return response;
     }
 
     public async Task<TicketResponseDto?> UpdateTicketAsync(

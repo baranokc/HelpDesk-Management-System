@@ -1,7 +1,3 @@
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.SignalR;
-
 namespace backend.Entities;
 
 public class User
@@ -27,6 +23,7 @@ public class User
     public ICollection<Ticket> CreatedTickets { get; set; } = new List<Ticket>();
     public ICollection<Ticket> AssignedTickets { get; set; } = new List<Ticket>();
     public ICollection<Ticket> ResolvedTickets { get; set; } = new List<Ticket>();
+    public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
     public ICollection<User> DirectReports { get; set; } = new List<User>();
     public Guid? RoleId { get; set; } 
     public Role? Role { get; set; } 

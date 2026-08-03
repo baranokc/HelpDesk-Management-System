@@ -1,5 +1,4 @@
 using backend.Entities;
-using Microsoft.AspNetCore.Razor.TagHelpers;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.Data;
@@ -31,6 +30,7 @@ public class AppDbContext : DbContext
     public DbSet<ImpactLevel> ImpactLevels { get; set; } = null!;
     public DbSet<TicketHistory> TicketHistories { get; set; } = null!;
     public DbSet<ResolutionCategory> ResolutionCategories { get; set; } = null!;
+    public DbSet<Notification> Notifications { get; set; } = null!;
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -56,6 +56,37 @@ public class AppDbContext : DbContext
         .WithMany(u => u.CreatedTickets)
         .HasForeignKey(t => t.CreatedById)
         .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<TicketCategory>()
+            .HasOne(category => category.DefaultTeam)
+            .WithMany(team => team.TicketCategories)
+            .HasForeignKey(category => category.DefaultTeamId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.Property(notification => notification.Type)
+                .HasMaxLength(50);
+            entity.Property(notification => notification.Title)
+                .HasMaxLength(150);
+            entity.Property(notification => notification.Message)
+                .HasMaxLength(500);
+
+            entity.HasOne(notification => notification.User)
+                .WithMany(user => user.Notifications)
+                .HasForeignKey(notification => notification.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(notification => notification.Ticket)
+                .WithMany()
+                .HasForeignKey(notification => notification.TicketId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(notification =>
+                new { notification.UserId, notification.CreatedAt });
+            entity.HasIndex(notification =>
+                new { notification.UserId, notification.IsRead });
+        });
 
         modelBuilder.Entity<Ticket>()
         .HasOne(t => t.AssignedTo)

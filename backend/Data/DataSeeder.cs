@@ -42,6 +42,10 @@ public static class DataSeeder
         await SeedTeamsAsync(context);
 
         await SafeSaveChangesAsync(context);
+
+        await AssignTicketCategoriesToTeamsAsync(context);
+
+        await SafeSaveChangesAsync(context);
     }
 
     private static async Task SafeSaveChangesAsync(AppDbContext context)
@@ -900,5 +904,49 @@ public static class DataSeeder
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         });
+    }
+
+    private static async Task AssignTicketCategoriesToTeamsAsync(
+        AppDbContext context)
+    {
+        try
+        {
+            var teamIdsByName = await context.Teams
+                .Where(team => team.IsActive)
+                .ToDictionaryAsync(team => team.Name, team => team.Id);
+
+            var categoryTeamNames = new Dictionary<string, string>
+            {
+                ["Software"] = "Software Support",
+                ["Hardware"] = "Hardware Support",
+                ["Network / Internet"] = "Network Support",
+                ["Email / Account Access"] = "Service Desk",
+                ["Printer / Peripheral"] = "Service Desk",
+                ["Access Request"] = "Service Desk",
+                ["Other"] = "Service Desk"
+            };
+
+            var categories = await context.TicketCategories
+                .Where(category =>
+                    category.IsActive &&
+                    category.DefaultTeamId == null)
+                .ToListAsync();
+
+            foreach (var category in categories)
+            {
+                if (categoryTeamNames.TryGetValue(
+                        category.Name,
+                        out var teamName) &&
+                    teamIdsByName.TryGetValue(teamName, out var teamId))
+                {
+                    category.DefaultTeamId = teamId;
+                }
+            }
+        }
+        catch (PostgresException ex) when (ex.SqlState == "42P01")
+        {
+            Console.WriteLine(
+                "[DataSeeder Warning] Category-team assignments could not be created because a required table was not found.");
+        }
     }
 }

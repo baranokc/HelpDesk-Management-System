@@ -3,6 +3,7 @@ using backend.Data;
 using backend.DTO.Ticket;
 using backend.Entities;
 using Microsoft.EntityFrameworkCore;
+using backend.Services.Notification;
 
 
 namespace backend.Services.TicketAssignment;
@@ -10,10 +11,14 @@ namespace backend.Services.TicketAssignment;
 public class TicketAssignmentService : ITicketAssignmentService
 {
     private readonly AppDbContext _context;
+    private readonly INotificationService _notificationService;
 
-    public TicketAssignmentService(AppDbContext context)
+    public TicketAssignmentService(
+        AppDbContext context,
+        INotificationService notificationService)
     {
         _context = context;
+        _notificationService = notificationService;
     }
     
     public async Task<TicketAssignmentResponseDto?> AssignTicketAsync(
@@ -147,6 +152,12 @@ public class TicketAssignmentService : ITicketAssignmentService
         });
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        await _notificationService.NotifyTicketAssignedAsync(
+            ticket.Id,
+            assignedTo.UserId,
+            createDto.AssignedById,
+            cancellationToken);
 
         return new TicketAssignmentResponseDto
         {
