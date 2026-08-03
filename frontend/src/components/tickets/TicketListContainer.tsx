@@ -13,7 +13,7 @@ import type { TicketFilterDto, TicketListDto } from "@/src/types/ticket";
 import { TicketFilters } from "./TicketFilterTabs";
 import { TicketPriorityBadge } from "./TicketPriorityBadge";
 import { TicketStatusBadge } from "./TicketStatusBadge";
-import { TicketStatsCards } from "./TicketStatsCards"; // <--- BİLEŞEN IMPORT EDİLDİ
+import { TicketStatsCards } from "./TicketStatsCards";
 
 const initialFilter: TicketFilterDto = {
   pageNumber: 1,
