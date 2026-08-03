@@ -14,7 +14,7 @@ import { ticketCommentService } from "@/src/services/ticketCommentService";
 import { ticketService } from "@/src/services/ticketService";
 import { ticketWorkflowService } from "@/src/services/ticketWorkflowService";
 import type { TicketAttachmentDto } from "@/src/types/ticket-attachment";
-import type { TicketCommentCreateDto } from "@/src/types/ticket-comment";
+import type { TicketCommentCreateDto,  TicketCommentDto,} from "@/src/types/ticket-comment";
 import type { TicketHistoryDto } from "@/src/types/ticket-status";
 import type { TicketDetailDto } from "@/src/types/ticket";
 import { CommentForm } from "./CommentForm";
@@ -24,6 +24,10 @@ import { TicketComments } from "./TicketComments";
 import { TicketHeader, TicketMetadata, TicketSubject } from "./TicketDetail";
 import { TicketDetailTabs } from "./TicketDetailTabs";
 import { TicketHistory } from "./TicketHistory";
+import { Checkbox } from "@/src/components/ui/Checkbox";
+import { Input } from "@/src/components/ui/Input";
+import { Modal } from "@/src/components/ui/Modal";
+import { Textarea } from "@/src/components/ui/Textarea";
 
 interface TicketDetailContainerProps {
   ticketId: string;

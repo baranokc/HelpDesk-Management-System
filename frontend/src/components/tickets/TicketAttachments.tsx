@@ -9,7 +9,8 @@ interface TicketAttachmentsProps {
   attachments: TicketAttachmentDto[];
   downloadingAttachmentId?: string | null;
   onDownload: (attachment: TicketAttachmentDto) => Promise<void>;
-  onDelete?: (attachment: TicketAttachmentDto) => Promise<void>;
+  canManage?: (attachment: TicketAttachmentDto) => boolean;
+  onDelete?: (attachment: TicketAttachmentDto) => void | Promise<void>;
   onEditDescription?: (attachment: TicketAttachmentDto) => void;
 }
 
@@ -29,6 +30,7 @@ export function TicketAttachments({
   attachments,
   downloadingAttachmentId = null,
   onDownload,
+  canManage,
   onDelete,
   onEditDescription,
 }: TicketAttachmentsProps) {
@@ -45,6 +47,7 @@ export function TicketAttachments({
     <ul className="list rounded-box border border-base-300 bg-base-100">
       {attachments.map((attachment) => {
         const isDownloading = downloadingAttachmentId === attachment.id;
+        const showActions = canManage?.(attachment) ?? false;
 
         return (
           <li className="list-row" key={attachment.id}>
@@ -78,7 +81,7 @@ export function TicketAttachments({
                 {isDownloading ? "Downloading..." : "Download"}
               </Button>
 
-              {(onDelete || onEditDescription) && (
+              {showActions && (onDelete || onEditDescription) && (
                 <Dropdown
                   label="Update"
                   items={[
