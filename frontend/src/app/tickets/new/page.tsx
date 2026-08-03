@@ -46,10 +46,10 @@ export default function CreateTicketPage() {
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
             Create New Ticket
           </h1>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-slate-600 dark:text-slate-400">
             Submit a new support request to our team
           </p>
         </div>
@@ -62,7 +62,7 @@ export default function CreateTicketPage() {
         </Link>
       </div>
 
-      <div className="card border border-slate-200 bg-white shadow-lg">
+      <div className="card border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg transition-colors">
         <div className="card-body">
           <TicketForm
             error={error}

@@ -185,12 +185,19 @@ export function TicketDetailContainer({
   const canManage = canManageTicket(user, ticket);
   const canCreateInternal =
     canCreateInternalComment ??
-    (user?.role === "Admin" || user?.role === "TeamLeader"|| user?.role === "SupportAgent");
+    (user?.role === "Admin" ||
+      user?.role === "TeamLeader" ||
+      user?.role === "SupportAgent");
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-700 pb-4">
-        <LinkButton href="/tickets" size="sm" variant="secondary">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4 transition-colors">
+        <LinkButton
+          href="/tickets"
+          size="sm"
+          variant="secondary"
+          className="dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 hover:!bg-slate-900 hover:!text-white dark:hover:!bg-white dark:hover:!text-slate-900"
+        >
           ← Back to tickets
         </LinkButton>
 
@@ -242,9 +249,8 @@ export function TicketDetailContainer({
                     downloadingAttachmentId={downloadingAttachmentId}
                     onDownloadAttachment={handleDownloadAttachment}
                   />
-                  {/* Yorum Ekleme Kartının Arka Planı ve Başlık Rengi Düzeltildi */}
-                  <div className="rounded-xl border border-slate-700 bg-slate-800 p-6 shadow-md">
-                    <h3 className="mb-4 text-base font-bold text-white">
+                  <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-md transition-colors">
+                    <h3 className="mb-4 text-base font-bold text-slate-900 dark:text-white">
                       Add a comment
                     </h3>
                     {commentError && (

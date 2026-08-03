@@ -44,5 +44,9 @@ export function TicketDetailTabs({
     },
   ];
 
-  return <Tabs activeTab={activeTab} onChange={setActiveTab} tabs={tabs} />;
+  return (
+    <div className="w-full text-slate-900 dark:text-slate-100 transition-colors">
+      <Tabs activeTab={activeTab} onChange={setActiveTab} tabs={tabs} />
+    </div>
+  );
 }

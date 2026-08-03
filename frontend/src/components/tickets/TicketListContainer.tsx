@@ -111,25 +111,26 @@ export function TicketListContainer() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
             {viewLabel.title}
           </h1>
-          <p className="text-sm text-slate-600">{viewLabel.description}</p>
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            {viewLabel.description}
+          </p>
         </div>
-
       </div>
 
-      <div className="card border border-slate-200 bg-white shadow-sm">
+      <div className="card border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-colors">
         <div className="card-body p-4">
           <TicketFilters onApply={applyFilters} value={filter} />
         </div>
       </div>
 
       {loading && (
-        <div className="card overflow-hidden border border-slate-200 bg-white shadow-sm">
+        <div className="card overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-colors">
           <div className="overflow-x-auto">
             <table className="table w-full">
-              <thead className="bg-slate-50 text-xs font-semibold uppercase text-slate-700">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs font-semibold uppercase text-slate-700 dark:text-slate-300">
                 <tr>
                   <th>Ticket #</th>
                   <th>Title</th>
@@ -140,29 +141,29 @@ export function TicketListContainer() {
                   <th className="text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {[1, 2, 3, 4, 5].map((item) => (
                   <tr key={item}>
                     <td>
-                      <div className="skeleton h-4 w-16 bg-slate-200" />
+                      <div className="skeleton h-4 w-16 bg-slate-200 dark:bg-slate-800" />
                     </td>
                     <td>
-                      <div className="skeleton h-4 w-40 bg-slate-200" />
+                      <div className="skeleton h-4 w-40 bg-slate-200 dark:bg-slate-800" />
                     </td>
                     <td>
-                      <div className="skeleton h-4 w-28 bg-slate-200" />
+                      <div className="skeleton h-4 w-28 bg-slate-200 dark:bg-slate-800" />
                     </td>
                     <td>
-                      <div className="skeleton h-6 w-20 rounded-full bg-slate-200" />
+                      <div className="skeleton h-6 w-20 rounded-full bg-slate-200 dark:bg-slate-800" />
                     </td>
                     <td>
-                      <div className="skeleton h-6 w-16 rounded-full bg-slate-200" />
+                      <div className="skeleton h-6 w-16 rounded-full bg-slate-200 dark:bg-slate-800" />
                     </td>
                     <td>
-                      <div className="skeleton h-4 w-24 bg-slate-200" />
+                      <div className="skeleton h-4 w-24 bg-slate-200 dark:bg-slate-800" />
                     </td>
                     <td className="text-right">
-                      <div className="skeleton ml-auto h-4 w-20 bg-slate-200" />
+                      <div className="skeleton ml-auto h-4 w-20 bg-slate-200 dark:bg-slate-800" />
                     </td>
                   </tr>
                 ))}
@@ -176,7 +177,7 @@ export function TicketListContainer() {
 
       {!loading && !error && (
         <>
-          <div className="card overflow-hidden border border-slate-200 bg-white shadow-sm">
+          <div className="card overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-colors">
             {result.items.length === 0 ? (
               <div className="flex flex-col items-center justify-center px-4 py-12 text-center">
                 <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -195,10 +196,10 @@ export function TicketListContainer() {
                     />
                   </svg>
                 </div>
-                <h3 className="mb-1 text-lg font-semibold text-slate-900">
+                <h3 className="mb-1 text-lg font-semibold text-slate-900 dark:text-white">
                   No tickets found
                 </h3>
-                <p className="max-w-sm text-sm text-slate-500">
+                <p className="max-w-sm text-sm text-slate-500 dark:text-slate-400">
                   {hasActiveFilters
                     ? "No tickets match the selected filters. Try clearing or changing them."
                     : "There are no tickets available in your current view."}
@@ -207,7 +208,7 @@ export function TicketListContainer() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="table w-full">
-                  <thead className="bg-slate-50 text-xs font-semibold uppercase text-slate-700">
+                  <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs font-semibold uppercase text-slate-700 dark:text-slate-300">
                     <tr>
                       <th>Ticket #</th>
                       <th>Title</th>
@@ -218,22 +219,22 @@ export function TicketListContainer() {
                       <th className="text-right">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 text-sm">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
                     {result.items.map((ticket) => (
                       <tr
-                        className="transition-colors hover:bg-slate-50/80"
+                        className="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/50"
                         key={ticket.id}
                       >
-                        <td className="font-mono text-xs font-semibold text-slate-500">
+                        <td className="font-mono text-xs font-semibold text-slate-500 dark:text-slate-400">
                           {ticket.ticketNumber}
                         </td>
-                        <td className="font-medium text-slate-900">
+                        <td className="font-medium text-slate-900 dark:text-white">
                           {ticket.ticketTitle}
                         </td>
-                        <td className="text-slate-600">
+                        <td className="text-slate-600 dark:text-slate-300">
                           {ticket.categoryName}
                           {ticket.subcategoryName && (
-                            <span className="block text-xs text-slate-400">
+                            <span className="block text-xs text-slate-400 dark:text-slate-500">
                               {ticket.subcategoryName}
                             </span>
                           )}
@@ -244,7 +245,7 @@ export function TicketListContainer() {
                         <td>
                           <TicketPriorityBadge priority={ticket.priorityName} />
                         </td>
-                        <td className="text-slate-600">
+                        <td className="text-slate-600 dark:text-slate-300">
                           {ticket.createdByName}
                         </td>
                         <td className="text-right">
@@ -265,7 +266,7 @@ export function TicketListContainer() {
 
           {result.items.length > 0 && (
             <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-slate-500 dark:text-slate-400">
                 {result.totalCount} ticket(s) in this view
               </p>
               <Pagination

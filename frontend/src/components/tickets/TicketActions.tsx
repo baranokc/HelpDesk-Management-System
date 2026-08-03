@@ -48,6 +48,9 @@ export function TicketActions({
   const canResolve =
     isStaff && normalizedStatus !== "resolved" && normalizedStatus !== "closed";
 
+  const secondaryBtnStyle =
+    "dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 hover:!bg-slate-900 hover:!text-white dark:hover:!bg-white dark:hover:!text-slate-900 transition-all shadow-sm";
+
   const openAction = (action: ActionName) => {
     setActionError(null);
     setActiveAction(action);
@@ -143,6 +146,7 @@ export function TicketActions({
   return (
     <>
       <Card
+        className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 transition-colors shadow-sm"
         description="Upload files and perform the workflow actions available for your role."
         title="Ticket actions"
       >
@@ -152,6 +156,7 @@ export function TicketActions({
           </Button>
 
           <Button
+            className={secondaryBtnStyle}
             onClick={() => openAction("status")}
             size="sm"
             variant="secondary"
@@ -161,6 +166,7 @@ export function TicketActions({
 
           {isStaff && (
             <Button
+              className={secondaryBtnStyle}
               onClick={() => openAction("assign")}
               size="sm"
               variant="secondary"
@@ -181,6 +187,7 @@ export function TicketActions({
 
           {canResolve && (
             <Button
+              className={secondaryBtnStyle}
               onClick={() => openAction("resolve")}
               size="sm"
               variant="secondary"
@@ -264,7 +271,12 @@ export function TicketActions({
           />
 
           <div className="flex justify-end gap-3">
-            <Button onClick={closeAction} type="button" variant="secondary">
+            <Button
+              className={secondaryBtnStyle}
+              onClick={closeAction}
+              type="button"
+              variant="secondary"
+            >
               Cancel
             </Button>
             <Button

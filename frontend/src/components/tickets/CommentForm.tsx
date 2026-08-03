@@ -47,7 +47,7 @@ export function CommentForm({
           placeholder="Write your response..."
           maxLength={1000}
           required
-          className="w-full rounded-lg border border-slate-600 bg-slate-900 p-3 text-sm text-slate-100 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="textarea textarea-bordered w-full bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-700 focus:textarea-primary placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-colors"
         />
         <div className="mt-1 text-right text-xs text-slate-400">
           {commentText.length}/1000 characters
