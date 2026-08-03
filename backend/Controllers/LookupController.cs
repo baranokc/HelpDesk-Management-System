@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using backend.Constants;
 using backend.DTO.Lookup;
 using backend.Services.Lookup;
 using Microsoft.AspNetCore.Authorization;
@@ -16,6 +18,16 @@ public class LookupController : ControllerBase
     {
         _lookupService = lookupService;
     }
+
+    private Guid CurrentUserId => Guid.TryParse(
+        User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+        User.FindFirstValue("sub"),
+        out var id)
+            ? id
+            : Guid.Empty;
+
+    private string CurrentUserRole =>
+        User.FindFirstValue(ClaimTypes.Role) ?? string.Empty;
 
     [HttpGet("categories")]
     public async Task<ActionResult<
@@ -90,21 +102,37 @@ public class LookupController : ControllerBase
     }
 
     [HttpGet("teams")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.TeamLeader}")]
     public async Task<ActionResult<
         IReadOnlyCollection<LookupItemDto<Guid>>>> GetTeams(
         CancellationToken cancellationToken)
     {
+        if (CurrentUserId == Guid.Empty ||
+            string.IsNullOrWhiteSpace(CurrentUserRole))
+        {
+            return Unauthorized(new { message = "Invalid user identity." });
+        }
+
         return Ok(
             await _lookupService.GetTeamsAsync(
+                CurrentUserId,
+                CurrentUserRole,
                 cancellationToken));
     }
 
     [HttpGet("teams/{teamId:guid}/members")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.TeamLeader}")]
     public async Task<ActionResult<
         IReadOnlyCollection<TeamMemberLookupDto>>> GetTeamMembers(
         Guid teamId,
         CancellationToken cancellationToken)
     {
+        if (CurrentUserId == Guid.Empty ||
+            string.IsNullOrWhiteSpace(CurrentUserRole))
+        {
+            return Unauthorized(new { message = "Invalid user identity." });
+        }
+
         if (teamId == Guid.Empty)
         {
             return BadRequest(new
@@ -116,6 +144,8 @@ public class LookupController : ControllerBase
         return Ok(
             await _lookupService.GetTeamMembersAsync(
                 teamId,
+                CurrentUserId,
+                CurrentUserRole,
                 cancellationToken));
     }
 

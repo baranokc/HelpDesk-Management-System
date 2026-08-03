@@ -189,7 +189,7 @@ export function TicketDetailContainer({
   const canManage = canManageTicket(user, ticket);
   const canCreateInternal =
     canCreateInternalComment ??
-    (user?.role === "Admin" || user?.role === "SupportAgent");
+    (user?.role === "Admin" || user?.role === "TeamLeader"|| user?.role === "SupportAgent");
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">

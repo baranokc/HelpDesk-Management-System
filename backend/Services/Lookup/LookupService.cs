@@ -1,4 +1,5 @@
 using backend.Data;
+using backend.Constants;
 using backend.DTO.Lookup;
 using backend.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -34,15 +35,64 @@ public class LookupService : ILookupService
         await _db.UrgencyLevels.AsNoTracking().Where(x => x.IsActive).OrderBy(x => x.Order)
             .Select(x => new LookupItemDto<Guid> { ItemId = x.Id, Name = x.Name }).ToListAsync(cancellationToken);
 
-    public async Task<IReadOnlyCollection<LookupItemDto<Guid>>> GetTeamsAsync(CancellationToken cancellationToken = default) =>
-        await _db.Teams.AsNoTracking().Where(x => x.IsActive).OrderBy(x => x.Name)
-            .Select(x => new LookupItemDto<Guid> { ItemId = x.Id, Name = x.Name }).ToListAsync(cancellationToken);
+    public async Task<IReadOnlyCollection<LookupItemDto<Guid>>> GetTeamsAsync(
+        Guid currentUserId,
+        string currentUserRole,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _db.Teams
+            .AsNoTracking()
+            .Where(team => team.IsActive);
 
-    public async Task<IReadOnlyCollection<TeamMemberLookupDto>> GetTeamMembersAsync(Guid teamId, CancellationToken cancellationToken = default) =>
-        await _db.TeamMembers.AsNoTracking().Where(x => x.TeamId == teamId && x.IsActive && x.User.IsActive)
+        if (currentUserRole == Roles.TeamLeader)
+        {
+            query = query.Where(team =>
+                _db.TeamMembers.Any(teamMember =>
+                    teamMember.TeamId == team.Id &&
+                    teamMember.UserId == currentUserId &&
+                    teamMember.RoleInTeam == TeamMemberRole.TeamLeader &&
+                    teamMember.IsActive &&
+                    teamMember.User.IsActive));
+        }
+
+        return await query
+            .OrderBy(team => team.Name)
+            .Select(team => new LookupItemDto<Guid>
+            {
+                ItemId = team.Id,
+                Name = team.Name
+            })
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyCollection<TeamMemberLookupDto>> GetTeamMembersAsync(
+        Guid teamId,
+        Guid currentUserId,
+        string currentUserRole,
+        CancellationToken cancellationToken = default)
+    {
+        if (currentUserRole == Roles.TeamLeader)
+        {
+            var leadsTeam = await _db.TeamMembers
+                .AsNoTracking()
+                .AnyAsync(teamMember =>
+                    teamMember.TeamId == teamId &&
+                    teamMember.UserId == currentUserId &&
+                    teamMember.RoleInTeam == TeamMemberRole.TeamLeader &&
+                    teamMember.IsActive &&
+                    teamMember.Team.IsActive &&
+                    teamMember.User.IsActive,
+                    cancellationToken);
+
+            if (!leadsTeam)
+                return Array.Empty<TeamMemberLookupDto>();
+        }
+
+        return await _db.TeamMembers.AsNoTracking().Where(x => x.TeamId == teamId && x.IsActive && x.User.IsActive)
             .OrderBy(x => x.User.Name).ThenBy(x => x.User.LastName)
             .Select(x => new TeamMemberLookupDto { TeamMemberId = x.Id, UserId = x.UserId, FullName = x.User.Name + " " + x.User.LastName, RoleInTeam = x.RoleInTeam.ToString() })
             .ToListAsync(cancellationToken);
+    }
 
     public async Task<IReadOnlyCollection<LookupItemDto<int>>> GetDepartmentsAsync(CancellationToken cancellationToken = default) =>
         await _db.Departments.AsNoTracking().Where(x => x.IsActive ).OrderBy(x => x.Name)

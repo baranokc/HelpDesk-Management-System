@@ -26,7 +26,8 @@ public class TicketCommentController : ControllerBase
 
     private Guid UserId => Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub"), out var id) ? id : Guid.Empty;
     private string UserRole => User.FindFirstValue(ClaimTypes.Role) ?? string.Empty;
-    private bool CanManageAll => User.IsInRole(Roles.Admin) || User.IsInRole(Roles.SupportAgent);
+    private bool CanManageAll => User.IsInRole(Roles.Admin)|| User.IsInRole(Roles.TeamLeader) || User.IsInRole(Roles.SupportAgent);
+    private bool CanViewInternal => CanManageAll || User.IsInRole(Roles.TeamLeader);
 
     [HttpGet]
     public async Task<IActionResult> GetAll(
@@ -38,7 +39,7 @@ public class TicketCommentController : ControllerBase
 
         return Ok(await _service.GetCommentsAsync(
             ticketId,
-            CanManageAll,
+            CanViewInternal,
             ct));
     }
 
@@ -54,13 +55,14 @@ public class TicketCommentController : ControllerBase
         var item = await _service.GetCommentByIdAsync(
             ticketId,
             commentId,
-            CanManageAll,
+            CanViewInternal,
             ct);
 
         return item is null ? NotFound() : Ok(item);
     }
 
     [HttpPost]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.TeamLeader},{Roles.SupportAgent},{Roles.User}")]
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> Create(
         Guid ticketId,
@@ -98,6 +100,7 @@ public class TicketCommentController : ControllerBase
     }
     
     [HttpPut("{commentId:guid}")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.TeamLeader},{Roles.SupportAgent},{Roles.User}")]
     public async Task<IActionResult> Update(
         Guid ticketId,
         Guid commentId,
@@ -128,6 +131,7 @@ public class TicketCommentController : ControllerBase
     }
 
     [HttpDelete("{commentId:guid}")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.TeamLeader},{Roles.SupportAgent},{Roles.User}")]
     public async Task<IActionResult> Delete(
         Guid ticketId,
         Guid commentId,

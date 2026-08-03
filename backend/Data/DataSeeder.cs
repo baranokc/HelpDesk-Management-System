@@ -610,6 +610,17 @@ public static class DataSeeder
                 });
             }
 
+            if (!existingNames.Contains("TeamLeader"))
+            {
+                roles.Add(new Role
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "TeamLeader",
+                    Description = "Can view and assign tickets that belong to teams they actively lead.",
+                    IsActive = true
+                });
+            }
+
             if (!existingNames.Contains("User"))
             {
                 roles.Add(new Role

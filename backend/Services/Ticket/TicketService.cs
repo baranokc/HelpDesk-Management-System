@@ -64,18 +64,27 @@ public class TicketService : ITicketService
             query = query.Where(t => t.ImpactLevelId == filter.ImpactLevelId.Value);
 
         if (filter.CreatedFrom.HasValue)
-            query = query.Where(t => t.CreatedAt >= filter.CreatedFrom.Value);
+        {
+            var createdFromUtc = DateTime.SpecifyKind(
+                filter.CreatedFrom.Value.Date,
+                DateTimeKind.Utc);
+            query = query.Where(t => t.CreatedAt >= createdFromUtc);
+        }
 
         if (filter.CreatedTo.HasValue)
-            query = query.Where(t => t.CreatedAt <= filter.CreatedTo.Value);
+        {
+            var createdToExclusiveUtc = DateTime.SpecifyKind(
+                filter.CreatedTo.Value.Date.AddDays(1),
+                DateTimeKind.Utc);
+            query = query.Where(t => t.CreatedAt < createdToExclusiveUtc);
+        }
 
         var pageNumber = Math.Max(filter.PageNumber, 1);
         var pageSize = Math.Clamp(filter.PageSize, 1, 100);
         var totalCount = await query.CountAsync(cancellationToken);
 
         var items = await query
-            .OrderByDescending(t => t.TicketNumber)
-            .ThenByDescending(t => t.CreatedAt)
+            .OrderByDescending(t => t.CreatedAt)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .Select(t => new TicketListDto
@@ -157,6 +166,7 @@ public class TicketService : ITicketService
                         ContentType = a.ContentType,
                         FileSize = a.FileSize,
                         DownloadUrl = a.FilePath,
+                        Description = a.Description,
                         CommentId = a.TicketCommentId,
                         UploadedById = a.UploaderId,
                         UploadedByName = a.Uploader.Name + " " + a.Uploader.LastName,
@@ -181,6 +191,7 @@ public class TicketService : ITicketService
                 ContentType = a.ContentType,
                 FileSize = a.FileSize,
                 DownloadUrl = a.FilePath,
+                Description = a.Description,
                 CommentId = a.TicketCommentId,
                 UploadedById = a.UploaderId,
                 UploadedByName =
@@ -239,6 +250,40 @@ public class TicketService : ITicketService
         return await query.AnyAsync(
             t => t.Id == ticketId,
             cancellationToken);
+    }
+
+    public async Task<bool> CanProcessTicketAsync(
+        Guid ticketId,
+        Guid currentUserId,
+        string currentUserRole,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _db.Tickets
+            .AsNoTracking()
+            .Where(ticket =>
+                ticket.Id == ticketId &&
+                !ticket.IsDeleted);
+
+        if (currentUserRole == Roles.Admin)
+            return await query.AnyAsync(cancellationToken);
+
+        if (currentUserRole == Roles.SupportAgent)
+        {
+            return await query.AnyAsync(
+                ticket => ticket.AssignedToId == currentUserId,
+                cancellationToken);
+        }
+
+        if (currentUserRole == Roles.TeamLeader)
+        {
+            return await ApplyAccessScope(
+                    query,
+                    currentUserId,
+                    currentUserRole)
+                .AnyAsync(cancellationToken);
+        }
+
+        return false;
     }
 
     public async Task<TicketResponseDto> CreateTicketAsync(
@@ -376,10 +421,11 @@ public class TicketService : ITicketService
 
         if (ticket is null)
             return null;
-        if (!CanAccessTicket(
-                ticket,
+        if (!await CanAccessTicketAsync(
+                ticketId,
                 changedByUserId,
-                currentUserRole))
+                currentUserRole,
+                cancellationToken))
         {
             throw new UnauthorizedAccessException(
                 "You do not have permission to update this ticket.");
@@ -441,10 +487,11 @@ public class TicketService : ITicketService
         if (ticket is null)
             return false;
 
-        if (!CanAccessTicket(
-                ticket,
+        if (!await CanAccessTicketAsync(
+                ticketId,
                 deletedById,
-                currentUserRole))
+                currentUserRole,
+                cancellationToken))
         {
             throw new UnauthorizedAccessException(
                 "You do not have permission to delete this ticket.");
@@ -535,7 +582,7 @@ public class TicketService : ITicketService
         return $"HD-{sequenceValue:D8}";
     }
 
-    private static IQueryable<Entities.Ticket> ApplyAccessScope(
+    private IQueryable<Entities.Ticket> ApplyAccessScope(
         IQueryable<Entities.Ticket> query,
         Guid currentUserId,
         string currentUserRole)
@@ -546,25 +593,19 @@ public class TicketService : ITicketService
             Roles.SupportAgent => query.Where(ticket =>
                 ticket.CreatedById == currentUserId ||
                 ticket.AssignedToId == currentUserId),
+            Roles.TeamLeader => query.Where(ticket =>
+                ticket.TeamId.HasValue &&
+                _db.TeamMembers.Any(teamMember =>
+                    teamMember.UserId == currentUserId &&
+                    teamMember.TeamId == ticket.TeamId.Value &&
+                    teamMember.RoleInTeam == Entities.TeamMemberRole.TeamLeader &&
+                    teamMember.IsActive &&
+                    teamMember.Team.IsActive &&
+                    teamMember.User.IsActive)),
             Roles.User => query.Where(ticket =>
                 ticket.CreatedById == currentUserId),
             _ => query.Where(_ => false)
         };
     }
 
-    private static bool CanAccessTicket(
-        Entities.Ticket ticket,
-        Guid currentUserId,
-        string currentUserRole)
-    {
-        return currentUserRole switch
-        {
-            Roles.Admin => true,
-            Roles.SupportAgent =>
-                ticket.CreatedById == currentUserId ||
-                ticket.AssignedToId == currentUserId,
-            Roles.User => ticket.CreatedById == currentUserId,
-            _ => false
-        };
-    }
 }

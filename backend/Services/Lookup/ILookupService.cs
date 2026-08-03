@@ -10,8 +10,8 @@ public interface ILookupService
     Task<IReadOnlyCollection<LookupItemDto<Guid>>> GetStatusesAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyCollection<LookupItemDto<Guid>>> GetImpactLevelsAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyCollection<LookupItemDto<Guid>>> GetUrgencyLevelsAsync(CancellationToken cancellationToken = default);
-    Task<IReadOnlyCollection<LookupItemDto<Guid>>> GetTeamsAsync(CancellationToken cancellationToken = default);
-    Task<IReadOnlyCollection<TeamMemberLookupDto>> GetTeamMembersAsync(Guid teamId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyCollection<LookupItemDto<Guid>>> GetTeamsAsync(Guid currentUserId, string currentUserRole, CancellationToken cancellationToken = default);
+    Task<IReadOnlyCollection<TeamMemberLookupDto>> GetTeamMembersAsync(Guid teamId, Guid currentUserId, string currentUserRole, CancellationToken cancellationToken = default);
     Task<IReadOnlyCollection<LookupItemDto<int>>> GetDepartmentsAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyCollection<LookupItemDto<Guid>>> GetRolesAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyCollection<LookupItemDto<Guid>>> GetResolutionCategoriesAsync(CancellationToken cancellationToken = default);

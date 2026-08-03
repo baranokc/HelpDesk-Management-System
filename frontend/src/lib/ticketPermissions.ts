@@ -3,6 +3,7 @@ import type { User } from "@/src/context/AuthContext";
 interface TicketOwnership {
   createdById: string;
   assignedToId?: string | null;
+  teamId?: string | null;
 }
 
 export function canManageTicket(
@@ -14,6 +15,8 @@ export function canManageTicket(
   switch (user.role) {
     case "Admin":
       return true;
+    case "TeamLeader":
+      return Boolean(ticket.teamId && user.ledTeamIds.includes(ticket.teamId),);
     case "SupportAgent":
       return ticket.createdById === user.id || ticket.assignedToId === user.id;
     case "User":
@@ -40,6 +43,12 @@ export function getTicketViewLabel(role?: string): {
         title: "My and Assigned Tickets",
         description: "View tickets you created or that are assigned to you.",
         navigationLabel: "My + Assigned",
+      };
+    case "TeamLeader":
+      return {
+        title: "My Team's Tickets",
+        description: "View and assign tickets that belong to teams you lead.",
+        navigationLabel: "My Team",
       };
     default:
       return {
