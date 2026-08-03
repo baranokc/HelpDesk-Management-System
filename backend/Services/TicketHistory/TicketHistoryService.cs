@@ -15,6 +15,7 @@ public class TicketHistoryService : ITicketHistoryService
 
     public async Task<IReadOnlyCollection<TicketHistoryDto>> GetHistoryAsync(
         Guid ticketId,
+        bool includeStaffDetails,
         CancellationToken cancellationToken = default)
     {
         return await _db.TicketHistories
@@ -29,7 +30,11 @@ public class TicketHistoryService : ITicketHistoryService
                 FieldName = h.FieldName,
                 OldValue = h.OldValue,
                 NewValue = h.NewValue,
-                Description = h.Description,
+                Description = includeStaffDetails ||
+                    (h.ActionType != Entities.TicketHistoryActionType.Assigned &&
+                     h.ActionType != Entities.TicketHistoryActionType.Unassigned)
+                    ? h.Description
+                    : null,
                 ChangedById = h.ChangedById,
                 ChangedByName = h.ChangedBy.Name + " " + h.ChangedBy.LastName,
                 ChangedAt = h.ChangedAt

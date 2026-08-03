@@ -132,15 +132,24 @@ public class TicketAttachmentController : ControllerBase
         if (!await CanAccessTicketAsync(ticketId, ct))
             return NotFound(new { message = "Ticket not found." });
 
-        var item = await _service.UpdateAttachmentAsync(
-            ticketId,
-            attachmentId,
-            dto,
-            UserId,
-            CanManageAll,
-            ct);
+        try
+        {
+            var item = await _service.UpdateAttachmentAsync(
+                ticketId,
+                attachmentId,
+                dto,
+                UserId,
+                CanManageAll,
+                ct);
 
-        return item is null ? NotFound() : Ok(item);
+            return item is null ? NotFound() : Ok(item);
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                new { message = exception.Message });
+        }
     }
 
     [HttpDelete("{attachmentId:guid}")]
@@ -152,23 +161,32 @@ public class TicketAttachmentController : ControllerBase
         if (!await CanAccessTicketAsync(ticketId, ct))
             return NotFound(new { message = "Ticket not found." });
 
-        var deleted = await _service.DeleteAttachmentAsync(
-            ticketId,
-            attachmentId,
-            UserId,
-            CanManageAll,
-            ct);
-
-        if (!deleted)
+        try
         {
-            return NotFound(new
-            {
-                message =
-                    "Attachment was not found or does not belong to the specified ticket."
-            });
-        }
+            var deleted = await _service.DeleteAttachmentAsync(
+                ticketId,
+                attachmentId,
+                UserId,
+                CanManageAll,
+                ct);
 
-        return NoContent();
+            if (!deleted)
+            {
+                return NotFound(new
+                {
+                    message =
+                        "Attachment was not found or does not belong to the specified ticket."
+                });
+            }
+
+            return NoContent();
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                new { message = exception.Message });
+        }
     }
 
     private Task<bool> CanAccessTicketAsync(

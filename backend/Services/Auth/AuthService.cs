@@ -4,6 +4,7 @@ using System.Reflection.Metadata;
 using System.Security.Claims;
 using System.Text;
 using backend.Data;
+using backend.Constants;
 using backend.DTO.Auth;
 using backend.Entities;
 using BCrypt.Net;
@@ -24,10 +25,12 @@ public class AuthService : IAuthService
     }
     public async Task<LoginResponse?> LoginAsync(Login dto)
     {
+        var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
         var user = await _context.Users
         .Include(u => u.Role)
-        .FirstOrDefaultAsync(u => u.Email == dto.Email);
-        if (user == null) return null;
+        .FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail);
+        if (user == null || !user.IsActive) return null;
+        if (user.Role is not null && !user.Role.IsActive) return null;
 
         bool IsPasswordValid = BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash);
         if (!IsPasswordValid) return null;
@@ -67,8 +70,9 @@ public class AuthService : IAuthService
     }
     public async Task<bool> RegisterAsync(UserCreate dto)
     {
+        var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
         var existingUser = await _context.Users
-            .FirstOrDefaultAsync(u => u.Email == dto.Email);
+            .FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail);
         if (existingUser != null)
         {
             return false;
@@ -85,13 +89,20 @@ public class AuthService : IAuthService
         }
         string passwordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
 
+        var defaultRole = await _context.Roles
+            .SingleOrDefaultAsync(role =>
+                role.Name == Roles.User && role.IsActive)
+            ?? throw new InvalidOperationException(
+                "The active default User role was not found.");
+
         var newUser = new User
         {
-            Email = dto.Email,
+            Email = normalizedEmail,
             PasswordHash = passwordHash,
             Name = dto.Name,
             LastName = dto.LastName,
             DepartmentId = dto.DepartmentId,
+            RoleId = defaultRole.Id,
             CreatedAt = DateTime.UtcNow
         };
 

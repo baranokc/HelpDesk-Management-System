@@ -20,6 +20,8 @@ public class TicketAssignmentService : ITicketAssignmentService
     TicketAssignmentDto assignmentDto)
     {
         var ticket = await _context.Tickets
+            .Include(x => x.AssignedTo)
+            .Include(x => x.Team)
             .FirstOrDefaultAsync(
                 x => x.Id == createDto.TicketId &&
                     !x.IsDeleted);
@@ -73,6 +75,14 @@ public class TicketAssignmentService : ITicketAssignmentService
                 "The selected team member was not found or does not belong to the selected team.");
         }
 
+        var changedAt = DateTime.UtcNow;
+        var oldAssignment = ticket.AssignedTo is not null
+            ? $"{ticket.AssignedTo.Name} {ticket.AssignedTo.LastName}"
+            : ticket.Team?.Name ?? "Unassigned";
+
+        var newAssignment =
+            $"{team.Name} / {assignedTo.User.Name} {assignedTo.User.LastName}";
+
         var assignment = new Entities.TicketAssignment
         {
             Id = Guid.NewGuid(),
@@ -80,13 +90,27 @@ public class TicketAssignmentService : ITicketAssignmentService
             TeamId = team.Id,
             AssignedToId = assignedTo.Id,
             AssignedById = assignedBy.Id,
-            AssignedAt = DateTime.UtcNow
+            AssignedAt = changedAt
         };
 
         ticket.TeamId = team.Id;
         ticket.AssignedToId = assignedTo.UserId;
 
         await _context.TicketAssignments.AddAsync(assignment);
+        _context.TicketHistories.Add(new Entities.TicketHistory
+        {
+            TicketId = ticket.Id,
+            ActionType = Entities.TicketHistoryActionType.Assigned,
+            FieldName = "Assignment",
+            OldValue = oldAssignment,
+            NewValue = newAssignment,
+            Description = string.IsNullOrWhiteSpace(assignmentDto.Reason ?? createDto.Note)
+                ? null
+                : (assignmentDto.Reason ?? createDto.Note)!.Trim(),
+            ChangedById = createDto.AssignedById,
+            ChangedAt = changedAt
+        });
+
         await _context.SaveChangesAsync();
 
         return new TicketAssignmentResponseDto

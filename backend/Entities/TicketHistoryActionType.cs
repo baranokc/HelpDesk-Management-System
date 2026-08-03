@@ -11,5 +11,6 @@ public enum TicketHistoryActionType
     Resolved,
     Closed,
     Reopened,
+    Unassigned,
     
 }

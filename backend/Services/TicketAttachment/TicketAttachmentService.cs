@@ -76,17 +76,42 @@ public class TicketAttachmentService : ITicketAttachmentService
         if (list.Count == 0) return Array.Empty<TicketAttachmentDto>();
         var folder = Path.Combine(_environment.ContentRootPath, "uploads"); Directory.CreateDirectory(folder);
         var result = new List<TicketAttachmentDto>();
-        foreach (var file in list)
+        var createdPaths = new List<string>();
+        var createdEntities = new List<Entities.TicketAttachment>();
+
+        try
         {
-            var storedName = $"{Guid.NewGuid():N}{Path.GetExtension(file.FileName).ToLowerInvariant()}";
-            var physicalPath = Path.Combine(folder, storedName);
-            await using (var stream = new FileStream(physicalPath, FileMode.CreateNew, FileAccess.Write, FileShare.None)) await file.CopyToAsync(stream, cancellationToken);
-            var item = new Entities.TicketAttachment { TicketId = ticketId, TicketCommentId = commentId, FileName = Path.GetFileName(file.FileName), FilePath = $"/uploads/{storedName}", ContentType = file.ContentType, FileSize = file.Length, Description = description?.Trim(), UploadedAt = DateTime.UtcNow, UploaderId = uploaderId };
-            _db.TicketAttachments.Add(item); result.Add(ToDto(item));
+            foreach (var file in list)
+            {
+                var storedName = $"{Guid.NewGuid():N}{Path.GetExtension(file.FileName).ToLowerInvariant()}";
+                var physicalPath = Path.Combine(folder, storedName);
+                await using (var stream = new FileStream(physicalPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                    await file.CopyToAsync(stream, cancellationToken);
+
+                createdPaths.Add(physicalPath);
+                var item = new Entities.TicketAttachment { TicketId = ticketId, TicketCommentId = commentId, FileName = Path.GetFileName(file.FileName), FilePath = $"/uploads/{storedName}", ContentType = file.ContentType, FileSize = file.Length, Description = description?.Trim(), UploadedAt = DateTime.UtcNow, UploaderId = uploaderId };
+                createdEntities.Add(item);
+                _db.TicketAttachments.Add(item);
+                result.Add(ToDto(item));
+            }
+
+            await _db.SaveChangesAsync(cancellationToken);
+            return result;
         }
-        await _db.SaveChangesAsync(cancellationToken); return result;
+        catch
+        {
+            _db.TicketAttachments.RemoveRange(createdEntities);
+
+            foreach (var createdPath in createdPaths)
+            {
+                if (File.Exists(createdPath))
+                    File.Delete(createdPath);
+            }
+
+            throw;
+        }
     }
 
-    private static readonly System.Linq.Expressions.Expression<Func<Entities.TicketAttachment, TicketAttachmentDto>> MapExpression = x => new TicketAttachmentDto { Id = x.Id, FileName = x.FileName, ContentType = x.ContentType, FileSize = x.FileSize, DownloadUrl = x.FilePath, CommentId = x.TicketCommentId, UploadedById = x.UploaderId, UploadedByName = x.Uploader.Name + " " + x.Uploader.LastName, UploadedAt = x.UploadedAt };
-    private static TicketAttachmentDto ToDto(Entities.TicketAttachment x) => new() { Id = x.Id, FileName = x.FileName, ContentType = x.ContentType, FileSize = x.FileSize, DownloadUrl = x.FilePath, CommentId = x.TicketCommentId, UploadedById = x.UploaderId, UploadedByName = x.Uploader is null ? null : x.Uploader.Name + " " + x.Uploader.LastName, UploadedAt = x.UploadedAt };
+    private static readonly System.Linq.Expressions.Expression<Func<Entities.TicketAttachment, TicketAttachmentDto>> MapExpression = x => new TicketAttachmentDto { Id = x.Id, FileName = x.FileName, ContentType = x.ContentType, FileSize = x.FileSize, DownloadUrl = x.FilePath, Description = x.Description, CommentId = x.TicketCommentId, UploadedById = x.UploaderId, UploadedByName = x.Uploader.Name + " " + x.Uploader.LastName, UploadedAt = x.UploadedAt };
+    private static TicketAttachmentDto ToDto(Entities.TicketAttachment x) => new() { Id = x.Id, FileName = x.FileName, ContentType = x.ContentType, FileSize = x.FileSize, DownloadUrl = x.FilePath, Description = x.Description, CommentId = x.TicketCommentId, UploadedById = x.UploaderId, UploadedByName = x.Uploader is null ? null : x.Uploader.Name + " " + x.Uploader.LastName, UploadedAt = x.UploadedAt };
 }

@@ -395,6 +395,7 @@ public class TicketController : ControllerBase
 
         var history = await _ticketHistoryService.GetHistoryAsync(
             id,
+            currentUserRole != Roles.User,
             cancellationToken);
 
         return Ok(history);

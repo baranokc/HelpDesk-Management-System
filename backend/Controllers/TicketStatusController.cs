@@ -26,7 +26,7 @@ public class TicketStatusController : ControllerBase
     }
 
     [HttpPost("update")]
-    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.User}")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent}")]
     public async Task<IActionResult> UpdateStatus(
         [FromBody] TicketStatusUpdateDto request,
         CancellationToken cancellationToken)
@@ -48,20 +48,36 @@ public class TicketStatusController : ControllerBase
             return NotFound(new { message = "Ticket not found." });
         }
 
-        var success = await _statusService.UpdateTicketStatusAsync(
-            request.TicketId,
-            request.StatusId,
-            currentUserId,
-            request.Reason
-        );
-        if (!success)
-            return BadRequest(new { message = "Status update failed. Please check your ticket or Status ID." });
+        try
+        {
+            var success = await _statusService.UpdateTicketStatusAsync(
+                request.TicketId,
+                request.StatusId,
+                currentUserId,
+                request.Reason
+            );
 
-        return Ok(new { message = "Ticket status has been successfully updated." });
+            if (!success)
+            {
+                return BadRequest(new
+                {
+                    message = "Status update failed. Please check your ticket or Status ID."
+                });
+            }
+
+            return Ok(new
+            {
+                message = "Ticket status has been successfully updated."
+            });
+        }
+        catch (InvalidOperationException exception)
+        {
+            return BadRequest(new { message = exception.Message });
+        }
     }
 
     [HttpGet("history/{ticketId}")]
-    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.User}")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent}")]
     public async Task<IActionResult> GetTicketHistory(
         Guid ticketId,
         CancellationToken cancellationToken)

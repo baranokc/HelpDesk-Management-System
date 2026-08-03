@@ -92,6 +92,8 @@ public class TicketResolutionService : ITicketResolutionService
                 IsInternal = true,
                 CreatedAt = resolvedAt
             };
+
+            _db.TicketComments.Add(comment);
         }
 
         await _db.SaveChangesAsync(cancellationToken);

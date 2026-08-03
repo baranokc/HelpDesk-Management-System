@@ -107,15 +107,24 @@ public class TicketCommentController : ControllerBase
         if (!await CanAccessTicketAsync(ticketId, ct))
             return NotFound(new { message = "Ticket not found." });
 
-        var item = await _service.UpdateCommentAsync(
-            ticketId,
-            commentId,
-            dto,
-            UserId,
-            CanManageAll,
-            ct);
+        try
+        {
+            var item = await _service.UpdateCommentAsync(
+                ticketId,
+                commentId,
+                dto,
+                UserId,
+                CanManageAll,
+                ct);
 
-        return item is null ? NotFound() : Ok(item);
+            return item is null ? NotFound() : Ok(item);
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                new { message = exception.Message });
+        }
     }
 
     [HttpDelete("{commentId:guid}")]

@@ -6,5 +6,6 @@ public interface ITicketHistoryService
 {
     Task<IReadOnlyCollection<TicketHistoryDto>> GetHistoryAsync(
         Guid ticketId,
+        bool includeStaffDetails,
         CancellationToken cancellationToken = default);
 }

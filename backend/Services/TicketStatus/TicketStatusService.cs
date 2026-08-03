@@ -20,14 +20,30 @@ public class TicketStatusService : ITicketStatusService
     {
         var ticket = await _context.Tickets
             .Include(t => t.Status)
-            .FirstOrDefaultAsync(t => t.Id == ticketId);
+            .FirstOrDefaultAsync(t => t.Id == ticketId && !t.IsDeleted);
 
         if (ticket == null) return false;
 
-        var newStatus = await _context.TicketStatuses.FindAsync(newStatusId);
+        var newStatus = await _context.TicketStatuses
+            .SingleOrDefaultAsync(status =>
+                status.Id == newStatusId && status.IsActive);
+
         if (newStatus == null) return false;
 
         if (ticket.StatusId == newStatusId) return true;
+
+        if (ticket.ResolvedAt.HasValue || ticket.ClosedAt.HasValue)
+        {
+            throw new InvalidOperationException(
+                "A resolved or closed ticket requires a dedicated reopen workflow before its status can be changed.");
+        }
+
+        if (newStatus.Name.Equals("Resolved", StringComparison.OrdinalIgnoreCase) ||
+            newStatus.Name.Equals("Closed", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                "Use the dedicated resolve/close workflow for this status.");
+        }
 
         string oldStatusName = ticket.Status?.Name ?? "Didn't specified";
         string newStatusName = newStatus.Name;
@@ -42,6 +58,9 @@ public class TicketStatusService : ITicketStatusService
             FieldName = "Status",
             OldValue = oldStatusName,
             NewValue = newStatusName,
+            Description = string.IsNullOrWhiteSpace(note)
+                ? null
+                : note.Trim(),
             ChangedById = changedById,
             ChangedAt = DateTime.UtcNow
         };
@@ -64,6 +83,7 @@ public class TicketStatusService : ITicketStatusService
                 FieldName = h.FieldName,
                 OldValue = h.OldValue,
                 NewValue = h.NewValue,
+                Description = h.Description,
                 ChangedById = h.ChangedById,
                 ChangedByName = h.ChangedBy != null ? h.ChangedBy.Name : "Unknown",
                 ChangedAt = h.ChangedAt

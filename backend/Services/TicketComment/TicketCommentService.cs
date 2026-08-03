@@ -73,13 +73,13 @@ public class TicketCommentService : ITicketCommentService
     {
         Id = x.Id, Comment = x.Comment, CreatedById = x.UserId, CreatedByName = x.User.Name + " " + x.User.LastName,
         CreatedAt = x.CreatedAt, EditedAt = x.EditedAt, IsInternal = x.IsInternal,
-        Attachments = x.Attachments.OrderBy(a => a.UploadedAt).Select(a => new TicketAttachmentDto { Id = a.Id, FileName = a.FileName, ContentType = a.ContentType, FileSize = a.FileSize, DownloadUrl = a.FilePath, CommentId = a.TicketCommentId, UploadedById = a.UploaderId, UploadedByName = a.Uploader.Name + " " + a.Uploader.LastName, UploadedAt = a.UploadedAt }).ToList()
+        Attachments = x.Attachments.OrderBy(a => a.UploadedAt).Select(a => new TicketAttachmentDto { Id = a.Id, FileName = a.FileName, ContentType = a.ContentType, FileSize = a.FileSize, DownloadUrl = a.FilePath, Description = a.Description, CommentId = a.TicketCommentId, UploadedById = a.UploaderId, UploadedByName = a.Uploader.Name + " " + a.Uploader.LastName, UploadedAt = a.UploadedAt }).ToList()
     };
 
     private static TicketCommentDto ToDto(Entities.TicketComment x) => new()
     {
         Id = x.Id, Comment = x.Comment, CreatedById = x.UserId, CreatedByName = x.User.Name + " " + x.User.LastName,
         CreatedAt = x.CreatedAt, EditedAt = x.EditedAt, IsInternal = x.IsInternal,
-        Attachments = x.Attachments.Select(a => new TicketAttachmentDto { Id = a.Id, FileName = a.FileName, ContentType = a.ContentType, FileSize = a.FileSize, DownloadUrl = a.FilePath, CommentId = a.TicketCommentId, UploadedById = a.UploaderId, UploadedAt = a.UploadedAt }).ToList()
+        Attachments = x.Attachments.Select(a => new TicketAttachmentDto { Id = a.Id, FileName = a.FileName, ContentType = a.ContentType, FileSize = a.FileSize, DownloadUrl = a.FilePath, Description = a.Description, CommentId = a.TicketCommentId, UploadedById = a.UploaderId, UploadedAt = a.UploadedAt }).ToList()
     };
 }

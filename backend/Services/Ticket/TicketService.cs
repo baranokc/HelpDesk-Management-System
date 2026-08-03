@@ -64,10 +64,20 @@ public class TicketService : ITicketService
             query = query.Where(t => t.ImpactLevelId == filter.ImpactLevelId.Value);
 
         if (filter.CreatedFrom.HasValue)
-            query = query.Where(t => t.CreatedAt >= filter.CreatedFrom.Value);
+        {
+            var createdFromUtc = DateTime.SpecifyKind(
+                filter.CreatedFrom.Value.Date,
+                DateTimeKind.Utc);
+            query = query.Where(t => t.CreatedAt >= createdFromUtc);
+        }
 
         if (filter.CreatedTo.HasValue)
-            query = query.Where(t => t.CreatedAt <= filter.CreatedTo.Value);
+        {
+            var createdToExclusiveUtc = DateTime.SpecifyKind(
+                filter.CreatedTo.Value.Date.AddDays(1),
+                DateTimeKind.Utc);
+            query = query.Where(t => t.CreatedAt < createdToExclusiveUtc);
+        }
 
         var pageNumber = Math.Max(filter.PageNumber, 1);
         var pageSize = Math.Clamp(filter.PageSize, 1, 100);
@@ -156,6 +166,7 @@ public class TicketService : ITicketService
                         ContentType = a.ContentType,
                         FileSize = a.FileSize,
                         DownloadUrl = a.FilePath,
+                        Description = a.Description,
                         CommentId = a.TicketCommentId,
                         UploadedById = a.UploaderId,
                         UploadedByName = a.Uploader.Name + " " + a.Uploader.LastName,
@@ -180,6 +191,7 @@ public class TicketService : ITicketService
                 ContentType = a.ContentType,
                 FileSize = a.FileSize,
                 DownloadUrl = a.FilePath,
+                Description = a.Description,
                 CommentId = a.TicketCommentId,
                 UploadedById = a.UploaderId,
                 UploadedByName =
