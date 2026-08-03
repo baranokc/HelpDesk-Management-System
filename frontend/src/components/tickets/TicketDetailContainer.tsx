@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Alert } from "@/src/components/ui/Alert";
 import { Button, LinkButton } from "@/src/components/ui/Button";
-import { Card } from "@/src/components/ui/Card";
 import { ConfirmModal } from "@/src/components/ui/ConfirmModal";
 import { LoadingSpinner } from "@/src/components/ui/LoadingSpinner";
 import { useAuth } from "@/src/context/AuthContext";
@@ -22,7 +21,8 @@ import { CommentForm } from "./CommentForm";
 import { TicketActions } from "./TicketActions";
 import { TicketAttachments } from "./TicketAttachments";
 import { TicketComments } from "./TicketComments";
-import { TicketDetail } from "./TicketDetail";
+import { TicketHeader, TicketMetadata, TicketSubject } from "./TicketDetail";
+import { TicketDetailTabs } from "./TicketDetailTabs";
 import { TicketHistory } from "./TicketHistory";
 
 interface TicketDetailContainerProps {
@@ -179,8 +179,6 @@ export function TicketDetailContainer({
     );
   }
 
-  // The backend also returns comment attachments in ticket.attachments.
-  // Keep only ticket-level attachments here to prevent duplicate rendering.
   const ticketLevelAttachments = (ticket.attachments ?? []).filter(
     (attachment) => !attachment.commentId,
   );
@@ -190,14 +188,14 @@ export function TicketDetailContainer({
     (user?.role === "Admin" || user?.role === "SupportAgent");
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
-      <div className="flex flex-wrap justify-end gap-3">
+    <div className="mx-auto max-w-7xl space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4 dark:border-slate-700">
         <LinkButton href="/tickets" size="sm" variant="secondary">
           ← Back to tickets
         </LinkButton>
 
         {canManage && (
-          <>
+          <div className="flex gap-2">
             <LinkButton
               href={`/tickets/${ticket.id}/edit`}
               size="sm"
@@ -212,67 +210,78 @@ export function TicketDetailContainer({
             >
               Delete ticket
             </Button>
-          </>
+          </div>
         )}
       </div>
 
       {deleteError && <Alert variant="error">{deleteError}</Alert>}
-
-      <TicketDetail ticket={ticket} />
-
-      <TicketActions
-        onChanged={() => loadTicket(false)}
-        ticket={ticket}
-        userRole={user?.role}
-      />
-
       {attachmentError && <Alert variant="error">{attachmentError}</Alert>}
 
-      <Card
-        description={`${ticketLevelAttachments.length} attachment(s)`}
-        title="Attachments"
-      >
-        <TicketAttachments
-          attachments={ticketLevelAttachments}
-          downloadingAttachmentId={downloadingAttachmentId}
-          onDownload={handleDownloadAttachment}
-        />
-      </Card>
+      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
+          <TicketHeader ticket={ticket} />
+          <TicketSubject ticket={ticket} />
 
-      <Card
-        description={`${ticket.comments?.length ?? 0} comment(s)`}
-        title="Comments"
-      >
-        <TicketComments
-          comments={ticket.comments ?? []}
-          downloadingAttachmentId={downloadingAttachmentId}
-          onDownloadAttachment={handleDownloadAttachment}
-        />
-
-        <div className="mt-6 space-y-4 border-t border-base-300 pt-6">
-          <h3 className="text-base font-semibold">Add a comment</h3>
-
-          {commentError && <Alert variant="error">{commentError}</Alert>}
-
-          <CommentForm
-            canCreateInternal={canCreateInternal}
-            loading={submittingComment}
-            onSubmit={handleAddComment}
-          />
-        </div>
-      </Card>
-
-      <Card
-        description={`${history.length} history record(s)`}
-        title="Ticket history"
-      >
-        {historyError && (
-          <div className="mb-4">
-            <Alert variant="error">{historyError}</Alert>
+          <div className="mt-8">
+            <TicketDetailTabs
+              attachmentCount={ticketLevelAttachments.length}
+              attachments={
+                <div className="mt-4">
+                  <TicketAttachments
+                    attachments={ticketLevelAttachments}
+                    downloadingAttachmentId={downloadingAttachmentId}
+                    onDownload={handleDownloadAttachment}
+                  />
+                </div>
+              }
+              commentCount={ticket.comments?.length ?? 0}
+              comments={
+                <div className="mt-4 space-y-6">
+                  <TicketComments
+                    comments={ticket.comments ?? []}
+                    downloadingAttachmentId={downloadingAttachmentId}
+                    onDownloadAttachment={handleDownloadAttachment}
+                  />
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800/50">
+                    <h3 className="mb-4 text-sm font-semibold tracking-wide">
+                      Add a comment
+                    </h3>
+                    {commentError && (
+                      <div className="mb-4">
+                        <Alert variant="error">{commentError}</Alert>
+                      </div>
+                    )}
+                    <CommentForm
+                      canCreateInternal={canCreateInternal}
+                      loading={submittingComment}
+                      onSubmit={handleAddComment}
+                    />
+                  </div>
+                </div>
+              }
+              history={
+                <div className="mt-4">
+                  {historyError && (
+                    <div className="mb-4">
+                      <Alert variant="error">{historyError}</Alert>
+                    </div>
+                  )}
+                  <TicketHistory history={history} />
+                </div>
+              }
+            />
           </div>
-        )}
-        <TicketHistory history={history} />
-      </Card>
+        </div>
+
+        <div className="sticky top-6 space-y-6 lg:col-span-1">
+          <TicketActions
+            onChanged={() => loadTicket(false)}
+            ticket={ticket}
+            userRole={user?.role}
+          />
+          <TicketMetadata ticket={ticket} />
+        </div>
+      </div>
 
       <ConfirmModal
         confirmLabel="Delete ticket"
