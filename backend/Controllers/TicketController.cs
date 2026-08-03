@@ -55,7 +55,7 @@ public class TicketController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.User}")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.TeamLeader},{Roles.User}")]
     [ProducesResponseType(typeof(PagedResultDto<TicketListDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetTickets(
         [FromQuery] TicketFilterDto filter,
@@ -83,7 +83,7 @@ public class TicketController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.User}")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.TeamLeader},{Roles.User}")]
     [ProducesResponseType(typeof(TicketDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetTicketById(
@@ -149,7 +149,7 @@ public class TicketController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.User}")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.TeamLeader},{Roles.User}")]
     [ProducesResponseType(typeof(TicketResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateTicket(
@@ -204,7 +204,7 @@ public class TicketController : ControllerBase
     }
 
     [HttpPost("{id:guid}/assign")]
-    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent}")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.TeamLeader}")]
     [ProducesResponseType(typeof(TicketAssignmentResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -245,7 +245,11 @@ public class TicketController : ControllerBase
         try
         {
             var result = await _ticketAssignmentService
-                .AssignTicketAsync(createDto, dto);
+                .AssignTicketAsync(
+                    createDto,
+                    dto,
+                    currentUserRole,
+                    cancellationToken);
 
             if (result is null)
             {
@@ -265,10 +269,16 @@ public class TicketController : ControllerBase
                 message = exception.Message
             });
         }
+        catch (UnauthorizedAccessException exception)
+        {
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                new { message = exception.Message });
+        }
     }
 
     [HttpDelete("{id:guid}/assign")]
-    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent}")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.TeamLeader}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UnassignTicket(
@@ -307,7 +317,7 @@ public class TicketController : ControllerBase
     }
 
     [HttpPost("{id:guid}/resolve")]
-    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent}")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.TeamLeader}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ResolveTicket(
@@ -327,7 +337,7 @@ public class TicketController : ControllerBase
             });
         }
 
-        if (!await _ticketService.CanAccessTicketAsync(
+        if (!await _ticketService.CanProcessTicketAsync(
                 id,
                 currentUserId,
                 currentUserRole,
@@ -369,7 +379,7 @@ public class TicketController : ControllerBase
     }
 
     [HttpGet("{id:guid}/history")]
-    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.User}")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.TeamLeader},{Roles.User}")]
     [ProducesResponseType(typeof(IReadOnlyCollection<TicketHistoryDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetHistory(
         Guid id,
@@ -401,7 +411,7 @@ public class TicketController : ControllerBase
         return Ok(history);
     }
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.User}")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.TeamLeader},{Roles.User}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]

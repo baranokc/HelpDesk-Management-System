@@ -1,6 +1,7 @@
-using System.Net;
+using backend.Constants;
 using backend.Data;
 using backend.DTO.Ticket;
+using backend.Entities;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -16,15 +17,18 @@ public class TicketAssignmentService : ITicketAssignmentService
     }
     
     public async Task<TicketAssignmentResponseDto?> AssignTicketAsync(
-    TicketAssignmentCreateDto createDto,
-    TicketAssignmentDto assignmentDto)
+        TicketAssignmentCreateDto createDto,
+        TicketAssignmentDto assignmentDto,
+        string currentUserRole,
+        CancellationToken cancellationToken = default)
     {
         var ticket = await _context.Tickets
             .Include(x => x.AssignedTo)
             .Include(x => x.Team)
             .FirstOrDefaultAsync(
                 x => x.Id == createDto.TicketId &&
-                    !x.IsDeleted);
+                    !x.IsDeleted,
+                cancellationToken);
 
         if (ticket is null)
         {
@@ -35,7 +39,8 @@ public class TicketAssignmentService : ITicketAssignmentService
         var team = await _context.Teams
             .FirstOrDefaultAsync(
                 x => x.Id == assignmentDto.TeamId &&
-                    x.IsActive);
+                    x.IsActive,
+                cancellationToken);
 
         if (team is null)
         {
@@ -43,16 +48,43 @@ public class TicketAssignmentService : ITicketAssignmentService
                 "Team was not found or is inactive.");
         }
 
-        var assignedBy = await _context.TeamMembers
+        if (currentUserRole == Roles.TeamLeader &&
+            ticket.TeamId != assignmentDto.TeamId)
+        {
+            throw new UnauthorizedAccessException(
+                "Team leaders can assign tickets only within the ticket's current team.");
+        }
+
+        var assignedByQuery = _context.TeamMembers
             .Include(tm => tm.User)
-            .FirstOrDefaultAsync(
-                tm =>
-                    tm.UserId == createDto.AssignedById &&
-                    tm.IsActive &&
-                    tm.User.IsActive);
+            .Where(tm =>
+                tm.UserId == createDto.AssignedById &&
+                tm.IsActive &&
+                tm.User.IsActive);
+
+        if (currentUserRole == Roles.TeamLeader)
+        {
+            assignedByQuery = assignedByQuery.Where(tm =>
+                tm.TeamId == assignmentDto.TeamId &&
+                tm.RoleInTeam == TeamMemberRole.TeamLeader);
+        }
+        else
+        {
+            assignedByQuery = assignedByQuery
+                .OrderByDescending(tm => tm.TeamId == assignmentDto.TeamId);
+        }
+
+        var assignedBy = await assignedByQuery.FirstOrDefaultAsync(
+            cancellationToken);
 
         if (assignedBy is null)
         {
+            if (currentUserRole == Roles.TeamLeader)
+            {
+                throw new UnauthorizedAccessException(
+                    "You are not an active leader of the selected team.");
+            }
+
             throw new ArgumentException(
                 "The logged-in user is not an active team member.");
         }
@@ -67,7 +99,8 @@ public class TicketAssignmentService : ITicketAssignmentService
                     tm.Id == targetAssignedToId &&
                     tm.TeamId == assignmentDto.TeamId &&
                     tm.IsActive &&
-                    tm.User.IsActive);
+                    tm.User.IsActive,
+                cancellationToken);
 
         if (assignedTo is null)
         {
@@ -96,7 +129,9 @@ public class TicketAssignmentService : ITicketAssignmentService
         ticket.TeamId = team.Id;
         ticket.AssignedToId = assignedTo.UserId;
 
-        await _context.TicketAssignments.AddAsync(assignment);
+        await _context.TicketAssignments.AddAsync(
+            assignment,
+            cancellationToken);
         _context.TicketHistories.Add(new Entities.TicketHistory
         {
             TicketId = ticket.Id,
@@ -111,7 +146,7 @@ public class TicketAssignmentService : ITicketAssignmentService
             ChangedAt = changedAt
         });
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
         return new TicketAssignmentResponseDto
         {

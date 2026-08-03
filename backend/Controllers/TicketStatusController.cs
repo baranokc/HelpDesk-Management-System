@@ -26,7 +26,7 @@ public class TicketStatusController : ControllerBase
     }
 
     [HttpPost("update")]
-    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent}")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.TeamLeader}")]
     public async Task<IActionResult> UpdateStatus(
         [FromBody] TicketStatusUpdateDto request,
         CancellationToken cancellationToken)
@@ -39,7 +39,7 @@ public class TicketStatusController : ControllerBase
         var currentUserRole =
             User.FindFirstValue(ClaimTypes.Role) ?? string.Empty;
 
-        if (!await _ticketService.CanAccessTicketAsync(
+        if (!await _ticketService.CanProcessTicketAsync(
                 request.TicketId,
                 currentUserId,
                 currentUserRole,
@@ -77,7 +77,7 @@ public class TicketStatusController : ControllerBase
     }
 
     [HttpGet("history/{ticketId}")]
-    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent}")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.TeamLeader}")]
     public async Task<IActionResult> GetTicketHistory(
         Guid ticketId,
         CancellationToken cancellationToken)

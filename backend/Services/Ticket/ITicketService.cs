@@ -23,6 +23,12 @@ public interface ITicketService
         string currentUserRole,
         CancellationToken cancellationToken = default);
 
+    Task<bool> CanProcessTicketAsync(
+        Guid ticketId,
+        Guid currentUserId,
+        string currentUserRole,
+        CancellationToken cancellationToken = default);
+
     Task<TicketResponseDto> CreateTicketAsync(
         TicketCreateDto dto,
         Guid createdBy,

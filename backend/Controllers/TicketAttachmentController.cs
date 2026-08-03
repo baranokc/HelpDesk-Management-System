@@ -26,7 +26,8 @@ public class TicketAttachmentController : ControllerBase
 
     private Guid UserId => Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub"), out var id) ? id : Guid.Empty;
     private string UserRole => User.FindFirstValue(ClaimTypes.Role) ?? string.Empty;
-    private bool CanManageAll => User.IsInRole(Roles.Admin) || User.IsInRole(Roles.SupportAgent);
+    private bool CanManageAll => User.IsInRole(Roles.Admin) || User.IsInRole(Roles.TeamLeader) || User.IsInRole(Roles.SupportAgent);
+    private bool CanViewInternal => CanManageAll || User.IsInRole(Roles.TeamLeader);
 
     [HttpGet]
     public async Task<IActionResult> GetAll(
@@ -40,7 +41,7 @@ public class TicketAttachmentController : ControllerBase
         return Ok(await _service.GetAttachmentsAsync(
             ticketId,
             commentId,
-            CanManageAll,
+            CanViewInternal,
             ct));
     }
 
@@ -56,7 +57,7 @@ public class TicketAttachmentController : ControllerBase
         var item = await _service.GetAttachmentByIdAsync(
             ticketId,
             attachmentId,
-            CanManageAll,
+            CanViewInternal,
             ct);
 
         return item is null ? NotFound() : Ok(item);
@@ -74,7 +75,7 @@ public class TicketAttachmentController : ControllerBase
         var item = await _service.GetDownloadAsync(
             ticketId,
             attachmentId,
-            CanManageAll,
+            CanViewInternal,
             ct);
 
         return item is null
@@ -86,6 +87,7 @@ public class TicketAttachmentController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.TeamLeader},{Roles.SupportAgent},{Roles.User}")]
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> Create(
         Guid ticketId,
@@ -123,6 +125,7 @@ public class TicketAttachmentController : ControllerBase
     }
 
     [HttpPatch("{attachmentId:guid}")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.TeamLeader},{Roles.SupportAgent},{Roles.User}")]
     public async Task<IActionResult> Update(
         Guid ticketId,
         Guid attachmentId,
@@ -153,6 +156,7 @@ public class TicketAttachmentController : ControllerBase
     }
 
     [HttpDelete("{attachmentId:guid}")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.TeamLeader},{Roles.SupportAgent},{Roles.User}")]
     public async Task<IActionResult> Delete(
         Guid ticketId,
         Guid attachmentId,

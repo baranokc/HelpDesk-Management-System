@@ -28,7 +28,7 @@ public class TicketAssignmentController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent}")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.TeamLeader}")]
     [ProducesResponseType(typeof(TicketAssignmentResponseDto),StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -77,7 +77,11 @@ public class TicketAssignmentController : ControllerBase
         try
         {
             var result = await _assignmentService
-                .AssignTicketAsync(createDto, assignmentDto);
+                .AssignTicketAsync(
+                    createDto,
+                    assignmentDto,
+                    currentUserRole,
+                    cancellationToken);
 
             if (result is null)
             {
@@ -96,9 +100,13 @@ public class TicketAssignmentController : ControllerBase
                 message = exception.Message
             });
         }
+        catch (UnauthorizedAccessException exception)
+        {
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                new { message = exception.Message });
+        }
     }
 
         
 }
-        
-    

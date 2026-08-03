@@ -9,6 +9,7 @@ export interface User {
   email: string;
   name: string;
   role: string;
+  ledTeamIds: string[];
 }
 
 interface AuthContextType {
@@ -39,12 +40,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const role = (payload.role || payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']) as string;
         const name = (payload.name || payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name']) as string;
         const email = payload.email as string;
+        const ledTeamIds = typeof payload.led_team_ids === 'string' ? payload.led_team_ids.split(',').map((teamId) => teamId.trim()).filter(Boolean): [];
 
         setUser({
           id: userId,
           email,
           name,
           role: role || 'User',
+          ledTeamIds,
         });
       }
     } else {

@@ -34,8 +34,14 @@ public class AuthService : IAuthService
 
         bool IsPasswordValid = BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash);
         if (!IsPasswordValid) return null;
+        var ledTeamIds = user.Role?.Name == Roles.TeamLeader  ? await _context.TeamMembers
+        .AsNoTracking()
+        .Where(teamMember => teamMember.UserId == user.Id && teamMember.RoleInTeam == TeamMemberRole.TeamLeader && teamMember.IsActive && teamMember.Team.IsActive)
+        .Select(teamMember => teamMember.TeamId)
+        .Distinct()
+        .ToListAsync(): new List<Guid>();
 
-        var token = GenerateJwtToken(user);
+        var token = GenerateJwtToken(user, ledTeamIds);
         return new LoginResponse
         {
             Token = token,
@@ -45,7 +51,7 @@ public class AuthService : IAuthService
         };
 
     }
-    private string GenerateJwtToken(User user)
+    private string GenerateJwtToken(User user, IReadOnlyCollection<Guid> ledTeamIds)
     {
         var jwtSettings = _configuration.GetSection("JwtSettings");
         var key = Encoding.UTF8.GetBytes(jwtSettings["Secret"]!);
@@ -54,6 +60,7 @@ public class AuthService : IAuthService
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString() ),
             new Claim(ClaimTypes.Email , user.Email),
             new Claim(ClaimTypes.Role , user.Role?.Name ?? "User"),
+            new Claim("led_team_ids",string.Join(",", ledTeamIds.Select(teamId => teamId.ToString())))
         };
         var tokenDescriptor = new SecurityTokenDescriptor
         {
