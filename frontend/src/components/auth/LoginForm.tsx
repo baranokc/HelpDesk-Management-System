@@ -6,20 +6,19 @@ import {
   useState,
   type SubmitEvent,
 } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/src/components/ui/Button";
 import { ThemeToggle } from "@/src/components/ui/ThemeToggle";
-import {
-  type FormErrors,
-  getFormErrors,
-} from "@/src/lib/validation";
+import {type FormErrors, getFormErrors,} from "@/src/lib/validation";
 import { loginSchema } from "@/src/schemas/authSchemas";
 import { authService } from "@/src/services/authService";
 import { ForgotPasswordModal } from "./ForgotPassword";
+import { useAuth } from "@/src/context/AuthContext";
 
 export function LoginForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
-
+  const {login, isAuthenticated, loading: authLoading,} = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -38,6 +37,12 @@ export function LoginForm() {
       );
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      router.replace("/tickets");
+    }
+  }, [authLoading, isAuthenticated, router]);
 
   const handleSubmit = async (
     event: SubmitEvent<HTMLFormElement>,
@@ -63,8 +68,10 @@ export function LoginForm() {
     setLoading(true);
 
     try {
-      await authService.login(result.data);
-      window.location.href = "/tickets";
+      const loginResponse = await authService.login(result.data);
+
+      login(loginResponse.token);
+      router.replace("/tickets");
     } catch (caughtError: unknown) {
       const errorMessage =
         (
@@ -83,6 +90,14 @@ export function LoginForm() {
       setLoading(false);
     }
   };
+
+  if (authLoading || isAuthenticated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <span className="loading loading-spinner loading-lg text-primary" />
+      </div>
+    );
+  }
 
   return (
     <>
