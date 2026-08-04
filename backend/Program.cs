@@ -14,6 +14,7 @@ using backend.Services.Lookup;
 using backend.Hubs;
 using backend.Services.Notification;
 using backend.Services.TeamManagement;
+using backend.Services.Category;
 using Microsoft.OpenApi;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +22,7 @@ using Microsoft.IdentityModel.Tokens;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Http.Features;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -89,6 +91,7 @@ builder.Services.AddScoped<ITicketResolutionService, TicketResolutionService>();
 builder.Services.AddScoped<ITicketHistoryService, TicketHistoryService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<ITeamManagementService, TeamManagementService>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
 
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");

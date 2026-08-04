@@ -12,7 +12,13 @@ public class LookupService : ILookupService
     public LookupService(AppDbContext db) => _db = db;
 
     public async Task<IReadOnlyCollection<LookupItemDto<Guid>>> GetCategoriesAsync(CancellationToken cancellationToken = default) =>
-        await _db.TicketCategories.AsNoTracking().Where(x => x.IsActive).OrderBy(x => x.Name)
+        await _db.TicketCategories.AsNoTracking()
+            .Where(x =>
+                x.IsActive &&
+                x.DefaultTeamId.HasValue &&
+                x.DefaultTeam != null &&
+                x.DefaultTeam.IsActive)
+            .OrderBy(x => x.Name)
             .Select(x => new LookupItemDto<Guid> { ItemId = x.Id, Name = x.Name }).ToListAsync(cancellationToken);
 
     public async Task<IReadOnlyCollection<LookupItemDto<Guid>>> GetSubCategoriesAsync(Guid categoryId, CancellationToken cancellationToken = default) =>
