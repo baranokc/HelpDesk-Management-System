@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Text;
 using backend.Data;
 using backend.DTO.Ticket.Validator;
@@ -129,6 +130,86 @@ builder.Services.AddAuthentication(options =>
             }
 
             return Task.CompletedTask;
+        },
+        OnTokenValidated = async context =>
+        {
+            var userIdClaim =
+                context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier) ??
+                context.Principal?.FindFirstValue("sub");
+
+            if (!Guid.TryParse(userIdClaim, out var userId))
+            {
+                context.Fail("Invalid user identity.");
+                return;
+            }
+
+            var db = context.HttpContext.RequestServices
+                .GetRequiredService<AppDbContext>();
+
+            var currentUser = await db.Users
+                .AsNoTracking()
+                .Where(user => user.Id == userId)
+                .Select(user => new
+                {
+                    user.IsActive,
+                    RoleName = user.Role != null
+                        ? user.Role.Name
+                        : null,
+                    RoleIsActive = user.Role != null && user.Role.IsActive
+                })
+                .SingleOrDefaultAsync();
+
+            if (currentUser is null ||
+                !currentUser.IsActive ||
+                !currentUser.RoleIsActive ||
+                string.IsNullOrWhiteSpace(currentUser.RoleName))
+            {
+                context.Fail("The user account or role is inactive.");
+                return;
+            }
+
+            if (context.Principal?.Identity is not ClaimsIdentity identity)
+            {
+                context.Fail("Invalid claims identity.");
+                return;
+            }
+
+            foreach (var roleClaim in identity
+                .FindAll(ClaimTypes.Role)
+                .ToList())
+            {
+                identity.RemoveClaim(roleClaim);
+            }
+
+            foreach (var teamClaim in identity
+                .FindAll("led_team_ids")
+                .ToList())
+            {
+                identity.RemoveClaim(teamClaim);
+            }
+
+            identity.AddClaim(new Claim(
+                ClaimTypes.Role,
+                currentUser.RoleName));
+
+            if (currentUser.RoleName == backend.Constants.Roles.TeamLeader)
+            {
+                var ledTeamIds = await db.TeamMembers
+                    .AsNoTracking()
+                    .Where(teamMember =>
+                        teamMember.UserId == userId &&
+                        teamMember.RoleInTeam ==
+                            backend.Entities.TeamMemberRole.TeamLeader &&
+                        teamMember.IsActive &&
+                        teamMember.Team.IsActive)
+                    .Select(teamMember => teamMember.TeamId)
+                    .Distinct()
+                    .ToListAsync();
+
+                identity.AddClaim(new Claim(
+                    "led_team_ids",
+                    string.Join(",", ledTeamIds)));
+            }
         }
     };
 });

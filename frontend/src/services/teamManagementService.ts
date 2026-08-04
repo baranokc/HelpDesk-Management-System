@@ -37,4 +37,23 @@ export const teamManagementService = {
 
     return response.data;
   },
+
+  getOwnMemberDetail: async (
+    activePageNumber = 1,
+    inactivePageNumber = 1,
+    pageSize = 25,
+  ): Promise<TeamMemberDetailDto> => {
+    const response = await api.get<TeamMemberDetailDto>(
+      "/team-management/me",
+      {
+        params: {
+          activePageNumber,
+          inactivePageNumber,
+          pageSize,
+        },
+      },
+    );
+
+    return response.data;
+  },
 };

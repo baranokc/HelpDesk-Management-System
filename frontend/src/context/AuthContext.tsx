@@ -1,6 +1,12 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 import { authService } from '@/src/services/authService';
 import { decodeJwt, isTokenExpired } from '@/src/utils/jwt';
 
@@ -18,6 +24,7 @@ interface AuthContextType {
   loading: boolean;
   login: (token: string) => void;
   logout: () => void;
+  refreshSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -26,13 +33,14 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   login: () => {},
   logout: () => {},
+  refreshSession: async () => {},
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const processToken = (token: string) => {
+  const processToken = useCallback((token: string) => {
     if (token && !isTokenExpired(token)) {
       const payload = decodeJwt(token);
       if (payload) {
@@ -54,15 +62,57 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       authService.logout();
       setUser(null);
     }
-  };
+  }, []);
+
+  const refreshSession = useCallback(async () => {
+    const token = authService.getToken();
+
+    if (!token || isTokenExpired(token)) {
+      authService.logout();
+      setUser(null);
+      return;
+    }
+
+    processToken(token);
+
+    try {
+      const refreshedSession = await authService.refreshSession();
+      processToken(refreshedSession.token);
+    } catch {
+      if (!authService.getToken()) setUser(null);
+    }
+  }, [processToken]);
 
   useEffect(() => {
-    const token = authService.getToken();
-    if (token) {
-      processToken(token);
-    }
-    setLoading(false);
-  }, []);
+    let cancelled = false;
+
+    const initializeSession = async () => {
+      await refreshSession();
+      if (!cancelled) setLoading(false);
+    };
+
+    void initializeSession();
+
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') {
+        void refreshSession();
+      }
+    };
+
+    const refreshInterval = window.setInterval(() => {
+      void refreshSession();
+    }, 30_000);
+
+    window.addEventListener('focus', refreshWhenVisible);
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(refreshInterval);
+      window.removeEventListener('focus', refreshWhenVisible);
+      document.removeEventListener('visibilitychange', refreshWhenVisible);
+    };
+  }, [refreshSession]);
 
   const login = (token: string) => {
     processToken(token);
@@ -82,6 +132,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         loading,
         login,
         logout,
+        refreshSession,
       }}
     >
       {children}

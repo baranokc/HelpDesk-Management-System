@@ -94,7 +94,14 @@ public class LookupService : ILookupService
                 return Array.Empty<TeamMemberLookupDto>();
         }
 
-        return await _db.TeamMembers.AsNoTracking().Where(x => x.TeamId == teamId && x.IsActive && x.User.IsActive)
+        return await _db.TeamMembers.AsNoTracking().Where(x =>
+                x.TeamId == teamId &&
+                x.IsActive &&
+                x.User.IsActive &&
+                x.User.UserRoles.Any(userRole =>
+                    userRole.Role.IsActive &&
+                    (userRole.Role.Name == Roles.SupportAgent ||
+                     userRole.Role.Name == Roles.TeamLeader)))
             .OrderBy(x => x.User.Name).ThenBy(x => x.User.LastName)
             .Select(x => new TeamMemberLookupDto { TeamMemberId = x.Id, UserId = x.UserId, FullName = x.User.Name + " " + x.User.LastName, RoleInTeam = x.RoleInTeam.ToString() })
             .ToListAsync(cancellationToken);

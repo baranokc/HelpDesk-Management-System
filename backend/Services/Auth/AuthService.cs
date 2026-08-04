@@ -34,22 +34,50 @@ public class AuthService : IAuthService
 
         bool IsPasswordValid = BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash);
         if (!IsPasswordValid) return null;
-        var ledTeamIds = user.Role?.Name == Roles.TeamLeader  ? await _context.TeamMembers
-        .AsNoTracking()
-        .Where(teamMember => teamMember.UserId == user.Id && teamMember.RoleInTeam == TeamMemberRole.TeamLeader && teamMember.IsActive && teamMember.Team.IsActive)
-        .Select(teamMember => teamMember.TeamId)
-        .Distinct()
-        .ToListAsync(): new List<Guid>();
+        return await CreateLoginResponseAsync(user);
 
-        var token = GenerateJwtToken(user, ledTeamIds);
+    }
+
+    public async Task<LoginResponse?> RefreshSessionAsync(Guid userId)
+    {
+        var user = await _context.Users
+            .Include(item => item.Role)
+            .SingleOrDefaultAsync(item => item.Id == userId);
+
+        if (user is null ||
+            !user.IsActive ||
+            user.Role is null ||
+            !user.Role.IsActive)
+        {
+            return null;
+        }
+
+        return await CreateLoginResponseAsync(user);
+    }
+
+    private async Task<LoginResponse> CreateLoginResponseAsync(User user)
+    {
+        IReadOnlyCollection<Guid> ledTeamIds =
+            user.Role?.Name == Roles.TeamLeader
+            ? await _context.TeamMembers
+                .AsNoTracking()
+                .Where(teamMember =>
+                    teamMember.UserId == user.Id &&
+                    teamMember.RoleInTeam == TeamMemberRole.TeamLeader &&
+                    teamMember.IsActive &&
+                    teamMember.Team.IsActive)
+                .Select(teamMember => teamMember.TeamId)
+                .Distinct()
+                .ToListAsync()
+            : Array.Empty<Guid>();
+
         return new LoginResponse
         {
-            Token = token,
+            Token = GenerateJwtToken(user, ledTeamIds),
             Email = user.Email,
             FullName = $"{user.Name} {user.LastName}",
-            Role = user.Role?.Name ?? "User",
+            Role = user.Role?.Name ?? Roles.User,
         };
-
     }
     private string GenerateJwtToken(User user, IReadOnlyCollection<Guid> ledTeamIds)
     {

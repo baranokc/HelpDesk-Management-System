@@ -99,8 +99,49 @@ export default function TeamsPage() {
     }
   };
 
+  const refreshAllData = async () => {
+    await loadData();
+
+    const detailRequests: Promise<void>[] = [];
+
+    if (isMembersModalOpen && selectedTeamDetails?.id) {
+      detailRequests.push(
+        teamService.getTeamById(selectedTeamDetails.id).then((details) => {
+          setSelectedTeamDetails(details);
+        }),
+      );
+    }
+
+    if (isViewMembersModalOpen && viewTeamDetails?.id) {
+      detailRequests.push(
+        teamService.getTeamById(viewTeamDetails.id).then((details) => {
+          setViewTeamDetails(details);
+        }),
+      );
+    }
+
+    if (isLeaderModalOpen && leaderModalTeam?.id) {
+      detailRequests.push(
+        teamService.getTeamById(leaderModalTeam.id).then((details) => {
+          setLeaderModalTeam(details);
+          setSelectedLeaderId(details.leadId || "");
+        }),
+      );
+    }
+
+    try {
+      await Promise.all(detailRequests);
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, "Failed to refresh team details."));
+    }
+  };
+
   useEffect(() => {
-    void loadData();
+    const initialLoadTimer = window.setTimeout(() => {
+      void loadData();
+    }, 0);
+
+    return () => window.clearTimeout(initialLoadTimer);
   }, []);
 
   const openCreateModal = () => {
@@ -274,7 +315,7 @@ export default function TeamsPage() {
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => void loadData()}
+            onClick={() => void refreshAllData()}
             className="btn btn-sm btn-ghost border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2"
           >
             <RefreshIcon />

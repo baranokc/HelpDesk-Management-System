@@ -66,7 +66,12 @@ public class TicketAssignmentService : ITicketAssignmentService
             .Where(tm =>
                 tm.UserId == createDto.AssignedById &&
                 tm.IsActive &&
-                tm.User.IsActive);
+                tm.User.IsActive &&
+                tm.User.UserRoles.Any(userRole =>
+                    userRole.Role.IsActive &&
+                    (userRole.Role.Name == Roles.Admin ||
+                     userRole.Role.Name == Roles.SupportAgent ||
+                     userRole.Role.Name == Roles.TeamLeader)));
 
         if (currentUserRole == Roles.TeamLeader)
         {
@@ -105,7 +110,11 @@ public class TicketAssignmentService : ITicketAssignmentService
                     tm.Id == targetAssignedToId &&
                     tm.TeamId == assignmentDto.TeamId &&
                     tm.IsActive &&
-                    tm.User.IsActive,
+                    tm.User.IsActive &&
+                    tm.User.UserRoles.Any(userRole =>
+                        userRole.Role.IsActive &&
+                        (userRole.Role.Name == Roles.SupportAgent ||
+                         userRole.Role.Name == Roles.TeamLeader)),
                 cancellationToken);
 
         if (assignedTo is null)

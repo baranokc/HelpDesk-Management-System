@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace backend.Controllers;
 
-[Authorize(Roles = Roles.TeamLeader)]
+[Authorize]
 [ApiController]
 [Route("api/team-management")]
 public sealed class TeamManagementController : ControllerBase
@@ -28,6 +28,7 @@ public sealed class TeamManagementController : ControllerBase
             : Guid.Empty;
 
     [HttpGet]
+    [Authorize(Roles = Roles.TeamLeader)]
     [ProducesResponseType(
         typeof(TeamManagementOverviewDto),
         StatusCodes.Status200OK)]
@@ -56,6 +57,7 @@ public sealed class TeamManagementController : ControllerBase
     }
 
     [HttpGet("members/{teamMemberId:guid}")]
+    [Authorize(Roles = Roles.TeamLeader)]
     [ProducesResponseType(
         typeof(TeamMemberDetailDto),
         StatusCodes.Status200OK)]
@@ -92,5 +94,36 @@ public sealed class TeamManagementController : ControllerBase
                 StatusCodes.Status403Forbidden,
                 new { message = exception.Message });
         }
+    }
+
+    [HttpGet("me")]
+    [Authorize(Roles = Roles.SupportAgent)]
+    [ProducesResponseType(
+        typeof(TeamMemberDetailDto),
+        StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetOwnMemberDetail(
+        [FromQuery] int activePageNumber = 1,
+        [FromQuery] int inactivePageNumber = 1,
+        [FromQuery] int pageSize = 25,
+        CancellationToken cancellationToken = default)
+    {
+        if (CurrentUserId == Guid.Empty)
+            return Unauthorized(new { message = "Invalid user identity." });
+
+        var result = await _teamManagementService.GetOwnMemberDetailAsync(
+            CurrentUserId,
+            activePageNumber,
+            inactivePageNumber,
+            pageSize,
+            cancellationToken);
+
+        return result is null
+            ? NotFound(new
+            {
+                message = "No active team membership was found for your account."
+            })
+            : Ok(result);
     }
 }

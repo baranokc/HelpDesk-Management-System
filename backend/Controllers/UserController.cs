@@ -1,8 +1,12 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using backend.Constants;
 using backend.Data;
 using backend.Entities;
+using backend.Hubs;
+using Microsoft.AspNetCore.SignalR;
 
 namespace backend.Controllers;
 
@@ -12,10 +16,14 @@ namespace backend.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly IHubContext<NotificationHub> _hubContext;
 
-    public UsersController(AppDbContext context)
+    public UsersController(
+        AppDbContext context,
+        IHubContext<NotificationHub> hubContext)
     {
         _context = context;
+        _hubContext = hubContext;
     }
 
     [HttpGet]
@@ -37,29 +45,173 @@ public class UsersController : ControllerBase
     }
 
     [HttpPut("{id}/role")]
-    public async Task<IActionResult> UpdateUserRole(string id, [FromBody] UpdateRoleDto dto)
+    public async Task<IActionResult> UpdateUserRole(
+        string id,
+        [FromBody] UpdateRoleDto dto,
+        CancellationToken cancellationToken)
     {
         if (!Guid.TryParse(id, out var userGuid))
         {
             return BadRequest("Invalid User ID format.");
         }
 
+        var normalizedRole = dto.NewRole?.Trim();
+        if (string.IsNullOrWhiteSpace(normalizedRole))
+            return BadRequest("Role name is required.");
+
         var user = await _context.Users
             .Include(u => u.UserRoles)
-            .FirstOrDefaultAsync(u => u.Id == userGuid);
+            .FirstOrDefaultAsync(
+                u => u.Id == userGuid,
+                cancellationToken);
 
         if (user == null)
             return NotFound("User not found.");
 
         var roleEntity = await _context.Roles
-            .FirstOrDefaultAsync(r => r.Name.ToLower() == dto.NewRole.ToLower());
+            .FirstOrDefaultAsync(
+                role =>
+                    role.IsActive &&
+                    role.Name.ToLower() == normalizedRole.ToLower(),
+                cancellationToken);
 
         if (roleEntity == null)
             return BadRequest("Invalid role name.");
 
+        var canRemainTeamMember =
+            roleEntity.Name == Roles.SupportAgent ||
+            roleEntity.Name == Roles.TeamLeader;
+
+        await using var transaction = await _context.Database
+            .BeginTransactionAsync(cancellationToken);
+
+        user.RoleId = roleEntity.Id;
+
+        if (!canRemainTeamMember)
+        {
+            var memberships = await _context.TeamMembers
+                .Where(member =>
+                    member.UserId == userGuid &&
+                    member.IsActive)
+                .ToListAsync(cancellationToken);
+
+            foreach (var membership in memberships)
+                membership.IsActive = false;
+
+            var ledTeams = await _context.Teams
+                .Where(team => team.LeadId == userGuid)
+                .ToListAsync(cancellationToken);
+
+            foreach (var team in ledTeams)
+                team.LeadId = null;
+
+            user.TeamId = null;
+
+            var activeAssignedTickets = await _context.Tickets
+                .Where(ticket =>
+                    ticket.AssignedToId == userGuid &&
+                    !ticket.IsDeleted &&
+                    !ticket.Status.IsClosed &&
+                    ticket.Status.Name != "Resolved" &&
+                    ticket.Status.Name != "Cancelled" &&
+                    ticket.Status.Name != "Closed")
+                .ToListAsync(cancellationToken);
+
+            var changedById = Guid.TryParse(
+                User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+                User.FindFirstValue("sub"),
+                out var adminUserId)
+                    ? adminUserId
+                    : Guid.Empty;
+
+            foreach (var ticket in activeAssignedTickets)
+            {
+                ticket.AssignedToId = null;
+
+                if (changedById != Guid.Empty)
+                {
+                    _context.TicketHistories.Add(new TicketHistory
+                    {
+                        TicketId = ticket.Id,
+                        ActionType = TicketHistoryActionType.Unassigned,
+                        FieldName = "Assignment",
+                        OldValue = $"{user.Name} {user.LastName}".Trim(),
+                        NewValue = ticket.TeamId.HasValue
+                            ? "Assigned to team only"
+                            : "Unassigned",
+                        ChangedById = changedById,
+                        ChangedAt = DateTime.UtcNow,
+                        Description =
+                            "Assignee removed because the user's new role " +
+                            "does not permit team membership."
+                    });
+                }
+            }
+        }
+        else if (roleEntity.Name == Roles.TeamLeader)
+        {
+            var memberships = await _context.TeamMembers
+                .Where(member =>
+                    member.UserId == userGuid &&
+                    member.Team.IsActive)
+                .ToListAsync(cancellationToken);
+
+            var activeMemberships = memberships
+                .Where(member => member.IsActive)
+                .ToList();
+
+            if (activeMemberships.Count == 0 && memberships.Count == 1)
+            {
+                memberships[0].IsActive = true;
+                memberships[0].JoinedAt = DateTime.UtcNow;
+                activeMemberships.Add(memberships[0]);
+            }
+
+            if (activeMemberships.Count == 0)
+            {
+                return BadRequest(
+                    "The user must be an active member of at least one team " +
+                    "before being promoted to TeamLeader. If multiple inactive " +
+                    "memberships exist, reactivate the intended team first.");
+            }
+
+            foreach (var membership in activeMemberships)
+                membership.RoleInTeam = TeamMemberRole.TeamLeader;
+
+            var teamIds = activeMemberships
+                .Select(membership => membership.TeamId)
+                .ToArray();
+
+            var teams = await _context.Teams
+                .Where(team => teamIds.Contains(team.Id))
+                .ToListAsync(cancellationToken);
+
+            foreach (var team in teams)
+                team.LeadId = userGuid;
+        }
+        else if (roleEntity.Name == Roles.SupportAgent)
+        {
+            var leaderMemberships = await _context.TeamMembers
+                .Where(member =>
+                    member.UserId == userGuid &&
+                    member.IsActive &&
+                    member.RoleInTeam == TeamMemberRole.TeamLeader)
+                .ToListAsync(cancellationToken);
+
+            foreach (var membership in leaderMemberships)
+                membership.RoleInTeam = TeamMemberRole.Member;
+
+            var ledTeams = await _context.Teams
+                .Where(team => team.LeadId == userGuid)
+                .ToListAsync(cancellationToken);
+
+            foreach (var team in ledTeams)
+                team.LeadId = null;
+        }
+
         var existingUserRoles = await _context.UserRoles
-            .Where(ur => ur.UserId == userGuid)
-            .ToListAsync();
+            .Where(userRole => userRole.UserId == userGuid)
+            .ToListAsync(cancellationToken);
 
         _context.UserRoles.RemoveRange(existingUserRoles);
 
@@ -70,7 +222,16 @@ public class UsersController : ControllerBase
             AssignedAt = DateTime.UtcNow
         });
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        await _hubContext.Clients
+            .User(userGuid.ToString())
+            .SendAsync(
+                "SessionChanged",
+                new { reason = "RoleChanged" },
+                cancellationToken);
+
         return NoContent();
     }
 

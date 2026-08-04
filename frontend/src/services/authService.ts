@@ -21,6 +21,15 @@ export const authService = {
         const response = await api.post<UserResponse>('/auth/register',dto);
         return response.data;
     },
+    refreshSession: async (): Promise<LoginResponse> => {
+        const response = await api.post<LoginResponse>('/auth/refresh');
+
+        if (response.data.token) {
+            localStorage.setItem('token', response.data.token);
+        }
+
+        return response.data;
+    },
     logout: (): void => {
         localStorage.removeItem('token');
     },

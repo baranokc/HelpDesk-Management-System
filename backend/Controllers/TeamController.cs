@@ -1,8 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using backend.Constants;
 using backend.Data;
 using backend.Entities;
+using backend.Hubs;
+using Microsoft.AspNetCore.SignalR;
 
 namespace backend.Controllers;
 
@@ -12,10 +15,14 @@ namespace backend.Controllers;
 public class TeamController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly IHubContext<NotificationHub> _hubContext;
 
-    public TeamController(AppDbContext context)
+    public TeamController(
+        AppDbContext context,
+        IHubContext<NotificationHub> hubContext)
     {
         _context = context;
+        _hubContext = hubContext;
     }
 
     [HttpGet]
@@ -32,7 +39,13 @@ public class TeamController : ControllerBase
                 leadName = t.Lead != null 
                     ? (string.IsNullOrEmpty(t.Lead.LastName) ? t.Lead.Name : (t.Lead.Name + " " + t.Lead.LastName)) 
                     : null,
-                memberCount = t.TeamMembers.Count,
+                memberCount = t.TeamMembers.Count(tm =>
+                    tm.IsActive &&
+                    tm.User.IsActive &&
+                    tm.User.UserRoles.Any(userRole =>
+                        userRole.Role.IsActive &&
+                        (userRole.Role.Name == Roles.SupportAgent ||
+                         userRole.Role.Name == Roles.TeamLeader))),
                 createdAt = t.CreatedAt
             })
             .ToListAsync();
@@ -44,7 +57,12 @@ public class TeamController : ControllerBase
     public async Task<IActionResult> GetEligibleAgents()
     {
         var agents = await _context.Users
-            .Where(u => u.UserRoles.Any(ur => ur.Role.Name == "SupportAgent" || ur.Role.Name == "TeamLeader"))
+            .Where(u =>
+                u.IsActive &&
+                u.UserRoles.Any(userRole =>
+                    userRole.Role.IsActive &&
+                    (userRole.Role.Name == Roles.SupportAgent ||
+                     userRole.Role.Name == Roles.TeamLeader)))
             .Select(u => new
             {
                 id = u.Id,
@@ -53,24 +71,6 @@ public class TeamController : ControllerBase
             })
             .OrderBy(u => u.fullName)
             .ToListAsync();
-
-        if (!agents.Any())
-        {
-            agents = await _context.Users
-                .Where(u => _context.UserRoles
-                    .Include(ur => ur.Role)
-                    .Where(ur => ur.UserId == u.Id)
-                    .Select(ur => ur.Role.Name)
-                    .Any(roleName => roleName == "SupportAgent" || roleName == "TeamLeader"))
-                .Select(u => new
-                {
-                    id = u.Id,
-                    fullName = string.IsNullOrEmpty(u.LastName) ? u.Name : (u.Name + " " + u.LastName),
-                    email = u.Email
-                })
-                .OrderBy(u => u.fullName)
-                .ToListAsync();
-        }
 
         return Ok(agents);
     }
@@ -89,10 +89,22 @@ public class TeamController : ControllerBase
                 leadName = t.Lead != null 
                     ? (string.IsNullOrEmpty(t.Lead.LastName) ? t.Lead.Name : (t.Lead.Name + " " + t.Lead.LastName)) 
                     : null,
-                memberCount = t.TeamMembers.Count,
+                memberCount = t.TeamMembers.Count(tm =>
+                    tm.IsActive &&
+                    tm.User.IsActive &&
+                    tm.User.UserRoles.Any(userRole =>
+                        userRole.Role.IsActive &&
+                        (userRole.Role.Name == Roles.SupportAgent ||
+                         userRole.Role.Name == Roles.TeamLeader))),
                 createdAt = t.CreatedAt,
                 agents = t.TeamMembers
-                    .Where(tm => tm.User != null)
+                    .Where(tm =>
+                        tm.IsActive &&
+                        tm.User.IsActive &&
+                        tm.User.UserRoles.Any(userRole =>
+                            userRole.Role.IsActive &&
+                            (userRole.Role.Name == Roles.SupportAgent ||
+                             userRole.Role.Name == Roles.TeamLeader)))
                     .Select(tm => new
                     {
                         id = tm.User.Id,
@@ -162,35 +174,147 @@ public class TeamController : ControllerBase
     }
 
     [HttpPut("{id:guid}/lead")]
-    public async Task<IActionResult> SetTeamLead(Guid id, [FromBody] SetLeadDto dto)
+    public async Task<IActionResult> SetTeamLead(
+        Guid id,
+        [FromBody] SetLeadDto dto,
+        CancellationToken cancellationToken)
     {
+        await using var transaction = await _context.Database
+            .BeginTransactionAsync(cancellationToken);
+
         var team = await _context.Teams
             .Include(t => t.TeamMembers)
-            .FirstOrDefaultAsync(t => t.Id == id);
+                .ThenInclude(member => member.User)
+            .FirstOrDefaultAsync(
+                t => t.Id == id,
+                cancellationToken);
 
         if (team == null)
             return NotFound("Team not found.");
 
+        var previousLeadId = team.LeadId;
+        Guid? nextLeadId = null;
+
         if (string.IsNullOrWhiteSpace(dto.LeadId))
         {
-            team.LeadId = null;
+            nextLeadId = null;
         }
         else if (Guid.TryParse(dto.LeadId, out var leadGuid))
         {
-            var isMember = team.TeamMembers.Any(tm => tm.UserId == leadGuid);
-            if (!isMember)
+            var selectedMember = team.TeamMembers.SingleOrDefault(member =>
+                member.UserId == leadGuid &&
+                member.IsActive &&
+                member.User.IsActive);
+
+            if (selectedMember is null)
             {
                 return BadRequest("Selected team lead must be an active member of this team.");
             }
-            team.LeadId = leadGuid;
+
+            nextLeadId = leadGuid;
+            selectedMember.RoleInTeam = TeamMemberRole.TeamLeader;
+
+            await SetSystemRoleAsync(
+                leadGuid,
+                Roles.TeamLeader,
+                cancellationToken);
         }
         else
         {
             return BadRequest("Invalid Lead ID format.");
         }
 
-        await _context.SaveChangesAsync();
+        team.LeadId = nextLeadId;
+
+        if (previousLeadId.HasValue &&
+            previousLeadId != nextLeadId)
+        {
+            var previousMembership = team.TeamMembers
+                .SingleOrDefault(member =>
+                    member.UserId == previousLeadId.Value &&
+                    member.IsActive);
+
+            if (previousMembership is not null)
+                previousMembership.RoleInTeam = TeamMemberRole.Member;
+
+            var leadsAnotherTeam = await _context.TeamMembers
+                .AnyAsync(member =>
+                    member.UserId == previousLeadId.Value &&
+                    member.TeamId != id &&
+                    member.IsActive &&
+                    member.Team.IsActive &&
+                    member.RoleInTeam == TeamMemberRole.TeamLeader,
+                    cancellationToken);
+
+            if (!leadsAnotherTeam)
+            {
+                leadsAnotherTeam = await _context.Teams
+                    .AnyAsync(otherTeam =>
+                        otherTeam.Id != id &&
+                        otherTeam.LeadId == previousLeadId.Value &&
+                        otherTeam.IsActive,
+                        cancellationToken);
+            }
+
+            if (!leadsAnotherTeam)
+            {
+                await SetSystemRoleAsync(
+                    previousLeadId.Value,
+                    Roles.SupportAgent,
+                    cancellationToken);
+            }
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        var affectedUserIds = new HashSet<Guid>();
+        if (nextLeadId.HasValue)
+            affectedUserIds.Add(nextLeadId.Value);
+        if (previousLeadId.HasValue)
+            affectedUserIds.Add(previousLeadId.Value);
+
+        foreach (var affectedUserId in affectedUserIds)
+        {
+            await _hubContext.Clients
+                .User(affectedUserId.ToString())
+                .SendAsync(
+                    "SessionChanged",
+                    new { reason = "TeamLeadershipChanged" },
+                    cancellationToken);
+        }
+
         return NoContent();
+    }
+
+    private async Task SetSystemRoleAsync(
+        Guid userId,
+        string roleName,
+        CancellationToken cancellationToken)
+    {
+        var role = await _context.Roles
+            .SingleAsync(
+                item => item.Name == roleName && item.IsActive,
+                cancellationToken);
+
+        var user = await _context.Users
+            .SingleAsync(
+                item => item.Id == userId && item.IsActive,
+                cancellationToken);
+
+        user.RoleId = role.Id;
+
+        var existingRoles = await _context.UserRoles
+            .Where(userRole => userRole.UserId == userId)
+            .ToListAsync(cancellationToken);
+
+        _context.UserRoles.RemoveRange(existingRoles);
+        _context.UserRoles.Add(new UserRole
+        {
+            UserId = userId,
+            RoleId = role.Id,
+            AssignedAt = DateTime.UtcNow
+        });
     }
 
     [HttpPost("{id:guid}/members")]
@@ -204,8 +328,23 @@ public class TeamController : ControllerBase
         var teamExists = await _context.Teams.AnyAsync(t => t.Id == id);
         if (!teamExists) return NotFound("Team not found.");
 
-        var alreadyMember = await _context.TeamMembers.AnyAsync(tm => tm.TeamId == id && tm.UserId == userGuid);
-        if (alreadyMember) return BadRequest("User is already a member of this team.");
+        var existingMember = await _context.TeamMembers
+            .FirstOrDefaultAsync(tm =>
+                tm.TeamId == id &&
+                tm.UserId == userGuid);
+
+        if (existingMember?.IsActive == true)
+            return BadRequest("User is already a member of this team.");
+
+        if (existingMember is not null)
+        {
+            existingMember.IsActive = true;
+            existingMember.RoleInTeam = TeamMemberRole.Member;
+            existingMember.JoinedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
 
         _context.TeamMembers.Add(new TeamMember
         {

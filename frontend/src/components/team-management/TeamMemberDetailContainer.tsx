@@ -13,13 +13,11 @@ import { useAuth } from "@/src/context/AuthContext";
 import { getApiErrorMessage } from "@/src/lib/api";
 import { teamManagementService } from "@/src/services/teamManagementService";
 import type { PagedResultDto } from "@/src/types/common";
-import type {
-  TeamMemberDetailDto,
-  TeamMemberTicketDto,
-} from "@/src/types/team-management";
+import type { TeamMemberDetailDto, TeamMemberTicketDto, } from "@/src/types/team-management";
 
 interface TeamMemberDetailContainerProps {
-  teamMemberId: string;
+  teamMemberId?: string;
+  selfView?: boolean;
 }
 
 function formatDate(value: string): string {
@@ -152,6 +150,7 @@ function MemberTicketList({
 
 export function TeamMemberDetailContainer({
   teamMemberId,
+  selfView = false,
 }: TeamMemberDetailContainerProps) {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
@@ -160,15 +159,17 @@ export function TeamMemberDetailContainer({
   const [detail, setDetail] = useState<TeamMemberDetailDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const requiredRole = selfView ? "SupportAgent" : "TeamLeader";
+  const canViewPage = user?.role === requiredRole;
 
   useEffect(() => {
-    if (!authLoading && user?.role !== "TeamLeader") {
+    if (!authLoading && !canViewPage) {
       router.replace("/tickets");
     }
-  }, [authLoading, router, user?.role]);
+  }, [authLoading, canViewPage, router]);
 
   useEffect(() => {
-    if (authLoading || user?.role !== "TeamLeader") return;
+    if (authLoading || !canViewPage || (!selfView && !teamMemberId)) return;
 
     let cancelled = false;
 
@@ -177,12 +178,18 @@ export function TeamMemberDetailContainer({
       setError(null);
 
       try {
-        const response = await teamManagementService.getMemberDetail(
-          teamMemberId,
-          activePageNumber,
-          inactivePageNumber,
-          25,
-        );
+        const response = selfView
+          ? await teamManagementService.getOwnMemberDetail(
+              activePageNumber,
+              inactivePageNumber,
+              25,
+            )
+          : await teamManagementService.getMemberDetail(
+              teamMemberId!,
+              activePageNumber,
+              inactivePageNumber,
+              25,
+            );
 
         if (!cancelled) setDetail(response);
       } catch (requestError: unknown) {
@@ -207,12 +214,13 @@ export function TeamMemberDetailContainer({
   }, [
     activePageNumber,
     authLoading,
+    canViewPage,
     inactivePageNumber,
+    selfView,
     teamMemberId,
-    user?.role,
   ]);
 
-  if (authLoading || user?.role !== "TeamLeader") {
+  if (authLoading || !canViewPage) {
     return (
       <div className="flex min-h-80 items-center justify-center">
         <span className="loading loading-spinner loading-lg text-primary" />
@@ -224,9 +232,9 @@ export function TeamMemberDetailContainer({
     <div className="space-y-6">
       <Link
         className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-        href="/tickets/team-management"
+        href={selfView ? "/tickets" : "/tickets/team-management"}
       >
-        ← Back to Team Management
+        ← {selfView ? "Back to Tickets" : "Back to Team Management"}
       </Link>
 
       {error && <Alert variant="error">{error}</Alert>}
@@ -309,21 +317,41 @@ export function TeamMemberDetailContainer({
             loading={loading}
             openCount={detail.stats.openCount}
             totalCount={detail.stats.totalCount}
-            totalDescription="Created by or assigned to this member"
+            totalDescription={
+              selfView
+                ? "Currently assigned to you"
+                : "Created by or assigned to this member"
+            }
           />
 
           <MemberTicketList
             title="Active Tickets"
-            description="Open and ongoing tickets created by or currently assigned to this member."
-            emptyMessage="No active tickets were found for this member."
+            description={
+              selfView
+                ? "Open and ongoing tickets currently assigned to you."
+                : "Open and ongoing tickets created by or currently assigned to this member."
+            }
+            emptyMessage={
+              selfView
+                ? "No active tickets are currently assigned to you."
+                : "No active tickets were found for this member."
+            }
             result={detail.activeTickets}
             onPageChange={setActivePageNumber}
           />
 
           <MemberTicketList
             title="Inactive Ticket List"
-            description="Resolved, cancelled, and closed tickets associated with this member."
-            emptyMessage="No inactive tickets were found for this member."
+            description={
+              selfView
+                ? "Resolved, cancelled, and closed tickets currently assigned to you."
+                : "Resolved, cancelled, and closed tickets associated with this member."
+            }
+            emptyMessage={
+              selfView
+                ? "No inactive tickets are currently assigned to you."
+                : "No inactive tickets were found for this member."
+            }
             result={detail.inactiveTickets}
             onPageChange={setInactivePageNumber}
           />

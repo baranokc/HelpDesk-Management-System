@@ -1,4 +1,5 @@
 using backend.Data;
+using backend.Constants;
 using backend.DTO.Common;
 using backend.DTO.TeamManagement;
 using backend.Entities;
@@ -64,7 +65,11 @@ public sealed class TeamManagementService : ITeamManagementService
             .Where(member =>
                 member.TeamId == selectedTeamId &&
                 member.IsActive &&
-                member.User.IsActive)
+                member.User.IsActive &&
+                member.User.UserRoles.Any(userRole =>
+                    userRole.Role.IsActive &&
+                    (userRole.Role.Name == Roles.SupportAgent ||
+                     userRole.Role.Name == Roles.TeamLeader)))
             .OrderByDescending(member =>
                 member.RoleInTeam == TeamMemberRole.TeamLeader)
             .ThenBy(member => member.User.Name)
@@ -126,7 +131,11 @@ public sealed class TeamManagementService : ITeamManagementService
                 item.Id == teamMemberId &&
                 item.IsActive &&
                 item.Team.IsActive &&
-                item.User.IsActive)
+                item.User.IsActive &&
+                item.User.UserRoles.Any(userRole =>
+                    userRole.Role.IsActive &&
+                    (userRole.Role.Name == Roles.SupportAgent ||
+                     userRole.Role.Name == Roles.TeamLeader)))
             .Select(item => new
             {
                 TeamMemberId = item.Id,
@@ -135,9 +144,9 @@ public sealed class TeamManagementService : ITeamManagementService
                 item.UserId,
                 item.User.Name,
                 item.User.LastName,
-                SystemRole = item.User.Role != null
-                    ? item.User.Role.Name
-                    : "User",
+                SystemRole = item.User.UserRoles
+                    .Select(userRole => userRole.Role.Name)
+                    .FirstOrDefault() ?? "User",
                 item.User.CreatedAt,
                 item.RoleInTeam,
                 item.JoinedAt
@@ -190,7 +199,7 @@ public sealed class TeamManagementService : ITeamManagementService
 
         var activeTickets = await GetMemberTicketsPageAsync(
             activeTicketQuery,
-            teamMemberId,
+            [teamMemberId],
             member.UserId,
             activePageNumber,
             pageSize,
@@ -198,7 +207,7 @@ public sealed class TeamManagementService : ITeamManagementService
 
         var inactiveTickets = await GetMemberTicketsPageAsync(
             inactiveTicketQuery,
-            teamMemberId,
+            [teamMemberId],
             member.UserId,
             inactivePageNumber,
             pageSize,
@@ -224,10 +233,121 @@ public sealed class TeamManagementService : ITeamManagementService
         };
     }
 
+    public async Task<TeamMemberDetailDto?> GetOwnMemberDetailAsync(
+        Guid userId,
+        int activePageNumber,
+        int inactivePageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var memberships = await _db.TeamMembers
+            .AsNoTracking()
+            .Where(member =>
+                member.UserId == userId &&
+                member.IsActive &&
+                member.Team.IsActive &&
+                member.User.IsActive &&
+                member.User.UserRoles.Any(userRole =>
+                    userRole.Role.IsActive &&
+                    (userRole.Role.Name == Roles.SupportAgent ||
+                     userRole.Role.Name == Roles.TeamLeader)))
+            .OrderBy(member => member.JoinedAt)
+            .Select(member => new
+            {
+                TeamMemberId = member.Id,
+                member.TeamId,
+                TeamName = member.Team.Name,
+                member.UserId,
+                member.User.Name,
+                member.User.LastName,
+                SystemRole = member.User.UserRoles
+                    .Select(userRole => userRole.Role.Name)
+                    .FirstOrDefault() ?? "User",
+                member.User.CreatedAt,
+                member.RoleInTeam,
+                member.JoinedAt
+            })
+            .ToListAsync(cancellationToken);
+
+        if (memberships.Count == 0)
+            return null;
+
+        var primaryMembership = memberships[0];
+        var teamMemberIds = memberships
+            .Select(member => member.TeamMemberId)
+            .ToArray();
+
+        var assignedTicketQuery = _db.Tickets
+            .AsNoTracking()
+            .Where(ticket =>
+                ticket.AssignedToId == userId &&
+                !ticket.IsDeleted);
+
+        var stats = await GetStatsAsync(
+            assignedTicketQuery,
+            cancellationToken);
+
+        var activeTicketQuery = assignedTicketQuery.Where(ticket =>
+            !ticket.Status.IsClosed &&
+            ticket.Status.Name != "Resolved" &&
+            ticket.Status.Name != "Cancelled" &&
+            ticket.Status.Name != "Closed");
+
+        var inactiveTicketQuery = assignedTicketQuery.Where(ticket =>
+            ticket.Status.IsClosed ||
+            ticket.Status.Name == "Resolved" ||
+            ticket.Status.Name == "Cancelled" ||
+            ticket.Status.Name == "Closed");
+
+        var activeTickets = await GetMemberTicketsPageAsync(
+            activeTicketQuery,
+            teamMemberIds,
+            userId,
+            activePageNumber,
+            pageSize,
+            cancellationToken);
+
+        var inactiveTickets = await GetMemberTicketsPageAsync(
+            inactiveTicketQuery,
+            teamMemberIds,
+            userId,
+            inactivePageNumber,
+            pageSize,
+            cancellationToken);
+
+        return new TeamMemberDetailDto
+        {
+            TeamId = primaryMembership.TeamId,
+            TeamName = string.Join(
+                ", ",
+                memberships
+                    .Select(member => member.TeamName)
+                    .Distinct()),
+            TeamMemberId = primaryMembership.TeamMemberId,
+            UserId = primaryMembership.UserId,
+            FirstName = primaryMembership.Name,
+            LastName = primaryMembership.LastName,
+            FullName =
+                $"{primaryMembership.Name} {primaryMembership.LastName}".Trim(),
+            Title = memberships.Count == 1
+                ? FormatTeamRole(primaryMembership.RoleInTeam)
+                : "Team Member",
+            RoleInTeam = memberships.Count == 1
+                ? primaryMembership.RoleInTeam.ToString()
+                : "Member",
+            SystemRole = primaryMembership.SystemRole,
+            RegisteredAt = primaryMembership.CreatedAt,
+            JoinedAt = memberships.Min(member => member.JoinedAt),
+            Stats = stats,
+            ActiveTickets = activeTickets,
+            InactiveTickets = inactiveTickets
+        };
+    }
+
     private async Task<PagedResultDto<TeamMemberTicketDto>>
         GetMemberTicketsPageAsync(
             IQueryable<TicketEntity> query,
-            Guid teamMemberId,
+            IReadOnlyCollection<Guid> teamMemberIds,
             Guid memberUserId,
             int pageNumber,
             int pageSize,
@@ -250,7 +370,7 @@ public sealed class TeamManagementService : ITeamManagementService
                 AssignedAt = _db.TicketAssignments
                     .Where(assignment =>
                         assignment.TicketId == ticket.Id &&
-                        assignment.AssignedToId == teamMemberId)
+                        teamMemberIds.Contains(assignment.AssignedToId))
                     .Max(assignment => (DateTime?)assignment.AssignedAt)
             })
             .OrderByDescending(item =>
@@ -301,7 +421,10 @@ public sealed class TeamManagementService : ITeamManagementService
                 member.RoleInTeam == TeamMemberRole.TeamLeader &&
                 member.IsActive &&
                 member.Team.IsActive &&
-                member.User.IsActive)
+                member.User.IsActive &&
+                member.User.UserRoles.Any(userRole =>
+                    userRole.Role.IsActive &&
+                    userRole.Role.Name == Roles.TeamLeader))
             .OrderBy(member => member.Team.Name)
             .Select(member => new ManagedTeamDto
             {

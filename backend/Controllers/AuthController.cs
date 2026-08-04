@@ -1,5 +1,7 @@
+using System.Security.Claims;
 using backend.DTO.Auth;
 using backend.Services.Auth;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
@@ -54,6 +56,24 @@ public class AuthController : ControllerBase
                 message = exception.Message
             });
         }
+    }
+
+    [Authorize]
+    [HttpPost("refresh")]
+    public async Task<IActionResult> RefreshSession()
+    {
+        var userIdClaim =
+            User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+            User.FindFirstValue("sub");
+
+        if (!Guid.TryParse(userIdClaim, out var userId))
+            return Unauthorized(new { message = "Invalid user identity." });
+
+        var result = await _authService.RefreshSessionAsync(userId);
+
+        return result is null
+            ? Unauthorized(new { message = "The user session is no longer valid." })
+            : Ok(result);
     }
 }
 

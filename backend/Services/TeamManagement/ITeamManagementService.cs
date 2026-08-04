@@ -16,4 +16,11 @@ public interface ITeamManagementService
         int inactivePageNumber,
         int pageSize,
         CancellationToken cancellationToken = default);
+
+    Task<TeamMemberDetailDto?> GetOwnMemberDetailAsync(
+        Guid userId,
+        int activePageNumber,
+        int inactivePageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default);
 }

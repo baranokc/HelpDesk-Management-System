@@ -13,10 +13,7 @@ import { ticketAttachmentService } from "@/src/services/ticketAttachmentService"
 import { ticketWorkflowService } from "@/src/services/ticketWorkflowService";
 import type { TicketAssignmentDto } from "@/src/types/ticket-assignment";
 import type { TicketAttachmentCreateDto } from "@/src/types/ticket-attachment";
-import type {
-  TicketResolveDto,
-  TicketStatusUpdateDto,
-} from "@/src/types/ticket-status";
+import type { TicketResolveDto, TicketStatusUpdateDto, } from "@/src/types/ticket-status";
 import type { TicketDetailDto } from "@/src/types/ticket";
 import { AttachmentUploader } from "./AttachmentUploader";
 import { TicketAssignmentForm } from "./TicketAssignmentForm";
@@ -51,7 +48,7 @@ const canAssign =
   userRole === "Admin" ||
   userRole === "TeamLeader";
 
-const isAssigned = Boolean(ticket.assignedToId || ticket.teamId);
+const isAssigned = Boolean(ticket.assignedToId);
 const normalizedStatus = ticket.statusName.trim().toLowerCase();
 
 const canResolve =

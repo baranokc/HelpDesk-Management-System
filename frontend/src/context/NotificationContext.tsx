@@ -44,7 +44,11 @@ function getNotificationHubUrl(): string {
 }
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const {
+    isAuthenticated,
+    loading: authLoading,
+    refreshSession,
+  } = useAuth();
   const [notifications, setNotifications] = useState<NotificationDto[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -105,6 +109,10 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         },
       );
 
+      connection.on("SessionChanged", () => {
+        void refreshSession();
+      });
+
       connection.onreconnected(() => {
         void refresh();
       });
@@ -125,7 +133,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       disposed = true;
       if (connection) void connection.stop();
     };
-  }, [authLoading, isAuthenticated, refresh]);
+  }, [authLoading, isAuthenticated, refresh, refreshSession]);
 
   const markAsRead = useCallback(
     async (notificationId: string) => {
