@@ -9,69 +9,97 @@ namespace backend.Controllers;
 [ApiController]
 [Route("api/teams")]
 [Authorize(Roles = "Admin")]
-public class TeamsController : ControllerBase
+public class TeamController : ControllerBase
 {
     private readonly AppDbContext _context;
 
-    public TeamsController(AppDbContext context)
+    public TeamController(AppDbContext context)
     {
         _context = context;
     }
 
-    // 🟢 1. Tüm Ekipleri Getir
     [HttpGet]
     public async Task<IActionResult> GetAllTeams()
     {
         var teams = await _context.Teams
+            .OrderByDescending(t => t.CreatedAt)
             .Select(t => new
             {
-                Id = t.Id,
-                Name = t.Name,
-                Description = t.Description,
-                LeadId = t.LeadId,
-                LeadName = t.Lead != null 
+                id = t.Id,
+                name = t.Name,
+                description = t.Description,
+                leadId = t.LeadId,
+                leadName = t.Lead != null 
                     ? (string.IsNullOrEmpty(t.Lead.LastName) ? t.Lead.Name : (t.Lead.Name + " " + t.Lead.LastName)) 
                     : null,
-                MemberCount = t.TeamMembers.Count,
-                CreatedAt = t.CreatedAt
+                memberCount = t.TeamMembers.Count,
+                createdAt = t.CreatedAt
             })
-            .OrderByDescending(t => t.CreatedAt)
             .ToListAsync();
 
         return Ok(teams);
     }
 
-    // 🟢 2. Tek Ekip Detayı Getir (Agents listesi ile)
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetTeamById(string id)
+    [HttpGet("eligible-agents")]
+    public async Task<IActionResult> GetEligibleAgents()
     {
-        if (!Guid.TryParse(id, out var teamGuid))
+        var agents = await _context.Users
+            .Include(u => u.UserRoles)
+            .ThenInclude(ur => ur.Role)
+            .Where(u => u.UserRoles.Any(ur => 
+                ur.Role.Name.ToLower().Contains("agent") || 
+                ur.Role.Name.ToLower().Contains("admin") ||
+                ur.Role.Name.ToLower().Contains("support")))
+            .Select(u => new
+            {
+                id = u.Id,
+                fullName = string.IsNullOrEmpty(u.LastName) ? u.Name : (u.Name + " " + u.LastName),
+                email = u.Email
+            })
+            .OrderBy(u => u.fullName)
+            .ToListAsync();
+
+        if (!agents.Any())
         {
-            return BadRequest("Invalid Team ID format.");
+            agents = await _context.Users
+                .Select(u => new
+                {
+                    id = u.Id,
+                    fullName = string.IsNullOrEmpty(u.LastName) ? u.Name : (u.Name + " " + u.LastName),
+                    email = u.Email
+                })
+                .OrderBy(u => u.fullName)
+                .ToListAsync();
         }
 
+        return Ok(agents);
+    }
+
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetTeamById(Guid id)
+    {
         var team = await _context.Teams
-            .Where(t => t.Id == teamGuid)
+            .Where(t => t.Id == id)
             .Select(t => new
             {
-                Id = t.Id,
-                Name = t.Name,
-                Description = t.Description,
-                LeadId = t.LeadId,
-                LeadName = t.Lead != null 
+                id = t.Id,
+                name = t.Name,
+                description = t.Description,
+                leadId = t.LeadId,
+                leadName = t.Lead != null 
                     ? (string.IsNullOrEmpty(t.Lead.LastName) ? t.Lead.Name : (t.Lead.Name + " " + t.Lead.LastName)) 
                     : null,
-                MemberCount = t.TeamMembers.Count,
-                CreatedAt = t.CreatedAt,
-                Agents = t.TeamMembers
+                memberCount = t.TeamMembers.Count,
+                createdAt = t.CreatedAt,
+                agents = t.TeamMembers
                     .Where(tm => tm.User != null)
                     .Select(tm => new
                     {
-                        Id = tm.User.Id,
-                        FullName = string.IsNullOrEmpty(tm.User.LastName) 
+                        id = tm.User.Id,
+                        fullName = string.IsNullOrEmpty(tm.User.LastName) 
                             ? tm.User.Name 
                             : (tm.User.Name + " " + tm.User.LastName),
-                        Email = tm.User.Email
+                        email = tm.User.Email
                     })
                     .ToList()
             })
@@ -107,33 +135,42 @@ public class TeamsController : ControllerBase
         };
 
         _context.Teams.Add(team);
+
+        if (leadGuid.HasValue)
+        {
+            _context.TeamMembers.Add(new TeamMember
+            {
+                TeamId = team.Id,
+                UserId = leadGuid.Value,
+                JoinedAt = DateTime.UtcNow
+            });
+        }
+
         await _context.SaveChangesAsync();
 
         return CreatedAtAction(nameof(GetTeamById), new { id = team.Id }, new
         {
-            Id = team.Id,
-            Name = team.Name,
-            Description = team.Description,
-            LeadId = team.LeadId,
-            MemberCount = 0,
-            CreatedAt = team.CreatedAt
+            id = team.Id,
+            name = team.Name,
+            description = team.Description,
+            leadId = team.LeadId,
+            memberCount = leadGuid.HasValue ? 1 : 0,
+            createdAt = team.CreatedAt
         });
     }
 
-    [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateTeam(string id, [FromBody] UpdateTeamDto dto)
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> UpdateTeam(Guid id, [FromBody] UpdateTeamDto dto)
     {
-        if (!Guid.TryParse(id, out var teamGuid))
-        {
-            return BadRequest("Invalid Team ID format.");
-        }
-
         if (string.IsNullOrWhiteSpace(dto.Name))
         {
             return BadRequest("Team name cannot be empty.");
         }
 
-        var team = await _context.Teams.FirstOrDefaultAsync(t => t.Id == teamGuid);
+        var team = await _context.Teams
+            .Include(t => t.TeamMembers)
+            .FirstOrDefaultAsync(t => t.Id == id);
+
         if (team == null)
             return NotFound("Team not found.");
 
@@ -143,6 +180,15 @@ public class TeamsController : ControllerBase
         if (!string.IsNullOrEmpty(dto.LeadId) && Guid.TryParse(dto.LeadId, out var leadGuid))
         {
             team.LeadId = leadGuid;
+            if (!team.TeamMembers.Any(tm => tm.UserId == leadGuid))
+            {
+                _context.TeamMembers.Add(new TeamMember
+                {
+                    TeamId = team.Id,
+                    UserId = leadGuid,
+                    JoinedAt = DateTime.UtcNow
+                });
+            }
         }
         else
         {
@@ -153,15 +199,52 @@ public class TeamsController : ControllerBase
         return NoContent();
     }
 
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteTeam(string id)
+    [HttpPost("{id:guid}/members")]
+    public async Task<IActionResult> AddMember(Guid id, [FromBody] AddMemberDto dto)
     {
-        if (!Guid.TryParse(id, out var teamGuid))
+        if (!Guid.TryParse(dto.UserId, out var userGuid))
         {
-            return BadRequest("Invalid Team ID format.");
+            return BadRequest("Invalid User ID format.");
         }
 
-        var team = await _context.Teams.FirstOrDefaultAsync(t => t.Id == teamGuid);
+        var teamExists = await _context.Teams.AnyAsync(t => t.Id == id);
+        if (!teamExists) return NotFound("Team not found.");
+
+        var alreadyMember = await _context.TeamMembers.AnyAsync(tm => tm.TeamId == id && tm.UserId == userGuid);
+        if (alreadyMember) return BadRequest("User is already a member of this team.");
+
+        _context.TeamMembers.Add(new TeamMember
+        {
+            TeamId = id,
+            UserId = userGuid,
+            JoinedAt = DateTime.UtcNow
+        });
+
+        await _context.SaveChangesAsync();
+        return Ok();
+    }
+
+    [HttpDelete("{id:guid}/members/{userId:guid}")]
+    public async Task<IActionResult> RemoveMember(Guid id, Guid userId)
+    {
+        var member = await _context.TeamMembers.FirstOrDefaultAsync(tm => tm.TeamId == id && tm.UserId == userId);
+        if (member == null) return NotFound("Team member not found.");
+
+        var team = await _context.Teams.FirstOrDefaultAsync(t => t.Id == id);
+        if (team != null && team.LeadId == userId)
+        {
+            team.LeadId = null;
+        }
+
+        _context.TeamMembers.Remove(member);
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> DeleteTeam(Guid id)
+    {
+        var team = await _context.Teams.FirstOrDefaultAsync(t => t.Id == id);
         if (team == null)
             return NotFound("Team not found.");
 
@@ -184,4 +267,9 @@ public class UpdateTeamDto
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string? LeadId { get; set; }
+}
+
+public class AddMemberDto
+{
+    public string UserId { get; set; } = string.Empty;
 }
