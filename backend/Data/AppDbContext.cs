@@ -31,31 +31,52 @@ public class AppDbContext : DbContext
     public DbSet<TicketHistory> TicketHistories { get; set; } = null!;
     public DbSet<ResolutionCategory> ResolutionCategories { get; set; } = null!;
     public DbSet<Notification> Notifications { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
         modelBuilder.Entity<UserRole>()
-        .HasKey(ur => new { ur.UserId, ur.RoleId });
+            .HasKey(ur => new { ur.UserId, ur.RoleId });
         
         modelBuilder.Entity<User>()
-        .HasOne(u => u.Manager)
-        .WithMany(u => u.DirectReports)
-        .HasForeignKey(u => u.ManagerId)
-        .OnDelete(DeleteBehavior.Restrict);
+            .HasOne(u => u.Manager)
+            .WithMany(u => u.DirectReports)
+            .HasForeignKey(u => u.ManagerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+
+        modelBuilder.Entity<TeamMember>()
+            .HasOne(tm => tm.Team)
+            .WithMany(t => t.TeamMembers)
+            .HasForeignKey(tm => tm.TeamId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<TeamMember>()
+                .HasOne(tm => tm.User)
+            .WithMany(u => u.TeamMembers)
+            .HasForeignKey(tm => tm.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Team>()
+            .HasOne(t => t.Lead)
+            .WithMany()
+            .HasForeignKey(t => t.LeadId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         modelBuilder.HasSequence<long>("TicketNumberSequence")
-        .StartsAt(1)
-        .IncrementsBy(1);
+            .StartsAt(1)
+            .IncrementsBy(1);
 
         modelBuilder.Entity<Ticket>()
-        .HasIndex(x => x.TicketNumber)
-        .IsUnique();
+            .HasIndex(x => x.TicketNumber)
+            .IsUnique();
 
         modelBuilder.Entity<Ticket>()
-        .HasOne(t => t.CreatedBy)
-        .WithMany(u => u.CreatedTickets)
-        .HasForeignKey(t => t.CreatedById)
-        .OnDelete(DeleteBehavior.Restrict);
+            .HasOne(t => t.CreatedBy)
+            .WithMany(u => u.CreatedTickets)
+            .HasForeignKey(t => t.CreatedById)
+            .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<TicketCategory>()
             .HasOne(category => category.DefaultTeam)
@@ -89,29 +110,30 @@ public class AppDbContext : DbContext
         });
 
         modelBuilder.Entity<Ticket>()
-        .HasOne(t => t.AssignedTo)
-        .WithMany(u => u.AssignedTickets)
-        .HasForeignKey(t => t.AssignedToId)
-        .OnDelete(DeleteBehavior.Restrict);
+            .HasOne(t => t.AssignedTo)
+            .WithMany(u => u.AssignedTickets)
+            .HasForeignKey(t => t.AssignedToId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<Ticket>()
-        .HasOne(t => t.Team)
-        .WithMany(team => team.Tickets)
-        .HasForeignKey(t => t.TeamId)
-        .OnDelete(DeleteBehavior.Restrict);
+            .HasOne(t => t.Team)
+            .WithMany(team => team.Tickets)
+            .HasForeignKey(t => t.TeamId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<TicketAssignment>(entity =>
         {
             entity.HasOne(ta => ta.AssignedByTeamMember)
-            .WithMany(tm => tm.AssignmentsCreated)
-            .HasForeignKey(ta => ta.AssignedById)
-            .OnDelete(DeleteBehavior.Restrict);
+                .WithMany(tm => tm.AssignmentsCreated)
+                .HasForeignKey(ta => ta.AssignedById)
+                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(ta => ta.AssignedToTeamMember)
-            .WithMany(tm => tm.AssignmentsReceived)
-            .HasForeignKey(ta => ta.AssignedToId)
-            .OnDelete(DeleteBehavior.Restrict);
+                .WithMany(tm => tm.AssignmentsReceived)
+                .HasForeignKey(ta => ta.AssignedToId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
+
         modelBuilder.Entity<Ticket>()
             .HasOne(t => t.ResolvedBy)
             .WithMany(u => u.ResolvedTickets)
@@ -124,10 +146,5 @@ public class AppDbContext : DbContext
             new Department { Id = 3, Name = "Information Technologies(IT)"},
             new Department { Id = 4, Name = "Customer Services"}
         );
-
     }
-
-    }
-    
-
-
+}

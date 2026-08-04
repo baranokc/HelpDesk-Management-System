@@ -7,7 +7,7 @@ namespace backend.Controllers;
 
     [ApiController]
     [Route("api/users")]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     public class UsersController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -24,10 +24,9 @@ namespace backend.Controllers;
                 .Select(u => new
                 {
                     Id = u.Id,
-                    Name = u.Name,
-                    LastName = u.LastName,
+                    FullName = (u.Name + " " + u.LastName).Trim(), 
                     Email = u.Email,
-                    Role = u.Role
+                    Role = u.Role 
                 })
                 .ToListAsync();
 
