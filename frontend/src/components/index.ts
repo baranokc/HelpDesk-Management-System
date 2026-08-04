@@ -43,3 +43,6 @@ export * from "./auth/AuthCard";
 export * from "./auth/AuthMessage";
 export * from "./auth/LoginForm";
 export * from "./auth/RegisterForm";
+
+export * from "./team-management/TeamManagementContainer";
+export * from "./team-management/TeamMemberDetailContainer";

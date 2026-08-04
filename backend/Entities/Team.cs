@@ -11,6 +11,9 @@ public class Team
     public int DepartmentId { get; set; }
     public Department Department { get; set; } = null!;
 
+    public Guid? LeadId { get; set; }
+    public User? Lead { get; set; }
+
     public ICollection<TeamMember> TeamMembers { get; set; } = new List<TeamMember>();
     public ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
     public ICollection<TicketCategory> TicketCategories { get; set; } = new List<TicketCategory>();

@@ -13,6 +13,7 @@ using backend.Services.TicketAssignment;
 using backend.Services.Lookup;
 using backend.Hubs;
 using backend.Services.Notification;
+using backend.Services.TeamManagement;
 using Microsoft.OpenApi;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -87,6 +88,8 @@ builder.Services.AddScoped<ITicketUnassignmentService, TicketUnassignmentService
 builder.Services.AddScoped<ITicketResolutionService, TicketResolutionService>();
 builder.Services.AddScoped<ITicketHistoryService, TicketHistoryService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<ITeamManagementService, TeamManagementService>();
+
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = Encoding.UTF8.GetBytes(jwtSettings["Secret"]!);

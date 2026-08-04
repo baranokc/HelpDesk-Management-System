@@ -15,6 +15,9 @@ public class User
 
     public Department? Department { get; set; }
     public User? Manager { get; set; }
+
+    public Guid? TeamId { get; set; }
+    public Team? Team { get; set; }
    
 
     public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
