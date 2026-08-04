@@ -16,21 +16,29 @@ export function Card({
 }: CardProps) {
   return (
     <section
-      className={`card border border-base-300 bg-base-100 shadow-sm ${className}`}
+      className={`card rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm transition-colors ${className}`}
       {...props}
     >
       {(title || description || action) && (
-        <div className="flex items-start justify-between gap-4 border-b border-base-300 px-6 py-4">
+        <div className="flex items-start justify-between gap-4 border-b border-slate-200 dark:border-slate-800 px-6 py-4">
           <div>
-            {title && <h2 className="card-title text-base">{title}</h2>}
+            {title && (
+              <h2 className="card-title text-base font-bold text-slate-900 dark:text-white">
+                {title}
+              </h2>
+            )}
             {description && (
-              <p className="mt-1 text-sm opacity-60">{description}</p>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                {description}
+              </p>
             )}
           </div>
-          {action}
+          {action && <div>{action}</div>}
         </div>
       )}
-      <div className="card-body p-6">{children}</div>
+      <div className="card-body p-6 text-slate-800 dark:text-slate-200">
+        {children}
+      </div>
     </section>
   );
 }
