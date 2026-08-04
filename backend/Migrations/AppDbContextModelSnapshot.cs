@@ -241,6 +241,53 @@ namespace backend.Migrations
                     b.ToTable("ImpactLevels");
                 });
 
+            modelBuilder.Entity("backend.Entities.Notification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("TicketId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TicketId");
+
+                    b.HasIndex("UserId", "CreatedAt");
+
+                    b.HasIndex("UserId", "IsRead");
+
+                    b.ToTable("Notifications");
+                });
+
             modelBuilder.Entity("backend.Entities.ResolutionCategory", b =>
                 {
                     b.Property<Guid>("Id")
@@ -643,6 +690,9 @@ namespace backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("DefaultTeamId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
@@ -655,6 +705,8 @@ namespace backend.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DefaultTeamId");
 
                     b.ToTable("TicketCategories");
                 });
@@ -983,6 +1035,24 @@ namespace backend.Migrations
                     b.Navigation("ParentDepartment");
                 });
 
+            modelBuilder.Entity("backend.Entities.Notification", b =>
+                {
+                    b.HasOne("backend.Entities.Ticket", "Ticket")
+                        .WithMany()
+                        .HasForeignKey("TicketId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("backend.Entities.User", "User")
+                        .WithMany("Notifications")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Ticket");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("backend.Entities.SlaPause", b =>
                 {
                     b.HasOne("backend.Entities.User", "PausedBy")
@@ -1206,6 +1276,16 @@ namespace backend.Migrations
                     b.Navigation("Uploader");
                 });
 
+            modelBuilder.Entity("backend.Entities.TicketCategory", b =>
+                {
+                    b.HasOne("backend.Entities.Team", "DefaultTeam")
+                        .WithMany("TicketCategories")
+                        .HasForeignKey("DefaultTeamId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("DefaultTeam");
+                });
+
             modelBuilder.Entity("backend.Entities.TicketComment", b =>
                 {
                     b.HasOne("backend.Entities.Ticket", "Ticket")
@@ -1382,6 +1462,8 @@ namespace backend.Migrations
                 {
                     b.Navigation("TeamMembers");
 
+                    b.Navigation("TicketCategories");
+
                     b.Navigation("Tickets");
                 });
 
@@ -1435,6 +1517,8 @@ namespace backend.Migrations
                     b.Navigation("CreatedTickets");
 
                     b.Navigation("DirectReports");
+
+                    b.Navigation("Notifications");
 
                     b.Navigation("ResolvedTickets");
 
