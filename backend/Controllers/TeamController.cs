@@ -28,17 +28,14 @@ public class TeamController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAllTeams()
     {
-        var teams = await _context.Teams
+        var teamRows = await _context.Teams
+            .AsNoTracking()
             .OrderByDescending(t => t.CreatedAt)
             .Select(t => new
             {
                 id = t.Id,
                 name = t.Name,
                 description = t.Description,
-                leadId = t.LeadId,
-                leadName = t.Lead != null 
-                    ? (string.IsNullOrEmpty(t.Lead.LastName) ? t.Lead.Name : (t.Lead.Name + " " + t.Lead.LastName)) 
-                    : null,
                 memberCount = t.TeamMembers.Count(tm =>
                     tm.IsActive &&
                     tm.User.IsActive &&
@@ -46,9 +43,53 @@ public class TeamController : ControllerBase
                         userRole.Role.IsActive &&
                         (userRole.Role.Name == Roles.SupportAgent ||
                          userRole.Role.Name == Roles.TeamLeader))),
-                createdAt = t.CreatedAt
+                createdAt = t.CreatedAt,
+                leaderCandidates = t.TeamMembers
+                    .Where(tm =>
+                        tm.IsActive &&
+                        tm.User.IsActive &&
+                        (tm.UserId == t.LeadId ||
+                         tm.RoleInTeam == TeamMemberRole.TeamLeader) &&
+                        tm.User.UserRoles.Any(userRole =>
+                            userRole.Role.IsActive &&
+                            userRole.Role.Name == Roles.TeamLeader))
+                    .Select(tm => new
+                    {
+                        id = tm.UserId,
+                        fullName = string.IsNullOrEmpty(tm.User.LastName)
+                            ? tm.User.Name
+                            : tm.User.Name + " " + tm.User.LastName,
+                        isConfigured = t.LeadId == tm.UserId,
+                        isDeclared =
+                            tm.RoleInTeam == TeamMemberRole.TeamLeader
+                    })
+                    .ToList()
             })
             .ToListAsync();
+
+        var teams = teamRows.Select(teamRow =>
+        {
+            var configuredLeader = teamRow.leaderCandidates
+                .FirstOrDefault(candidate => candidate.isConfigured);
+
+            var declaredLeaders = teamRow.leaderCandidates
+                .Where(candidate => candidate.isDeclared)
+                .ToList();
+
+            var effectiveLeader = configuredLeader ??
+                (declaredLeaders.Count == 1 ? declaredLeaders[0] : null);
+
+            return new
+            {
+                teamRow.id,
+                teamRow.name,
+                teamRow.description,
+                leadId = effectiveLeader?.id,
+                leadName = effectiveLeader?.fullName,
+                teamRow.memberCount,
+                teamRow.createdAt
+            };
+        }).ToList();
 
         return Ok(teams);
     }
@@ -78,17 +119,14 @@ public class TeamController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetTeamById(Guid id)
     {
-        var team = await _context.Teams
+        var teamRow = await _context.Teams
+            .AsNoTracking()
             .Where(t => t.Id == id)
             .Select(t => new
             {
                 id = t.Id,
                 name = t.Name,
                 description = t.Description,
-                leadId = t.LeadId,
-                leadName = t.Lead != null 
-                    ? (string.IsNullOrEmpty(t.Lead.LastName) ? t.Lead.Name : (t.Lead.Name + " " + t.Lead.LastName)) 
-                    : null,
                 memberCount = t.TeamMembers.Count(tm =>
                     tm.IsActive &&
                     tm.User.IsActive &&
@@ -113,12 +151,54 @@ public class TeamController : ControllerBase
                             : (tm.User.Name + " " + tm.User.LastName),
                         email = tm.User.Email
                     })
+                    .ToList(),
+                leaderCandidates = t.TeamMembers
+                    .Where(tm =>
+                        tm.IsActive &&
+                        tm.User.IsActive &&
+                        (tm.UserId == t.LeadId ||
+                         tm.RoleInTeam == TeamMemberRole.TeamLeader) &&
+                        tm.User.UserRoles.Any(userRole =>
+                            userRole.Role.IsActive &&
+                            userRole.Role.Name == Roles.TeamLeader))
+                    .Select(tm => new
+                    {
+                        id = tm.UserId,
+                        fullName = string.IsNullOrEmpty(tm.User.LastName)
+                            ? tm.User.Name
+                            : tm.User.Name + " " + tm.User.LastName,
+                        isConfigured = t.LeadId == tm.UserId,
+                        isDeclared =
+                            tm.RoleInTeam == TeamMemberRole.TeamLeader
+                    })
                     .ToList()
             })
             .FirstOrDefaultAsync();
 
-        if (team == null)
+        if (teamRow == null)
             return NotFound("Team not found.");
+
+        var configuredLeader = teamRow.leaderCandidates
+            .FirstOrDefault(candidate => candidate.isConfigured);
+
+        var declaredLeaders = teamRow.leaderCandidates
+            .Where(candidate => candidate.isDeclared)
+            .ToList();
+
+        var effectiveLeader = configuredLeader ??
+            (declaredLeaders.Count == 1 ? declaredLeaders[0] : null);
+
+        var team = new
+        {
+            teamRow.id,
+            teamRow.name,
+            teamRow.description,
+            leadId = effectiveLeader?.id,
+            leadName = effectiveLeader?.fullName,
+            teamRow.memberCount,
+            teamRow.createdAt,
+            teamRow.agents
+        };
 
         return Ok(team);
     }
