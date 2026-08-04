@@ -8,6 +8,12 @@ import { getApiErrorMessage } from "@/src/lib/api";
 import { userService } from "@/src/services/userService";
 import type { UserListDto } from "@/src/types/user";
 
+type UserListFallbackFields = {
+  name?: string;
+  lastName?: string;
+  userName?: string;
+};
+
 // SVG Ikonlar
 const RefreshIcon = () => (
   <svg
@@ -81,12 +87,13 @@ const getRoleName = (role: unknown): string => {
   return String(role);
 };
 
-// Rol Öncelik Sıralaması: Admin (1) -> SupportAgent (2) -> User (3)
+// Rol Öncelik Sıralaması: Admin (1) -> TeamLeader (2) -> SupportAgent (3) -> User (4)
 const getRolePriority = (role: unknown): number => {
   const roleName = getRoleName(role);
   if (roleName === "Admin") return 1;
-  if (roleName === "SupportAgent") return 2;
-  return 3;
+  if (roleName === "TeamLeader") return 2;
+  if (roleName === "SupportAgent") return 3;
+  return 4;
 };
 
 export default function UserManagementPage() {
@@ -100,8 +107,12 @@ export default function UserManagementPage() {
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {
-    const isDark = document.documentElement.classList.contains("dark");
-    setIsDarkMode(isDark);
+    const themeSyncTimer = window.setTimeout(() => {
+      const isDark = document.documentElement.classList.contains("dark");
+      setIsDarkMode(isDark);
+    }, 0);
+
+    return () => window.clearTimeout(themeSyncTimer);
   }, []);
 
   const toggleTheme = () => {
@@ -130,7 +141,11 @@ export default function UserManagementPage() {
   };
 
   useEffect(() => {
-    void loadUsers();
+    const initialLoadTimer = window.setTimeout(() => {
+      void loadUsers();
+    }, 0);
+
+    return () => window.clearTimeout(initialLoadTimer);
   }, []);
 
   const handleRoleChange = async (userId: string, newRole: string) => {
@@ -152,7 +167,7 @@ export default function UserManagementPage() {
   const filteredUsers = useMemo(() => {
     return users
       .filter((u) => {
-        const rawUser = u as any;
+        const rawUser = u as UserListDto & UserListFallbackFields;
         const roleName = getRoleName(u.role);
 
         const displayName = (
@@ -196,6 +211,8 @@ export default function UserManagementPage() {
     switch (roleName) {
       case "Admin":
         return "bg-purple-100 text-purple-700 dark:bg-purple-950/80 dark:text-purple-300 border-purple-200 dark:border-purple-800";
+      case "TeamLeader":
+        return "bg-red-100 text-red-700 dark:bg-red-950/80 dark:text-red-300 border-red-200 dark:border-red-800";
       case "SupportAgent":
         return "bg-blue-100 text-blue-700 dark:bg-blue-950/80 dark:text-blue-300 border-blue-200 dark:border-blue-800";
       default:
@@ -256,6 +273,7 @@ export default function UserManagementPage() {
           >
             <option value="ALL">All Roles</option>
             <option value="Admin">Admin</option>
+            <option value="TeamLeader">Team Leader</option>
             <option value="SupportAgent">Support Agent</option>
             <option value="User">User</option>
           </select>
@@ -293,7 +311,7 @@ export default function UserManagementPage() {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
                 {filteredUsers.map((u) => {
                   const roleName = getRoleName(u.role);
-                  const rawUser = u as any;
+                  const rawUser = u as UserListDto & UserListFallbackFields;
                   const displayName =
                     u.fullName ||
                     (rawUser.name && rawUser.lastName
@@ -333,9 +351,10 @@ export default function UserManagementPage() {
                           }
                           className="select select-sm select-bordered bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs disabled:opacity-50"
                         >
-                          <option value="User">User</option>
-                          <option value="SupportAgent">SupportAgent</option>
                           <option value="Admin">Admin</option>
+                          <option value="TeamLeader">TeamLeader</option>
+                          <option value="SupportAgent">SupportAgent</option>
+                          <option value="User">User</option>
                         </select>
                       </td>
                     </tr>
