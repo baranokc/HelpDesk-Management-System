@@ -45,6 +45,12 @@ public class AppDbContext : DbContext
             .HasForeignKey(u => u.ManagerId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<UserRole>()
+        .Property(ur => ur.AssignedAt)
+        .HasDefaultValueSql("NOW()");
+
 
         modelBuilder.Entity<TeamMember>()
             .HasOne(tm => tm.Team)
