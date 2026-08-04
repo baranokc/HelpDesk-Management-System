@@ -90,33 +90,33 @@ export default function TicketsLayout({
           </div>
 
           {/* Navigation Links */}
-<div className="hidden md:flex items-center gap-2 mr-4">
-  <LinkButton
-    href="/tickets"
-    size="sm"
-    variant={isTicketsSection ? "primary" : "secondary"}
-    className={`text-sm font-medium normal-case transition-all ${
-      !isTicketsSection
-        ? "dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 hover:!bg-slate-900 hover:!text-white dark:hover:!bg-white dark:hover:!text-slate-900"
-        : ""
-    }`}
-  >
-    {viewLabel.navigationLabel}
-  </LinkButton>
+          <div className="hidden md:flex items-center gap-2 mr-4">
+            <LinkButton
+              href="/tickets"
+              size="sm"
+              variant={isTicketsSection ? "primary" : "secondary"}
+              className={`text-sm font-medium normal-case transition-all ${
+                !isTicketsSection
+                  ? "dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 hover:!bg-slate-900 hover:!text-white dark:hover:!bg-white dark:hover:!text-slate-900"
+                  : ""
+              }`}
+            >
+              {viewLabel.navigationLabel}
+            </LinkButton>
 
-  <LinkButton
-    href="/tickets/new"
-    size="sm"
-    variant={isCreateTicketPage ? "primary" : "secondary"}
-    className={`text-sm font-medium normal-case transition-all ${
-      !isCreateTicketPage
-        ? "dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 hover:!bg-slate-900 hover:!text-white dark:hover:!bg-white dark:hover:!text-slate-900"
-        : ""
-    }`}
-  >
-    Create Ticket
-  </LinkButton>
-</div>
+            <LinkButton
+              href="/tickets/new"
+              size="sm"
+              variant={isCreateTicketPage ? "primary" : "secondary"}
+              className={`text-sm font-medium normal-case transition-all ${
+                !isCreateTicketPage
+                  ? "dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 hover:!bg-slate-900 hover:!text-white dark:hover:!bg-white dark:hover:!text-slate-900"
+                  : ""
+              }`}
+            >
+              Create Ticket
+            </LinkButton>
+          </div>
 
           {/* User Actions */}
           <div className="flex-none gap-3 flex items-center">
@@ -177,77 +177,77 @@ export default function TicketsLayout({
                 </li>
 
                 {/* Profil Butonu */}
-  <li>
-    <button
-      type="button"
-      onClick={(e) => e.preventDefault()}
-      className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg py-2"
-    >
-      <svg
-        className="h-4 w-4 text-slate-500 dark:text-slate-400"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-        />
-      </svg>
-      Profile
-    </button>
-  </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={(e) => e.preventDefault()}
+                    className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg py-2"
+                  >
+                    <svg
+                      className="h-4 w-4 text-slate-500 dark:text-slate-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      />
+                    </svg>
+                    Profile
+                  </button>
+                </li>
 
-  {/* 🛡️ ADMIN PANEL BUTONU (SADECE ADMIN VE SUPPORT AGENT İÇİN) */}
-  {(user?.role === "Admin" || user?.role === "SupportAgent") && (
-    <li>
-      <Link
-        href="/admin"
-        className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg py-2"
-      >
-        <svg
-          className="h-4 w-4 text-blue-600 dark:text-blue-400"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-          />
-        </svg>
-        Admin Panel
-      </Link>
-    </li>
-  )}
+                {/* ADMIN PANEL BUTONU (SADECE ADMIN İÇİN) */}
+                {user?.role === "Admin" && (
+                  <li>
+                    <Link
+                      href="/admin"
+                      className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg py-2"
+                    >
+                      <svg
+                        className="h-4 w-4 text-blue-600 dark:text-blue-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                        />
+                      </svg>
+                      Admin Panel
+                    </Link>
+                  </li>
+                )}
 
-  {/* Sign Out Butonu */}
-  <li>
-    <button
-      onClick={handleLogout}
-      className="flex items-center gap-2 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-700 dark:hover:text-red-300 rounded-lg py-2"
-    >
-      <svg
-        className="h-4 w-4"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-        />
-      </svg>
-      Sign Out
-    </button>
-  </li>
-</ul>
+                {/* Sign Out Butonu */}
+                <li>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-700 dark:hover:text-red-300 rounded-lg py-2"
+                  >
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                      />
+                    </svg>
+                    Sign Out
+                  </button>
+                </li>
+              </ul>
             </div>
 
             {/* Dark / Light Mode Toggle */}
