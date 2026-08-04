@@ -79,6 +79,13 @@ export const teamService = {
     await api.put(`/teams/${id}`, dto);
   },
 
+  setTeamLead: async (id: string, leadId: string | null): Promise<void> => {
+    if (!id || id === "undefined" || id.trim() === "") {
+      throw new Error("Invalid Team ID provided.");
+    }
+    await api.put(`/teams/${id}/lead`, { leadId });
+  },
+
   deleteTeam: async (id: string): Promise<void> => {
     if (!id || id === "undefined" || id.trim() === "") {
       throw new Error("Invalid Team ID provided.");

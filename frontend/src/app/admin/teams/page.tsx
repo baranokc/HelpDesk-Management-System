@@ -65,13 +65,22 @@ export default function TeamsPage() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTeam, setEditingTeam] = useState<TeamDto | null>(null);
-  const [formData, setFormData] = useState<CreateTeamDto>({ name: "", description: "", leadId: "" });
+  const [formData, setFormData] = useState<CreateTeamDto>({ name: "", description: "" });
   const [submitting, setSubmitting] = useState(false);
 
   const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
   const [selectedTeamDetails, setSelectedTeamDetails] = useState<TeamDto | null>(null);
   const [selectedAgentToAdd, setSelectedAgentToAdd] = useState("");
   const [memberActionLoading, setMemberActionLoading] = useState(false);
+
+  const [isViewMembersModalOpen, setIsViewMembersModalOpen] = useState(false);
+  const [viewTeamDetails, setViewTeamDetails] = useState<TeamDto | null>(null);
+  const [viewMembersLoading, setViewMembersLoading] = useState(false);
+
+  const [isLeaderModalOpen, setIsLeaderModalOpen] = useState(false);
+  const [leaderModalTeam, setLeaderModalTeam] = useState<TeamDto | null>(null);
+  const [selectedLeaderId, setSelectedLeaderId] = useState("");
+  const [leaderActionLoading, setLeaderActionLoading] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
@@ -96,7 +105,7 @@ export default function TeamsPage() {
 
   const openCreateModal = () => {
     setEditingTeam(null);
-    setFormData({ name: "", description: "", leadId: "" });
+    setFormData({ name: "", description: "" });
     setIsModalOpen(true);
   };
 
@@ -105,7 +114,6 @@ export default function TeamsPage() {
     setFormData({
       name: team.name,
       description: team.description || "",
-      leadId: team.leadId || "",
     });
     setIsModalOpen(true);
   };
@@ -120,7 +128,6 @@ export default function TeamsPage() {
       const payload: CreateTeamDto = {
         name: formData.name,
         description: formData.description || undefined,
-        leadId: formData.leadId || undefined,
       };
 
       if (editingTeam) {
@@ -149,6 +156,19 @@ export default function TeamsPage() {
     }
   };
 
+  const openViewMembersModal = async (teamId: string) => {
+    setViewMembersLoading(true);
+    setIsViewMembersModalOpen(true);
+    try {
+      const details = await teamService.getTeamById(teamId);
+      setViewTeamDetails(details);
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, "Failed to load team members."));
+    } finally {
+      setViewMembersLoading(false);
+    }
+  };
+
   const openMembersModal = async (teamId: string) => {
     setMemberActionLoading(true);
     setIsMembersModalOpen(true);
@@ -160,6 +180,34 @@ export default function TeamsPage() {
       setError(getApiErrorMessage(err, "Failed to load team members."));
     } finally {
       setMemberActionLoading(false);
+    }
+  };
+
+  const openLeaderModal = async (team: TeamDto) => {
+    setLeaderActionLoading(true);
+    setIsLeaderModalOpen(true);
+    try {
+      const details = await teamService.getTeamById(team.id);
+      setLeaderModalTeam(details);
+      setSelectedLeaderId(details.leadId || "");
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, "Failed to load team leader details."));
+    } finally {
+      setLeaderActionLoading(false);
+    }
+  };
+
+  const handleSaveLeader = async () => {
+    if (!leaderModalTeam) return;
+    setLeaderActionLoading(true);
+    try {
+      await teamService.setTeamLead(leaderModalTeam.id, selectedLeaderId || null);
+      setIsLeaderModalOpen(false);
+      await loadData();
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, "Failed to update team leader."));
+    } finally {
+      setLeaderActionLoading(false);
     }
   };
 
@@ -290,22 +338,31 @@ export default function TeamsPage() {
                       {team.name}
                     </td>
                     <td>
-                      {team.leadName ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-                          <CrownIcon />
-                          {team.leadName}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-slate-400 dark:text-slate-500 italic">Unassigned</span>
-                      )}
+                      <button
+                        onClick={() => void openLeaderModal(team)}
+                        className="group inline-flex items-center cursor-pointer focus:outline-none"
+                        title="Click to change Team Leader"
+                      >
+                        {team.leadName ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200 dark:border-amber-800 group-hover:bg-amber-100 dark:group-hover:bg-amber-900/60 transition-colors">
+                            <CrownIcon />
+                            {team.leadName}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-slate-400 dark:text-slate-500 italic underline decoration-dashed group-hover:text-amber-600 dark:group-hover:text-amber-400">
+                            + Assign Leader
+                          </span>
+                        )}
+                      </button>
                     </td>
                     <td className="text-slate-500 dark:text-slate-400 max-w-xs truncate">
                       {team.description || "-"}
                     </td>
                     <td>
                       <button
-                        onClick={() => void openMembersModal(team.id)}
+                        onClick={() => void openViewMembersModal(team.id)}
                         className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-950/80 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900 transition-colors cursor-pointer"
+                        title="Click to view team members"
                       >
                         <UsersIcon />
                         {team.memberCount || 0} agents
@@ -315,7 +372,7 @@ export default function TeamsPage() {
                       <button
                         onClick={() => void openMembersModal(team.id)}
                         className="btn btn-xs btn-ghost text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400"
-                        title="Manage Members"
+                        title="Manage Members (Add / Remove)"
                       >
                         <UsersIcon />
                       </button>
@@ -356,7 +413,7 @@ export default function TeamsPage() {
               {editingTeam ? "Edit Team" : "Create New Team"}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">
-              {editingTeam ? "Update team settings and leadership." : "Add a new support team and assign a leader."}
+              {editingTeam ? "Update team name and description." : "Add a new support team."}
             </p>
 
             <form onSubmit={(e) => void handleFormSubmit(e)} className="space-y-4">
@@ -372,24 +429,6 @@ export default function TeamsPage() {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="input input-sm input-bordered w-full bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs"
                 />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Team Leader
-                </label>
-                <select
-                  value={formData.leadId || ""}
-                  onChange={(e) => setFormData({ ...formData, leadId: e.target.value })}
-                  className="select select-sm select-bordered w-full bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs"
-                >
-                  <option value="">No Leader Assigned</option>
-                  {eligibleAgents.map((agent) => (
-                    <option key={agent.id} value={agent.id}>
-                      {agent.fullName} ({agent.email})
-                    </option>
-                  ))}
-                </select>
               </div>
 
               <div>
@@ -426,6 +465,145 @@ export default function TeamsPage() {
         </div>
       )}
 
+      {isLeaderModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 w-full max-w-md p-6 shadow-xl relative">
+            <button
+              onClick={() => setIsLeaderModalOpen(false)}
+              className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            >
+              <CloseIcon />
+            </button>
+
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-2">
+              <CrownIcon /> Select Team Leader
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">
+              Team: <b className="text-slate-800 dark:text-slate-200">{leaderModalTeam?.name}</b>
+            </p>
+
+            {leaderActionLoading && !leaderModalTeam ? (
+              <div className="p-4 flex justify-center">
+                <LoadingSpinner label="Loading agents..." />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Choose Leader (Support Agents in this Team)
+                  </label>
+                  <select
+                    value={selectedLeaderId}
+                    onChange={(e) => setSelectedLeaderId(e.target.value)}
+                    className="select select-sm select-bordered w-full bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs"
+                  >
+                    <option value="">No Leader Assigned</option>
+                    {leaderModalTeam?.agents?.map((agent) => (
+                      <option key={agent.id} value={agent.id}>
+                        {agent.fullName} ({agent.email})
+                      </option>
+                    ))}
+                  </select>
+                  {(!leaderModalTeam?.agents || leaderModalTeam.agents.length === 0) && (
+                    <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-2">
+                      Please add Support Agents to this team first to select a leader.
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setIsLeaderModalOpen(false)}
+                    className="btn btn-sm btn-ghost border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleSaveLeader()}
+                    disabled={leaderActionLoading}
+                    className="btn btn-sm btn-primary text-white"
+                  >
+                    {leaderActionLoading ? "Saving..." : "Save Leader"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {isViewMembersModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 w-full max-w-md p-6 shadow-xl relative">
+            <button
+              onClick={() => setIsViewMembersModalOpen(false)}
+              className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            >
+              <CloseIcon />
+            </button>
+
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
+              Team Members
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+              Team: <b className="text-slate-800 dark:text-slate-200">{viewTeamDetails?.name}</b>
+            </p>
+
+            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+              {viewMembersLoading && !viewTeamDetails ? (
+                <div className="p-4 flex justify-center">
+                  <LoadingSpinner label="Loading members..." />
+                </div>
+              ) : viewTeamDetails?.agents?.length === 0 ? (
+                <div className="p-4 text-center text-xs text-slate-500 dark:text-slate-400">
+                  No support agents assigned to this team yet.
+                </div>
+              ) : (
+                viewTeamDetails?.agents?.map((agent) => {
+                  const isLead =
+                    viewTeamDetails.leadId &&
+                    agent.id &&
+                    viewTeamDetails.leadId.toLowerCase() === agent.id.toLowerCase();
+                  return (
+                    <div
+                      key={agent.id}
+                      className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800"
+                    >
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-slate-900 dark:text-white">
+                            {agent.fullName}
+                          </span>
+                          {isLead && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 bg-amber-100 dark:bg-amber-950/80 dark:text-amber-400 px-1.5 py-0.5 rounded">
+                              <CrownIcon /> Leader
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
+                          {agent.email}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            <div className="flex justify-end pt-4 mt-4 border-t border-slate-100 dark:border-slate-800">
+              <button
+                onClick={() => setIsViewMembersModalOpen(false)}
+                className="btn btn-sm btn-ghost border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {isMembersModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 w-full max-w-lg p-6 shadow-xl relative">
@@ -451,7 +629,7 @@ export default function TeamsPage() {
               >
                 <option value="">
                   {availableAgentsForSelectedTeam.length === 0
-                    ? "No available agents to add"
+                    ? "No available Support Agents to add"
                     : "Select Support Agent to Add..."}
                 </option>
                 {availableAgentsForSelectedTeam.map((agent) => (
@@ -476,7 +654,7 @@ export default function TeamsPage() {
                 </div>
               ) : selectedTeamDetails?.agents?.length === 0 ? (
                 <div className="p-4 text-center text-xs text-slate-500 dark:text-slate-400">
-                  No agents assigned to this team yet.
+                  No support agents assigned to this team yet.
                 </div>
               ) : (
                 selectedTeamDetails?.agents?.map((agent) => {
