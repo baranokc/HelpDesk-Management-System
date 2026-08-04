@@ -4,6 +4,12 @@ export interface TeamAgentDto {
     email: string;
   }
   
+  export interface EligibleAgentDto {
+    id: string;
+    fullName: string;
+    email: string;
+  }
+  
   export interface TeamDto {
     id: string;
     name: string;
@@ -25,4 +31,8 @@ export interface TeamAgentDto {
     name: string;
     description?: string;
     leadId?: string;
+  }
+  
+  export interface AddMemberDto {
+    userId: string;
   }
