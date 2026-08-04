@@ -6,6 +6,7 @@ interface TicketStatsCardsProps {
   inProgressCount?: number;
   completedCount?: number;
   loading?: boolean;
+  totalDescription?: string;
 }
 
 export function TicketStatsCards({
@@ -14,12 +15,13 @@ export function TicketStatsCards({
   inProgressCount = 0,
   completedCount = 0,
   loading = false,
+  totalDescription = "All tickets in this view",
 }: TicketStatsCardsProps) {
   const stats = [
     {
       title: "Total Tickets",
       value: totalCount,
-      description: "All tickets in system",
+      description: totalDescription,
       icon: (
         <svg className="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />

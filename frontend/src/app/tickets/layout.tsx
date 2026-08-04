@@ -20,6 +20,7 @@ export default function TicketsLayout({
   const viewLabel = getTicketViewLabel(user?.role);
   const isCreateTicketPage = pathname === "/tickets/new";
   const isTicketsSection = pathname.startsWith("/tickets") && !isCreateTicketPage;
+  const isTeamManagementPage = pathname.startsWith("/tickets/team-management",);
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -199,6 +200,30 @@ export default function TicketsLayout({
                     Profile
                   </button>
                 </li>
+
+                {user?.role === "TeamLeader" && (
+                  <li>
+                    <Link
+                      aria-current={
+                        isTeamManagementPage ? "page" : undefined
+                      }
+                      href="/tickets/team-management"
+                      className={`flex items-center gap-2 rounded-lg py-2 text-xs font-semibold ${
+                        isTeamManagementPage
+                          ? "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300"
+                          : "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                      }`}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="w-4 text-center text-base leading-none text-slate-500 dark:text-slate-400"
+                      >
+                        ⚙
+                      </span>
+                      Management Page
+                    </Link>
+                  </li>
+                )}
 
                 {/* Sign Out Butonu */}
                 <li>
