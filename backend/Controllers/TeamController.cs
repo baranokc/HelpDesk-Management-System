@@ -44,12 +44,7 @@ public class TeamController : ControllerBase
     public async Task<IActionResult> GetEligibleAgents()
     {
         var agents = await _context.Users
-            .Include(u => u.UserRoles)
-            .ThenInclude(ur => ur.Role)
-            .Where(u => u.UserRoles.Any(ur => 
-                ur.Role.Name.ToLower().Contains("agent") || 
-                ur.Role.Name.ToLower().Contains("admin") ||
-                ur.Role.Name.ToLower().Contains("support")))
+            .Where(u => u.UserRoles.Any(ur => ur.Role.Name == "SupportAgent" || ur.Role.Name == "TeamLeader"))
             .Select(u => new
             {
                 id = u.Id,
@@ -62,6 +57,11 @@ public class TeamController : ControllerBase
         if (!agents.Any())
         {
             agents = await _context.Users
+                .Where(u => _context.UserRoles
+                    .Include(ur => ur.Role)
+                    .Where(ur => ur.UserId == u.Id)
+                    .Select(ur => ur.Role.Name)
+                    .Any(roleName => roleName == "SupportAgent" || roleName == "TeamLeader"))
                 .Select(u => new
                 {
                     id = u.Id,
@@ -119,33 +119,16 @@ public class TeamController : ControllerBase
             return BadRequest("Team name is required.");
         }
 
-        Guid? leadGuid = null;
-        if (!string.IsNullOrEmpty(dto.LeadId) && Guid.TryParse(dto.LeadId, out var parsedLeadGuid))
-        {
-            leadGuid = parsedLeadGuid;
-        }
-
         var team = new Team
         {
             Id = Guid.NewGuid(),
             Name = dto.Name.Trim(),
             Description = string.IsNullOrWhiteSpace(dto.Description) ? null : dto.Description.Trim(),
-            LeadId = leadGuid,
+            LeadId = null,
             CreatedAt = DateTime.UtcNow
         };
 
         _context.Teams.Add(team);
-
-        if (leadGuid.HasValue)
-        {
-            _context.TeamMembers.Add(new TeamMember
-            {
-                TeamId = team.Id,
-                UserId = leadGuid.Value,
-                JoinedAt = DateTime.UtcNow
-            });
-        }
-
         await _context.SaveChangesAsync();
 
         return CreatedAtAction(nameof(GetTeamById), new { id = team.Id }, new
@@ -154,7 +137,7 @@ public class TeamController : ControllerBase
             name = team.Name,
             description = team.Description,
             leadId = team.LeadId,
-            memberCount = leadGuid.HasValue ? 1 : 0,
+            memberCount = 0,
             createdAt = team.CreatedAt
         });
     }
@@ -167,6 +150,20 @@ public class TeamController : ControllerBase
             return BadRequest("Team name cannot be empty.");
         }
 
+        var team = await _context.Teams.FirstOrDefaultAsync(t => t.Id == id);
+        if (team == null)
+            return NotFound("Team not found.");
+
+        team.Name = dto.Name.Trim();
+        team.Description = string.IsNullOrWhiteSpace(dto.Description) ? null : dto.Description.Trim();
+
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
+    [HttpPut("{id:guid}/lead")]
+    public async Task<IActionResult> SetTeamLead(Guid id, [FromBody] SetLeadDto dto)
+    {
         var team = await _context.Teams
             .Include(t => t.TeamMembers)
             .FirstOrDefaultAsync(t => t.Id == id);
@@ -174,25 +171,22 @@ public class TeamController : ControllerBase
         if (team == null)
             return NotFound("Team not found.");
 
-        team.Name = dto.Name.Trim();
-        team.Description = string.IsNullOrWhiteSpace(dto.Description) ? null : dto.Description.Trim();
-
-        if (!string.IsNullOrEmpty(dto.LeadId) && Guid.TryParse(dto.LeadId, out var leadGuid))
+        if (string.IsNullOrWhiteSpace(dto.LeadId))
         {
-            team.LeadId = leadGuid;
-            if (!team.TeamMembers.Any(tm => tm.UserId == leadGuid))
+            team.LeadId = null;
+        }
+        else if (Guid.TryParse(dto.LeadId, out var leadGuid))
+        {
+            var isMember = team.TeamMembers.Any(tm => tm.UserId == leadGuid);
+            if (!isMember)
             {
-                _context.TeamMembers.Add(new TeamMember
-                {
-                    TeamId = team.Id,
-                    UserId = leadGuid,
-                    JoinedAt = DateTime.UtcNow
-                });
+                return BadRequest("Selected team lead must be an active member of this team.");
             }
+            team.LeadId = leadGuid;
         }
         else
         {
-            team.LeadId = null;
+            return BadRequest("Invalid Lead ID format.");
         }
 
         await _context.SaveChangesAsync();
@@ -259,13 +253,16 @@ public class CreateTeamDto
 {
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
-    public string? LeadId { get; set; }
 }
 
 public class UpdateTeamDto
 {
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
+}
+
+public class SetLeadDto
+{
     public string? LeadId { get; set; }
 }
 
