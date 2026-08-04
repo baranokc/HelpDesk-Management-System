@@ -1,0 +1,143 @@
+name: Build and Push Docker Images
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+      - develop
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      matrix:
+        include:
+          - service: backend
+            dockerfile: ./backend/Dockerfile
+            context: ./backend
+          - service: frontend
+            dockerfile: ./frontend/Dockerfile
+            context: ./frontend
+          - service: help-desk
+            dockerfile: ./help-desk/Dockerfile
+            context: ./help-desk
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-${{ matrix.service }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Compose
+        uses: docker/setup-buildx-action@v3
+
+      - name: Start services
+        run: |
+          docker compose up -d
+          sleep 30
+
+      - name: Check backend health
+        run: |
+          for i in {1..30}; do
+            if curl -f http://localhost:8080/swagger/index.html > /dev/null 2>&1; then
+              echo "Backend is healthy"
+              exit 0
+            fi
+            echo "Attempt $i: Waiting for backend..."
+            sleep 2
+          done
+          echo "Backend failed to start"
+          docker compose logs backend
+          exit 1
+
+      - name: Check frontend health
+        run: |
+          for i in {1..30}; do
+            if curl -f http://localhost:3000 > /dev/null 2>&1; then
+              echo "Frontend is healthy"
+              exit 0
+            fi
+            echo "Attempt $i: Waiting for frontend..."
+            sleep 2
+          done
+          echo "Frontend failed to start"
+          docker compose logs frontend
+          exit 1
+
+      - name: Check help-desk health
+        run: |
+          for i in {1..30}; do
+            if curl -f http://localhost:3001 > /dev/null 2>&1; then
+              echo "Help Desk app is healthy"
+              exit 0
+            fi
+            echo "Attempt $i: Waiting for help-desk..."
+            sleep 2
+          done
+          echo "Help Desk app failed to start"
+          docker compose logs help-desk
+          exit 1
+
+      - name: Test API endpoints
+        run: |
+          echo "Testing API endpoints..."
+          curl -v http://localhost:8080/swagger/index.html
+          curl -v http://localhost:8080/api/health || true
+
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v
