@@ -1,4 +1,4 @@
-import { api } from "@/src/lib/api"; 
+import { api } from "@/src/lib/api";
 import type { UserListDto, UserUpdateRoleDto } from "@/src/types/user";
 
 export const userService = {
@@ -8,6 +8,6 @@ export const userService = {
   },
 
   updateUserRole: async (dto: UserUpdateRoleDto): Promise<void> => {
-    await api.put(`/api/users/${dto.userId}/role`, { newRole: dto.newRole });
+    await api.put(`/users/${dto.userId}/role`, { newRole: dto.newRole });
   },
 };

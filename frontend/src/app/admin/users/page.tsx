@@ -8,9 +8,8 @@ import { getApiErrorMessage } from "@/src/lib/api";
 import { userService } from "@/src/services/userService";
 import type { UserListDto } from "@/src/types/user";
 
-// Role verisi ister string ister nesne gelsin, güvenle role ismini dndüren yardımcı fonksiyon
 const getRoleName = (role: unknown): string => {
-  if (!role) return "Customer";
+  if (!role) return "User";
   if (typeof role === "object" && role !== null && "name" in role) {
     return String((role as { name: string }).name);
   }
@@ -42,23 +41,31 @@ export default function UserManagementPage() {
 
   const handleRoleChange = async (userId: string, newRole: string) => {
     setUpdatingUserId(userId);
+    setError(null);
     try {
       await userService.updateUserRole({ userId, newRole });
+
       setUsers((prev) =>
-        prev.map((u) => {
-          if (u.id !== userId) return u;
-          // Eğer role nesne olarak tutuluyorsa 'name' alanını, string ise direkt kendisini güncelliyoruz
-          const updatedRole =
-            typeof u.role === "object" && u.role !== null
-              ? { ...(u.role as object), name: newRole }
-              : newRole;
-          return { ...u, role: updatedRole as any };
-        })
+        prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
       );
     } catch (err: unknown) {
-      setError(getApiErrorMessage(err, "Failed to update user role."));
+      console.error("Role update failed:", err);
+      setError(
+        getApiErrorMessage(err, "Failed to update user role.")
+      );
     } finally {
       setUpdatingUserId(null);
+    }
+  };
+
+  const getRoleBadgeStyle = (roleName: string) => {
+    switch (roleName) {
+      case "Admin":
+        return "bg-purple-100 text-purple-700 dark:bg-purple-950/80 dark:text-purple-300 border-purple-200 dark:border-purple-800";
+      case "SupportAgent":
+        return "bg-blue-100 text-blue-700 dark:bg-blue-950/80 dark:text-blue-300 border-blue-200 dark:border-blue-800";
+      default: // User / Customer
+        return "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700";
     }
   };
 
@@ -107,26 +114,30 @@ export default function UserManagementPage() {
                 {users.map((u) => {
                   const roleName = getRoleName(u.role);
 
+                  const rawUser = u as any;
+                  const displayName = 
+                    u.fullName || 
+                    (rawUser.name && rawUser.lastName ? `${rawUser.name} ${rawUser.lastName}` : null) ||
+                    rawUser.name ||
+                    u.email?.split("@")[0] ||
+                    "User";
+
                   return (
                     <tr
                       key={u.id}
                       className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
                     >
                       <td className="font-semibold text-slate-900 dark:text-white">
-                        {u.fullName}
+                        {displayName}
                       </td>
                       <td className="text-slate-500 dark:text-slate-400">
                         {u.email}
                       </td>
                       <td>
                         <span
-                          className={`badge badge-sm font-semibold ${
-                            roleName === "Admin"
-                              ? "badge-primary text-white"
-                              : roleName === "SupportAgent"
-                              ? "badge-secondary text-white"
-                              : "badge-ghost text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700"
-                          }`}
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${getRoleBadgeStyle(
+                            roleName
+                          )}`}
                         >
                           {roleName}
                         </span>
@@ -140,7 +151,8 @@ export default function UserManagementPage() {
                           }
                           className="select select-sm select-bordered bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs disabled:opacity-50"
                         >
-                          <option value="Customer">Customer</option>
+                          {/* 🟢 Customer yerine User yapıldı */}
+                          <option value="User">User</option>
                           <option value="SupportAgent">SupportAgent</option>
                           <option value="Admin">Admin</option>
                         </select>
