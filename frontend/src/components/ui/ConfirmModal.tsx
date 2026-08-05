@@ -19,8 +19,8 @@ export function ConfirmModal({
   open,
   title,
   description,
-  confirmLabel = "Onayla",
-  cancelLabel = "Vazgeç",
+  confirmLabel = "Confirm",
+  cancelLabel = "Cancel",
   danger = false,
   loading = false,
   onConfirm,
@@ -30,7 +30,12 @@ export function ConfirmModal({
     <Modal onClose={onClose} open={open} title={title}>
       <p className="text-sm opacity-70">{description}</p>
       <div className="modal-action">
-        <Button onClick={onClose} type="button" variant="secondary">
+        <Button
+          className="border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+          onClick={onClose}
+          type="button"
+          variant="secondary"
+        >
           {cancelLabel}
         </Button>
         <Button

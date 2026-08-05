@@ -10,71 +10,73 @@ import { TicketAttachments } from "./TicketAttachments";
 interface TicketCommentsProps {
   comments: TicketCommentDto[];
   downloadingAttachmentId?: string | null;
-  onDownloadAttachment: (
-    attachment: TicketAttachmentDto,
-  ) => Promise<void>;
+  onDownloadAttachment: (attachment: TicketAttachmentDto) => Promise<void>;
   onEdit?: (comment: TicketCommentDto) => void;
   onDelete?: (comment: TicketCommentDto) => void;
   canManage?: (comment: TicketCommentDto) => boolean;
   canManageAttachment?: (attachment: TicketAttachmentDto) => boolean;
-
-  onEditAttachmentDescription?: (
-    attachment: TicketAttachmentDto,
-  ) => void;
-
-  onDeleteAttachment?: (
-    attachment: TicketAttachmentDto,
-  ) => void | Promise<void>;
+  onEditAttachmentDescription?: (attachment: TicketAttachmentDto) => void;
+  onDeleteAttachment?: (attachment: TicketAttachmentDto) => void | Promise<void>;
 }
 
 function getCommentStyle(comment: TicketCommentDto) {
-  // 1. İç Not (Internal Comment) her zaman belirgin Amber / Sarı
+  // 1. İç Not (Internal Comment) -> Amber / Sarı
   if (comment.isInternal) {
     return {
-      bubbleClass: "bg-amber-900 text-amber-50 border border-amber-600 shadow-sm",
+      bubbleClass: "bg-amber-950/80 text-amber-50 border border-amber-600/70 shadow-sm",
       roleLabel: "Internal Note",
       badgeTone: "amber" as const,
     };
   }
 
-  const commentRecord = comment as unknown as Record<string, unknown>;
-  const role = (
-    commentRecord.userRole ||
-    commentRecord.authorRole ||
-    commentRecord.role ||
-    commentRecord.createdByRole ||
+  const rec = comment as unknown as Record<string, unknown>;
+  const rawRole = (
+    comment.createdByRole ||
+    rec.createdByRole ||
+    rec.userRole ||
+    rec.role ||
     ""
-  ).toString().toLowerCase();
+  )
+    .toString()
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .trim();
 
-  const name = (comment.createdByName || "").toLowerCase();
-
-  // 2. Admin Kontrolü (Rol veya İsimden)
-  if (role.includes("admin") || name.includes("admin")) {
+  // 2. ADMIN -> Mor
+  if (rawRole.includes("admin")) {
     return {
-      bubbleClass: "bg-indigo-900 text-indigo-50 border border-indigo-600 shadow-sm",
+      bubbleClass: "bg-indigo-950/80 text-indigo-50 border border-indigo-500/50 shadow-sm",
       roleLabel: "Admin",
       badgeTone: "purple" as const,
     };
   }
 
-  // 3. Support / TeamMember Kontrolü
+  // 3. TEAM LEADER -> Kırmızı (Kırmızı Baloncuk & Kırmızı Rozet)
+  if (rawRole.includes("teamleader") || rawRole.includes("leader")) {
+    return {
+      bubbleClass: "bg-red-950/80 text-red-50 border border-red-500/50 shadow-sm",
+      roleLabel: "Team Leader",
+      badgeTone: "red" as const,
+    };
+  }
+
+  // 4. SUPPORT AGENT -> Mavi / Gök Mavisi
   if (
-    role.includes("agent") ||
-    role.includes("support") ||
-    role.includes("team") ||
-    name.includes("support")
+    rawRole.includes("supportagent") ||
+    rawRole.includes("support") ||
+    rawRole.includes("agent")
   ) {
     return {
-      bubbleClass: "bg-blue-900 text-blue-50 border border-blue-600 shadow-sm",
-      roleLabel: "Support",
+      bubbleClass: "bg-sky-950/80 text-sky-50 border border-sky-500/50 shadow-sm",
+      roleLabel: "Support Agent",
       badgeTone: "blue" as const,
     };
   }
 
-  // 4. Standart / Müşteri Yorumları (Koyu Gri)
+  // 5. USER -> Gri
   return {
-    bubbleClass: "bg-slate-800 text-slate-100 border border-slate-700 shadow-sm",
-    roleLabel: role ? "Customer" : null,
+    bubbleClass: "bg-slate-800/90 text-slate-100 border border-slate-700 shadow-sm",
+    roleLabel: "User",
     badgeTone: "slate" as const,
   };
 }
@@ -109,23 +111,19 @@ export function TicketComments({
         return (
           <article className="chat chat-start" key={comment.id}>
             <div className="chat-header mb-1.5 flex items-center gap-2">
-              {/* KULLANICI ADI SİMSİYAH (text-slate-900) */}
               <span className="font-bold text-slate-900 dark:text-white">
                 {comment.createdByName}
               </span>
 
-              {/* Rol Etiketi */}
               {style.roleLabel && (
                 <Badge tone={style.badgeTone}>{style.roleLabel}</Badge>
               )}
 
-              {/* TARİH METNİ */}
-              <time className="text-xs font-medium text-slate-600">
+              <time className="text-xs font-medium text-slate-600 dark:text-slate-400">
                 {new Date(comment.createdAt).toLocaleString("tr-TR")}
                 {comment.editedAt && " · edited"}
               </time>
 
-              {/* DÜZENLEME VE SİLME YETKİ KONTROLÜ (showActions) */}
               {showActions && (onEdit || onDelete) && (
                 <Dropdown
                   label="•••"
@@ -154,29 +152,32 @@ export function TicketComments({
               )}
             </div>
 
-            {/* Mesaj Baloncuğu */}
             <div
-              className={`chat-bubble max-w-2xl whitespace-pre-wrap rounded-2xl p-4 text-sm font-medium ${style.bubbleClass}`}
+              className={`chat-bubble max-w-2xl rounded-2xl p-4 text-sm font-medium ${style.bubbleClass}`}
             >
-              {comment.comment}
-            </div>
-
-            {attachments.length > 0 && (
-              <div className="mt-3 w-full max-w-2xl">
-                <p className="mb-2 text-xs font-semibold text-slate-600">
-                  {attachments.length} attachment(s)
+              {comment.comment && (
+                <p className="whitespace-pre-wrap leading-relaxed">
+                  {comment.comment}
                 </p>
+              )}
 
-                <TicketAttachments
-                  attachments={attachments}
-                  canManage={canManageAttachment}
-                  downloadingAttachmentId={downloadingAttachmentId}
-                  onDelete={onDeleteAttachment}
-                  onDownload={onDownloadAttachment}
-                  onEditDescription={onEditAttachmentDescription}
-                />
-              </div>
-            )}
+              {attachments.length > 0 && (
+                <div className={comment.comment ? "mt-3 border-t border-white/10 pt-3" : ""}>
+                  <p className="mb-2 text-xs font-semibold opacity-80">
+                    {attachments.length} attachment(s)
+                  </p>
+
+                  <TicketAttachments
+                    attachments={attachments}
+                    canManage={canManageAttachment}
+                    downloadingAttachmentId={downloadingAttachmentId}
+                    onDelete={onDeleteAttachment}
+                    onDownload={onDownloadAttachment}
+                    onEditDescription={onEditAttachmentDescription}
+                  />
+                </div>
+              )}
+            </div>
           </article>
         );
       })}

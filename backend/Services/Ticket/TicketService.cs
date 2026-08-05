@@ -189,6 +189,13 @@ public class TicketService : ITicketService
                 Comment = c.Comment,
                 CreatedById = c.UserId,
                 CreatedByName = c.User.Name + " " + c.User.LastName,
+                // F5 yapıldığında rolün boş kalmasını engelleyen SQL subquery haritalaması:
+                CreatedByRole = (
+                    from ur in _db.UserRoles
+                    where ur.UserId == c.UserId
+                    join r in _db.Roles on ur.RoleId equals r.Id
+                    select r.Name
+                ).FirstOrDefault() ?? "User",
                 CreatedAt = c.CreatedAt,
                 EditedAt = c.EditedAt,
                 IsInternal = c.IsInternal,
@@ -575,6 +582,7 @@ public class TicketService : ITicketService
         await _db.SaveChangesAsync(cancellationToken);
         return true;
     }
+
     private async Task ValidateTicketLookupsAsync(
         Guid categoryId,
         Guid? subcategoryId,
@@ -651,6 +659,7 @@ public class TicketService : ITicketService
             }
         }
     }
+
     private static string FormatTicketNumber(long sequenceValue)
     {
         return $"HD-{sequenceValue:D8}";
@@ -681,5 +690,4 @@ public class TicketService : ITicketService
             _ => query.Where(_ => false)
         };
     }
-
 }
