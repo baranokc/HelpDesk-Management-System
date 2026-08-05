@@ -16,6 +16,7 @@ using backend.Hubs;
 using backend.Services.Notification;
 using backend.Services.TeamManagement;
 using backend.Services.Category;
+using backend.Services.Sla;
 using Microsoft.OpenApi;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -93,6 +94,7 @@ builder.Services.AddScoped<ITicketHistoryService, TicketHistoryService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<ITeamManagementService, TeamManagementService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<ISlaService, SlaService>();
 
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");

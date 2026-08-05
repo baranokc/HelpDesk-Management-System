@@ -145,6 +145,13 @@ public class TicketController : ControllerBase
                 message = exception.Message
             });
         }
+        catch (InvalidOperationException exception)
+        {
+            return BadRequest(new
+            {
+                message = exception.Message
+            });
+        }
     }
 
     [HttpPut("{id:guid}")]

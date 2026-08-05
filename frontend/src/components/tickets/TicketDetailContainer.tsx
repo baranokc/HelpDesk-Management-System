@@ -24,6 +24,7 @@ import { TicketComments } from "./TicketComments";
 import { TicketHeader, TicketMetadata, TicketSubject } from "./TicketDetail";
 import { TicketDetailTabs } from "./TicketDetailTabs";
 import { TicketHistory } from "./TicketHistory";
+import { TicketSlaCard } from "./TicketSlaCard";
 
 interface TicketDetailContainerProps {
   ticketId: string;
@@ -287,6 +288,7 @@ export function TicketDetailContainer({
             userRole={user?.role}
           />
           <TicketMetadata ticket={ticket} />
+          {ticket.sla && <TicketSlaCard sla={ticket.sla} />}
         </div>
       </div>
 

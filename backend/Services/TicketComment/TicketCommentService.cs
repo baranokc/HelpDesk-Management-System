@@ -2,6 +2,7 @@ using backend.Data;
 using backend.DTO.Ticket;
 using backend.Services.TicketAttachment;
 using backend.Services.Notification;
+using backend.Services.Sla;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.Services.TicketComment;
@@ -11,15 +12,18 @@ public class TicketCommentService : ITicketCommentService
     private readonly AppDbContext _db;
     private readonly ITicketAttachmentService _attachmentService;
     private readonly INotificationService _notificationService;
+    private readonly ISlaService _slaService;
 
     public TicketCommentService(
         AppDbContext db,
         ITicketAttachmentService attachmentService,
-        INotificationService notificationService)
+        INotificationService notificationService,
+        ISlaService slaService)
     {
         _db = db;
         _attachmentService = attachmentService;
         _notificationService = notificationService;
+        _slaService = slaService;
     }
 
     public async Task<IReadOnlyCollection<TicketCommentDto>> GetCommentsAsync(Guid ticketId, bool includeInternal, CancellationToken cancellationToken = default) =>
@@ -103,6 +107,19 @@ public class TicketCommentService : ITicketCommentService
                 ChangedById = userId,
                 ChangedAt = entity.CreatedAt
             });
+        }
+
+        var isPublicStaffResponse =
+            canManageAll &&
+            !entity.IsInternal &&
+            ticket.CreatedById != userId;
+
+        if (isPublicStaffResponse)
+        {
+            await _slaService.MarkFirstResponseAsync(
+                ticket,
+                entity.CreatedAt,
+                cancellationToken);
         }
 
         await _db.SaveChangesAsync(cancellationToken);

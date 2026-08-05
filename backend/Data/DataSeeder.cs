@@ -16,6 +16,10 @@ public static class DataSeeder
 
         await SafeSaveChangesAsync(context);
 
+        await SeedSlaPoliciesAsync(context);
+
+        await SafeSaveChangesAsync(context);
+
         try
         {
             var ticketStatuses = await context.TicketStatuses.ToListAsync();
@@ -234,6 +238,75 @@ public static class DataSeeder
         catch (PostgresException ex) when (ex.SqlState == "42P01")
         {
             Console.WriteLine("[DataSeeder Warning] TicketPriorities tablosu bulunamadı.");
+        }
+    }
+
+    private static async Task SeedSlaPoliciesAsync(AppDbContext context)
+    {
+        try
+        {
+            var targets = new Dictionary<
+                string,
+                (TimeSpan FirstResponse, TimeSpan Resolution, string Description)>(
+                StringComparer.OrdinalIgnoreCase)
+            {
+                ["Low"] = (
+                    TimeSpan.FromHours(8),
+                    TimeSpan.FromDays(3),
+                    "Low priority SLA policy."),
+                ["Medium"] = (
+                    TimeSpan.FromHours(4),
+                    TimeSpan.FromDays(2),
+                    "Medium priority SLA policy."),
+                ["High"] = (
+                    TimeSpan.FromHours(2),
+                    TimeSpan.FromHours(12),
+                    "High priority SLA policy."),
+                ["Critical"] = (
+                    TimeSpan.FromMinutes(30),
+                    TimeSpan.FromHours(4),
+                    "Critical priority SLA policy.")
+            };
+
+            var priorities = await context.TicketPriorities
+                .AsNoTracking()
+                .ToListAsync();
+
+            var activePolicyPriorityIds = (await context.SlaPolicies
+                    .AsNoTracking()
+                    .Where(policy => policy.IsActive)
+                    .Select(policy => policy.PriorityId)
+                    .ToListAsync())
+                .ToHashSet();
+
+            var policies = new List<SlaPolicy>();
+
+            foreach (var priority in priorities)
+            {
+                if (!targets.TryGetValue(priority.Name, out var target) ||
+                    activePolicyPriorityIds.Contains(priority.Id))
+                {
+                    continue;
+                }
+
+                policies.Add(new SlaPolicy
+                {
+                    Id = Guid.NewGuid(),
+                    PriorityId = priority.Id,
+                    FirstResponseTime = target.FirstResponse,
+                    ResolutionTime = target.Resolution,
+                    IsActive = true,
+                    Description = target.Description
+                });
+            }
+
+            if (policies.Count > 0)
+                await context.SlaPolicies.AddRangeAsync(policies);
+        }
+        catch (PostgresException ex) when (ex.SqlState == "42P01")
+        {
+            Console.WriteLine(
+                "[DataSeeder Warning] SlaPolicy tablosu bulunamadı.");
         }
     }
 

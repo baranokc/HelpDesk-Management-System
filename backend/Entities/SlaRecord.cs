@@ -13,7 +13,7 @@ public class SlaRecord
     public DateTime? ResolutionAt {get; set; }
     public bool IsPaused {get; set; }
     public string PauseReason {get; set; } = string.Empty;
-    public DateTime PausedAt {get; set; }
-    public DateTime ResumedAt {get; set; }
+    public DateTime? PausedAt {get; set; }
+    public DateTime? ResumedAt {get; set; }
     public ICollection<SlaPause> Pauses { get; set; } = new List<SlaPause>();
 }
