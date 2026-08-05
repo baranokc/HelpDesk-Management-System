@@ -28,4 +28,20 @@ public interface ICategoryService
     Task<bool> DeleteCategoryAsync(
         Guid categoryId,
         CancellationToken cancellationToken = default);
+
+    Task<CategoryAdminDto?> CreateSubcategoryAsync(
+        Guid categoryId,
+        SubcategoryUpsertDto dto,
+        CancellationToken cancellationToken = default);
+
+    Task<CategoryAdminDto?> UpdateSubcategoryAsync(
+        Guid categoryId,
+        Guid subcategoryId,
+        SubcategoryUpsertDto dto,
+        CancellationToken cancellationToken = default);
+
+    Task<CategoryAdminDto?> DeleteSubcategoryAsync(
+        Guid categoryId,
+        Guid subcategoryId,
+        CancellationToken cancellationToken = default);
 }

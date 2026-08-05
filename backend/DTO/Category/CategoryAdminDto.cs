@@ -9,4 +9,6 @@ public sealed class CategoryAdminDto
     public Guid? DefaultTeamId { get; set; }
     public string? DefaultTeamName { get; set; }
     public int SubcategoryCount { get; set; }
+    public IReadOnlyCollection<SubcategoryAdminDto> Subcategories { get; set; } =
+        Array.Empty<SubcategoryAdminDto>();
 }

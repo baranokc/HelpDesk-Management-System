@@ -135,4 +135,89 @@ public class CategoryController : ControllerBase
 
         return NoContent();
     }
+
+    [HttpPost("{categoryId:guid}/subcategories")]
+    public async Task<ActionResult<CategoryAdminDto>> CreateSubcategory(
+        Guid categoryId,
+        [FromBody] SubcategoryUpsertDto dto,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var category = await _categoryService.CreateSubcategoryAsync(
+                categoryId,
+                dto,
+                cancellationToken);
+
+            if (category is null)
+                return NotFound(new { message = "Category not found." });
+
+            return Ok(category);
+        }
+        catch (ArgumentException exception)
+        {
+            return BadRequest(new { message = exception.Message });
+        }
+        catch (InvalidOperationException exception)
+        {
+            return Conflict(new { message = exception.Message });
+        }
+    }
+
+    [HttpPut("{categoryId:guid}/subcategories/{subcategoryId:guid}")]
+    public async Task<ActionResult<CategoryAdminDto>> UpdateSubcategory(
+        Guid categoryId,
+        Guid subcategoryId,
+        [FromBody] SubcategoryUpsertDto dto,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var category = await _categoryService.UpdateSubcategoryAsync(
+                categoryId,
+                subcategoryId,
+                dto,
+                cancellationToken);
+
+            if (category is null)
+            {
+                return NotFound(new
+                {
+                    message = "Category or active subcategory not found."
+                });
+            }
+
+            return Ok(category);
+        }
+        catch (ArgumentException exception)
+        {
+            return BadRequest(new { message = exception.Message });
+        }
+        catch (InvalidOperationException exception)
+        {
+            return Conflict(new { message = exception.Message });
+        }
+    }
+
+    [HttpDelete("{categoryId:guid}/subcategories/{subcategoryId:guid}")]
+    public async Task<ActionResult<CategoryAdminDto>> DeleteSubcategory(
+        Guid categoryId,
+        Guid subcategoryId,
+        CancellationToken cancellationToken)
+    {
+        var category = await _categoryService.DeleteSubcategoryAsync(
+            categoryId,
+            subcategoryId,
+            cancellationToken);
+
+        if (category is null)
+        {
+            return NotFound(new
+            {
+                message = "Category or active subcategory not found."
+            });
+        }
+
+        return Ok(category);
+    }
 }

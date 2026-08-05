@@ -180,6 +180,136 @@ public sealed class CategoryService : ICategoryService
         return true;
     }
 
+    public async Task<CategoryAdminDto?> CreateSubcategoryAsync(
+        Guid categoryId,
+        SubcategoryUpsertDto dto,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateSubcategoryDto(dto);
+
+        var category = await _context.TicketCategories
+            .Include(item => item.Subcategories)
+            .SingleOrDefaultAsync(
+                item => item.Id == categoryId && item.IsActive,
+                cancellationToken);
+
+        if (category is null)
+            return null;
+
+        var name = dto.Name.Trim();
+        var existingSubcategory = category.Subcategories
+            .OrderByDescending(item => item.IsActive)
+            .FirstOrDefault(item => string.Equals(
+                item.Name,
+                name,
+                StringComparison.OrdinalIgnoreCase));
+
+        if (existingSubcategory?.IsActive == true)
+        {
+            throw new InvalidOperationException(
+                "An active subcategory with this name already exists in the category.");
+        }
+
+        if (existingSubcategory is not null)
+        {
+            existingSubcategory.Name = name;
+            existingSubcategory.Description =
+                dto.Description?.Trim() ?? string.Empty;
+            existingSubcategory.IsActive = true;
+        }
+        else
+        {
+            category.Subcategories.Add(new TicketSubCategory
+            {
+                CategoryId = categoryId,
+                Name = name,
+                Description = dto.Description?.Trim() ?? string.Empty,
+                IsActive = true
+            });
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return await GetCategoryDtoAsync(
+            categoryId,
+            cancellationToken);
+    }
+
+    public async Task<CategoryAdminDto?> UpdateSubcategoryAsync(
+        Guid categoryId,
+        Guid subcategoryId,
+        SubcategoryUpsertDto dto,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateSubcategoryDto(dto);
+
+        var subcategory = await _context.TicketSubCategories
+            .SingleOrDefaultAsync(
+                item =>
+                    item.Id == subcategoryId &&
+                    item.CategoryId == categoryId &&
+                    item.IsActive &&
+                    item.Category.IsActive,
+                cancellationToken);
+
+        if (subcategory is null)
+            return null;
+
+        var name = dto.Name.Trim();
+        var normalizedName = name.ToLower();
+        var duplicateExists = await _context.TicketSubCategories
+            .AnyAsync(
+                item =>
+                    item.Id != subcategoryId &&
+                    item.CategoryId == categoryId &&
+                    item.IsActive &&
+                    item.Name.ToLower() == normalizedName,
+                cancellationToken);
+
+        if (duplicateExists)
+        {
+            throw new InvalidOperationException(
+                "An active subcategory with this name already exists in the category.");
+        }
+
+        subcategory.Name = name;
+        subcategory.Description =
+            dto.Description?.Trim() ?? string.Empty;
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return await GetCategoryDtoAsync(
+            categoryId,
+            cancellationToken);
+    }
+
+    public async Task<CategoryAdminDto?> DeleteSubcategoryAsync(
+        Guid categoryId,
+        Guid subcategoryId,
+        CancellationToken cancellationToken = default)
+    {
+        var subcategory = await _context.TicketSubCategories
+            .SingleOrDefaultAsync(
+                item =>
+                    item.Id == subcategoryId &&
+                    item.CategoryId == categoryId &&
+                    item.IsActive &&
+                    item.Category.IsActive,
+                cancellationToken);
+
+        if (subcategory is null)
+            return null;
+
+        // Soft-delete keeps historical ticket relations valid.
+        subcategory.IsActive = false;
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return await GetCategoryDtoAsync(
+            categoryId,
+            cancellationToken);
+    }
+
     private IQueryable<CategoryAdminDto> CategoryQuery()
     {
         return _context.TicketCategories
@@ -195,7 +325,19 @@ public sealed class CategoryService : ICategoryService
                     ? category.DefaultTeam.Name
                     : null,
                 SubcategoryCount = category.Subcategories.Count(
-                    subcategory => subcategory.IsActive)
+                    subcategory => subcategory.IsActive),
+                Subcategories = category.Subcategories
+                    .Where(subcategory => subcategory.IsActive)
+                    .OrderBy(subcategory => subcategory.Name)
+                    .Select(subcategory => new SubcategoryAdminDto
+                    {
+                        Id = subcategory.Id,
+                        CategoryId = subcategory.CategoryId,
+                        Name = subcategory.Name,
+                        Description = subcategory.Description,
+                        IsActive = subcategory.IsActive
+                    })
+                    .ToList()
             });
     }
 
@@ -230,6 +372,25 @@ public sealed class CategoryService : ICategoryService
         await ValidateTeamAsync(
             dto.DefaultTeamId,
             cancellationToken);
+    }
+
+    private static void ValidateSubcategoryDto(
+        SubcategoryUpsertDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(dto.Name))
+            throw new ArgumentException("Subcategory name is required.");
+
+        if (dto.Name.Trim().Length > 100)
+        {
+            throw new ArgumentException(
+                "Subcategory name cannot exceed 100 characters.");
+        }
+
+        if ((dto.Description?.Trim().Length ?? 0) > 500)
+        {
+            throw new ArgumentException(
+                "Subcategory description cannot exceed 500 characters.");
+        }
     }
 
     private async Task ValidateTeamAsync(
