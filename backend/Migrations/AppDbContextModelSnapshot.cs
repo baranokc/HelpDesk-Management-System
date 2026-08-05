@@ -495,9 +495,12 @@ namespace backend.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TeamId");
-
                     b.HasIndex("UserId");
+
+                    b.HasIndex("TeamId", "RoleInTeam", "IsActive")
+                        .IsUnique()
+                        .HasDatabaseName("IX_TeamMembers_OneActiveLeaderPerTeam")
+                        .HasFilter("\"IsActive\" = TRUE AND \"RoleInTeam\" = 2");
 
                     b.ToTable("TeamMembers");
                 });

@@ -12,8 +12,8 @@ using backend.Data;
 namespace backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260804115944_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260805065454_SyncModelChanges")]
+    partial class SyncModelChanges
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -498,9 +498,12 @@ namespace backend.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TeamId");
-
                     b.HasIndex("UserId");
+
+                    b.HasIndex("TeamId", "RoleInTeam", "IsActive")
+                        .IsUnique()
+                        .HasDatabaseName("IX_TeamMembers_OneActiveLeaderPerTeam")
+                        .HasFilter("\"IsActive\" = TRUE AND \"RoleInTeam\" = 2");
 
                     b.ToTable("TeamMembers");
                 });

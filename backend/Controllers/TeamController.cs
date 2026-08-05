@@ -40,6 +40,7 @@ public class TeamController : ControllerBase
                 id = t.Id,
                 name = t.Name,
                 description = t.Description,
+                departmentId = t.DepartmentId,
                 memberCount = t.TeamMembers.Count(tm =>
                     tm.IsActive &&
                     tm.User.IsActive &&
@@ -88,6 +89,7 @@ public class TeamController : ControllerBase
                 teamRow.id,
                 teamRow.name,
                 teamRow.description,
+                teamRow.departmentId,
                 leadId = effectiveLeader?.id,
                 leadName = effectiveLeader?.fullName,
                 teamRow.memberCount,
@@ -130,6 +132,7 @@ public class TeamController : ControllerBase
                 id = t.Id,
                 name = t.Name,
                 description = t.Description,
+                departmentId = t.DepartmentId,
                 memberCount = t.TeamMembers.Count(tm =>
                     tm.IsActive &&
                     tm.User.IsActive &&
@@ -196,6 +199,7 @@ public class TeamController : ControllerBase
             teamRow.id,
             teamRow.name,
             teamRow.description,
+            teamRow.departmentId,
             leadId = effectiveLeader?.id,
             leadName = effectiveLeader?.fullName,
             teamRow.memberCount,
@@ -214,11 +218,20 @@ public class TeamController : ControllerBase
             return BadRequest("Team name is required.");
         }
 
+        int? targetDepartmentId = dto.DepartmentId;
+        if (!targetDepartmentId.HasValue || targetDepartmentId.Value <= 0)
+        {
+            targetDepartmentId = await _context.Departments
+                .Select(d => (int?)d.Id)
+                .FirstOrDefaultAsync();
+        }
+
         var team = new Team
         {
             Id = Guid.NewGuid(),
             Name = dto.Name.Trim(),
             Description = string.IsNullOrWhiteSpace(dto.Description) ? null : dto.Description.Trim(),
+            DepartmentId = targetDepartmentId ?? 0,
             LeadId = null,
             CreatedAt = DateTime.UtcNow
         };
@@ -231,6 +244,7 @@ public class TeamController : ControllerBase
             id = team.Id,
             name = team.Name,
             description = team.Description,
+            departmentId = team.DepartmentId,
             leadId = team.LeadId,
             memberCount = 0,
             createdAt = team.CreatedAt
@@ -251,6 +265,11 @@ public class TeamController : ControllerBase
 
         team.Name = dto.Name.Trim();
         team.Description = string.IsNullOrWhiteSpace(dto.Description) ? null : dto.Description.Trim();
+        
+        if (dto.DepartmentId.HasValue && dto.DepartmentId.Value > 0)
+        {
+            team.DepartmentId = dto.DepartmentId.Value;
+        }
 
         await _context.SaveChangesAsync();
         return NoContent();
@@ -590,12 +609,14 @@ public class CreateTeamDto
 {
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
+    public int? DepartmentId { get; set; }
 }
 
 public class UpdateTeamDto
 {
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
+    public int? DepartmentId { get; set; }
 }
 
 public class SetLeadDto

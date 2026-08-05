@@ -9,3 +9,5 @@ backend/obj/Debug/net10.0/backend.AssemblyInfoInputs.cache
 backend/obj/Debug/net10.0/backend.assets.cache
 backend/obj/Debug/net10.0/backend.csproj.AssemblyReference.cache
 backend/obj/Debug/net10.0/backend.GeneratedMSBuildEditorConfig.editorconfig
+backend/bin/
+backend/obj/
