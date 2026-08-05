@@ -9,7 +9,15 @@ namespace backend.Data;
 
 public class AppDbContext : DbContext
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+    private readonly IHttpContextAccessor _httpContextAccessor;
+
+    public AppDbContext(
+        DbContextOptions<AppDbContext> options,
+        IHttpContextAccessor httpContextAccessor)
+        : base(options)
+    {
+        _httpContextAccessor = httpContextAccessor;
+    }
 
     public DbSet<Department> Departments { get; set; }
     public DbSet<User> Users { get; set; } = null!;
@@ -42,8 +50,7 @@ public class AppDbContext : DbContext
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        var httpContextAccessor = this.GetService<IHttpContextAccessor>();
-        var httpContext = httpContextAccessor?.HttpContext;
+        var httpContext = _httpContextAccessor.HttpContext;
 
         Guid? userId = null;
         string? ipAddress = null;
