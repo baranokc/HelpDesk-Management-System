@@ -9,23 +9,19 @@ import { useAuth } from "@/src/context/AuthContext";
 import { getApiErrorMessage } from "@/src/lib/api";
 import { getTicketViewLabel } from "@/src/lib/ticketPermissions";
 import { ticketService } from "@/src/services/ticketService";
-import type {
-  TicketFilterDto,
-  TicketPagedResultDto,
-} from "@/src/types/ticket";
+import type { TicketFilterDto, TicketPagedResultDto } from "@/src/types/ticket";
 import { TicketFilters } from "./TicketFilterTabs";
 import { TicketPriorityBadge } from "./TicketPriorityBadge";
 import { TicketStatusBadge } from "./TicketStatusBadge";
 import { TicketStatsCards } from "./TicketStatsCards";
+import { TicketUrgencyBadge } from "./TicketUrgencyBadge";
 
 const initialFilter: TicketFilterDto = {
   pageNumber: 1,
   pageSize: 25,
 };
 
-function createEmptyResult(
-  filter: TicketFilterDto,
-): TicketPagedResultDto {
+function createEmptyResult(filter: TicketFilterDto): TicketPagedResultDto {
   return {
     items: [],
     pageNumber: filter.pageNumber ?? 1,
@@ -146,7 +142,7 @@ export function TicketListContainer() {
       {loading && (
         <div className="card overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-colors">
           <div className="overflow-x-auto">
-            <table className="table w-full">
+            <table className="table w-full min-w-[1100px]">
               <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs font-semibold uppercase text-slate-700 dark:text-slate-300">
                 <tr>
                   <th>Ticket #</th>
@@ -154,6 +150,7 @@ export function TicketListContainer() {
                   <th>Category</th>
                   <th>Status</th>
                   <th>Priority</th>
+                  <th>Urgency</th>
                   <th>Created By</th>
                   <th className="text-right">Action</th>
                 </tr>
@@ -175,6 +172,9 @@ export function TicketListContainer() {
                     </td>
                     <td>
                       <div className="skeleton h-6 w-16 rounded-full bg-slate-200 dark:bg-slate-800" />
+                    </td>
+                    <td>
+                      <div className="skeleton h-6 w-20 rounded-full bg-slate-200 dark:bg-slate-800" />
                     </td>
                     <td>
                       <div className="skeleton h-4 w-24 bg-slate-200 dark:bg-slate-800" />
@@ -224,7 +224,7 @@ export function TicketListContainer() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="table w-full">
+                <table className="table w-full min-w-[1100px]">
                   <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs font-semibold uppercase text-slate-700 dark:text-slate-300">
                     <tr>
                       <th>Ticket #</th>
@@ -232,6 +232,7 @@ export function TicketListContainer() {
                       <th>Category</th>
                       <th>Status</th>
                       <th>Priority</th>
+                      <th>Urgency</th>
                       <th>Created By</th>
                       <th className="text-right">Action</th>
                     </tr>
@@ -261,6 +262,11 @@ export function TicketListContainer() {
                         </td>
                         <td>
                           <TicketPriorityBadge priority={ticket.priorityName} />
+                        </td>
+                        <td>
+                          <TicketUrgencyBadge
+                            urgency={ticket.urgencyLevelName}
+                          />
                         </td>
                         <td className="text-slate-600 dark:text-slate-300">
                           <div className="flex items-center gap-2">

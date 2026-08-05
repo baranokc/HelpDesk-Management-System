@@ -129,6 +129,7 @@ public class TicketService : ITicketService
                 TicketTitle = t.TicketTitle,
                 StatusName = t.Status.Name,
                 PriorityName = t.Priority.Name,
+                UrgencyLevelName = t.UrgencyLevel.Name,
                 CategoryName = t.Category.Name,
                 SubcategoryName = t.Subcategory != null ? t.Subcategory.Name : null,
                 CreatedById = t.CreatedById,

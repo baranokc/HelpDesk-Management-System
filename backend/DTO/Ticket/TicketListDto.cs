@@ -6,6 +6,7 @@ public class TicketListDto
     public string TicketTitle {get; set; } = string.Empty;
     public string StatusName {get; set; } = string.Empty;
     public string PriorityName {get; set; } = string.Empty;
+    public string UrgencyLevelName { get; set; } = string.Empty;
     public string CategoryName {get; set; } = string.Empty;
     public string? SubcategoryName {get; set; }
     public Guid CreatedById { get; set; }
