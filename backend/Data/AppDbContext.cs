@@ -1,5 +1,9 @@
 using backend.Entities;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using System.Security.Claims;
+using System.Text.Json;
 
 namespace backend.Data;
 
@@ -24,6 +28,7 @@ public class AppDbContext : DbContext
     public DbSet<TicketSubCategory> TicketSubCategories { get; set; } = null!;
     public DbSet<UrgencyLevel> UrgencyLevels { get; set; } = null!;
     public DbSet<Asset> Assets { get; set; } = null!;
+    public DbSet<AuditLog> AuditLogs { get; set; } = null!;
     public DbSet<AssetAssignment> AssetAssignments { get; set; } = null!;
     public DbSet<AssetStatus> AssetStatuses { get; set; } = null!;
     public DbSet<AssetType> AssetTypes { get; set; } = null!;
@@ -34,6 +39,128 @@ public class AppDbContext : DbContext
     public DbSet<SlaPolicy> SlaPolicies { get; set; } = null!;
     public DbSet<SlaRecord> SlaRecords { get; set; } = null!;
     public DbSet<SlaPause> SlaPauses { get; set; } = null!;
+
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        var httpContextAccessor = this.GetService<IHttpContextAccessor>();
+        var httpContext = httpContextAccessor?.HttpContext;
+
+        Guid? userId = null;
+        string? ipAddress = null;
+
+        if (httpContext != null)
+        {
+            if (httpContext.User?.Identity?.IsAuthenticated == true)
+            {
+                var userIdClaim = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? 
+                                  httpContext.User.FindFirstValue("sub");
+                if (Guid.TryParse(userIdClaim, out var parsedId))
+                {
+                    userId = parsedId;
+                }
+            }
+
+            ipAddress = httpContext.Connection.RemoteIpAddress?.ToString();
+            if (ipAddress == "::1") ipAddress = "127.0.0.1";
+        }
+
+        ChangeTracker.DetectChanges();
+        var auditEntries = new List<AuditLog>();
+
+        foreach (var entry in ChangeTracker.Entries())
+        {
+            if (entry.Entity is AuditLog || entry.State == EntityState.Detached || entry.State == EntityState.Unchanged)
+                continue;
+
+            var auditEntry = new AuditLog
+            {
+                UserId = userId,
+                EntityName = entry.Metadata.GetTableName() ?? entry.Entity.GetType().Name,
+                IpAddress = ipAddress,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var primaryKey = entry.Metadata.FindPrimaryKey();
+            var primaryKeyProperty = primaryKey?.Properties.FirstOrDefault();
+            if (primaryKeyProperty != null)
+            {
+                var keyValue = entry.Property(primaryKeyProperty.Name).CurrentValue;
+                if (keyValue is Guid gVal)
+                {
+                    auditEntry.EntityId = gVal;
+                }
+                else if (keyValue != null && Guid.TryParse(keyValue.ToString(), out var parsedGuid))
+                {
+                    auditEntry.EntityId = parsedGuid;
+                }
+            }
+
+            var oldValues = new Dictionary<string, object>();
+            var newValues = new Dictionary<string, object>();
+
+            foreach (var property in entry.Properties)
+            {
+                if (property.IsTemporary) continue;
+
+                string propertyName = property.Metadata.Name;
+
+                if (property.Metadata.IsPrimaryKey())
+                {
+                    if (auditEntry.EntityId == null && property.CurrentValue != null)
+                    {
+                        if (Guid.TryParse(property.CurrentValue.ToString(), out var pkGuid))
+                        {
+                            auditEntry.EntityId = pkGuid;
+                        }
+                    }
+                    continue;
+                }
+
+                switch (entry.State)
+                {
+                    case EntityState.Added:
+                        auditEntry.Action = "CREATE";
+                        newValues[propertyName] = property.CurrentValue ?? "";
+                        break;
+
+                    case EntityState.Deleted:
+                        auditEntry.Action = "DELETE";
+                        oldValues[propertyName] = property.OriginalValue ?? "";
+                        break;
+
+                    case EntityState.Modified:
+                        if (property.IsModified)
+                        {
+                            auditEntry.Action = "UPDATE";
+                            oldValues[propertyName] = property.OriginalValue ?? "";
+                            newValues[propertyName] = property.CurrentValue ?? "";
+                        }
+                        break;
+                }
+            }
+
+            auditEntry.OldValues = oldValues.Count == 0 ? null : JsonSerializer.Serialize(oldValues);
+            auditEntry.NewValues = newValues.Count == 0 ? null : JsonSerializer.Serialize(newValues);
+
+            if (!string.IsNullOrEmpty(auditEntry.Action))
+            {
+                auditEntries.Add(auditEntry);
+            }
+        }
+
+        var result = await base.SaveChangesAsync(cancellationToken);
+
+        if (auditEntries.Count > 0)
+        {
+            foreach (var audit in auditEntries)
+            {
+                base.Add(audit);
+            }
+            await base.SaveChangesAsync(cancellationToken);
+        }
+
+        return result;
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -48,12 +175,9 @@ public class AppDbContext : DbContext
             .HasForeignKey(u => u.ManagerId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        base.OnModelCreating(modelBuilder);
-
         modelBuilder.Entity<UserRole>()
         .Property(ur => ur.AssignedAt)
         .HasDefaultValueSql("NOW()");
-
 
         modelBuilder.Entity<TeamMember>()
             .HasOne(tm => tm.Team)
