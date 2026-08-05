@@ -170,7 +170,7 @@ export function TicketAttachments({
                 size="sm"
                 type="button"
                 variant="secondary"
-                className="h-7 px-2 text-xs"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-800 text-gray-100 hover:bg-gray-700 border border-gray-700 text-sm font-medium transition-colors"
               >
                 <Download className="mr-1 h-3 w-3" />
                 {isDownloading ? "..." : "Download"}
