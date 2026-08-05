@@ -1,16 +1,21 @@
 using backend.Data;
 using backend.DTO.Ticket;
 using backend.Entities;
+using backend.Services.Sla;
 using Microsoft.EntityFrameworkCore;
 namespace backend.Services.TicketResolution;
 
 public class TicketResolutionService : ITicketResolutionService
 {
     private readonly AppDbContext _db;
+    private readonly ISlaService _slaService;
 
-    public TicketResolutionService(AppDbContext db)
+    public TicketResolutionService(
+        AppDbContext db,
+        ISlaService slaService)
     {
         _db = db;
+        _slaService = slaService;
     }
 
     public async Task<bool> ResolveTicketAsync(
@@ -69,6 +74,11 @@ public class TicketResolutionService : ITicketResolutionService
         ticket.ResolvedById = resolvedById;
         ticket.ResolvedAt = resolvedAt;
         ticket.StatusId = resolvedStatus.Id;
+
+        await _slaService.CompleteResolutionAsync(
+            ticket,
+            resolvedAt,
+            cancellationToken);
 
         _db.TicketHistories.Add(new backend.Entities.TicketHistory
         {

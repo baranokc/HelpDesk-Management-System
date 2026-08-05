@@ -31,6 +31,9 @@ public class AppDbContext : DbContext
     public DbSet<TicketHistory> TicketHistories { get; set; } = null!;
     public DbSet<ResolutionCategory> ResolutionCategories { get; set; } = null!;
     public DbSet<Notification> Notifications { get; set; } = null!;
+    public DbSet<SlaPolicy> SlaPolicies { get; set; } = null!;
+    public DbSet<SlaRecord> SlaRecords { get; set; } = null!;
+    public DbSet<SlaPause> SlaPauses { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -156,6 +159,51 @@ public class AppDbContext : DbContext
             .WithMany(u => u.ResolvedTickets)
             .HasForeignKey(t => t.ResolvedById)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<SlaPolicy>(entity =>
+        {
+            entity.ToTable("SlaPolicy");
+
+            entity.HasOne(policy => policy.Priority)
+                .WithMany(priority => priority.SlaPolicies)
+                .HasForeignKey(policy => policy.PriorityId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(policy => policy.PriorityId)
+                .HasDatabaseName("IX_SlaPolicy_OneActivePerPriority")
+                .IsUnique()
+                .HasFilter("\"IsActive\" = TRUE");
+        });
+
+        modelBuilder.Entity<SlaRecord>(entity =>
+        {
+            entity.ToTable("SlaRecord");
+
+            entity.HasOne(record => record.Ticket)
+                .WithMany(ticket => ticket.SlaRecords)
+                .HasForeignKey(record => record.TicketId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(record => record.SlaPolicy)
+                .WithMany(policy => policy.SlaRecords)
+                .HasForeignKey(record => record.SlaPolicyId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<SlaPause>(entity =>
+        {
+            entity.ToTable("SlaPause");
+
+            entity.HasOne(pause => pause.SlaRecord)
+                .WithMany(record => record.Pauses)
+                .HasForeignKey(pause => pause.SlaRecordId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(pause => pause.PausedBy)
+                .WithMany()
+                .HasForeignKey(pause => pause.PausedById)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
         modelBuilder.Entity<Department>().HasData(
             new Department { Id = 1, Name = "Software" },

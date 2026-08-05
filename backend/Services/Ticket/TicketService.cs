@@ -4,6 +4,7 @@ using backend.DTO.Ticket;
 using Microsoft.EntityFrameworkCore;
 using backend.Services.TicketAttachment;
 using backend.Services.Notification;
+using backend.Services.Sla;
 
 namespace backend.Services.Ticket;
 
@@ -12,15 +13,18 @@ public class TicketService : ITicketService
     private readonly AppDbContext _db;
     private readonly ITicketAttachmentService _attachmentService;
     private readonly INotificationService _notificationService;
+    private readonly ISlaService _slaService;
 
     public TicketService(
         AppDbContext db,
         ITicketAttachmentService attachmentService,
-        INotificationService notificationService)
+        INotificationService notificationService,
+        ISlaService slaService)
     {
         _db = db;
         _attachmentService = attachmentService;
         _notificationService = notificationService;
+        _slaService = slaService;
     }
 
     public async Task<TicketPagedResultDto> GetTicketAsync(
@@ -177,6 +181,42 @@ public class TicketService : ITicketService
         if (ticket is null)
             return null;
 
+        var slaRecord = await _db.SlaRecords
+            .AsNoTracking()
+            .Where(record => record.TicketId == ticketId)
+            .Select(record => new
+            {
+                record.FirstResponseDueAt,
+                record.FirstResponseAt,
+                record.ResolutionDueAt,
+                record.ResolutionAt,
+                record.IsPaused
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var now = DateTime.UtcNow;
+        TicketSlaSummaryDto? sla = null;
+
+        if (slaRecord is not null)
+        {
+            sla = new TicketSlaSummaryDto
+            {
+                FirstResponseDueAt = slaRecord.FirstResponseDueAt,
+                FirstResponseAt = slaRecord.FirstResponseAt,
+                FirstResponseStatus = GetSlaStatus(
+                    slaRecord.FirstResponseDueAt,
+                    slaRecord.FirstResponseAt,
+                    now),
+                ResolutionDueAt = slaRecord.ResolutionDueAt,
+                ResolutionAt = slaRecord.ResolutionAt,
+                ResolutionStatus = GetSlaStatus(
+                    slaRecord.ResolutionDueAt,
+                    slaRecord.ResolutionAt,
+                    now),
+                IsPaused = slaRecord.IsPaused
+            };
+        }
+
         var comments = await _db.TicketComments
             .AsNoTracking()
             .Where(c =>
@@ -272,6 +312,7 @@ public class TicketService : ITicketService
             FirstResponseAt = ticket.FirstResponseAt,
             ResolvedAt = ticket.ResolvedAt,
             ClosedAt = ticket.ClosedAt,
+            Sla = sla,
             Comments = comments,
             Attachments = attachments
         };
@@ -431,6 +472,10 @@ public class TicketService : ITicketService
         };
 
         _db.Tickets.Add(ticket);
+        await _slaService.StartSlaAsync(
+            ticket,
+            cancellationToken);
+
         _db.TicketHistories.Add(new Entities.TicketHistory
         {
             TicketId = ticket.Id,
@@ -663,6 +708,17 @@ public class TicketService : ITicketService
     private static string FormatTicketNumber(long sequenceValue)
     {
         return $"HD-{sequenceValue:D8}";
+    }
+
+    private static string GetSlaStatus(
+        DateTime dueAt,
+        DateTime? completedAt,
+        DateTime now)
+    {
+        if (completedAt.HasValue)
+            return completedAt.Value <= dueAt ? "Met" : "Breached";
+
+        return now <= dueAt ? "Pending" : "Breached";
     }
 
     private IQueryable<Entities.Ticket> ApplyAccessScope(

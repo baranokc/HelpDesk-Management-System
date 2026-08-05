@@ -22,6 +22,18 @@ export interface TicketPagedResultDto
     completedCount: number;
 }
 
+export type TicketSlaStatus = "Pending" | "Met" | "Breached";
+
+export interface TicketSlaSummaryDto {
+    firstResponseDueAt : string;
+    firstResponseAt? : string | null;
+    firstResponseStatus : TicketSlaStatus;
+    resolutionDueAt : string;
+    resolutionAt? : string | null;
+    resolutionStatus : TicketSlaStatus;
+    isPaused : boolean;
+}
+
 export interface TicketDetailDto {
     id : string;
     ticketNumber : string;
@@ -50,6 +62,7 @@ export interface TicketDetailDto {
     firstResponseAt? : string | null;
     resolvedAt? : string | null;
     closedAt? : string | null;
+    sla? : TicketSlaSummaryDto | null;
     comments : TicketCommentDto[];
     attachments : TicketAttachmentDto[];
 }

@@ -28,7 +28,7 @@ public class TicketDetailDto
     public DateTime? FirstResponseAt {get; set; }
     public DateTime? ResolvedAt {get; set; }
     public DateTime? ClosedAt {get; set; }
+    public TicketSlaSummaryDto? Sla { get; set; }
     public List <TicketCommentDto> Comments {get; set; } = [];
     public List <TicketAttachmentDto> Attachments {get; set; } = [];
-
 }
