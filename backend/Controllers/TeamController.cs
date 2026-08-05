@@ -290,7 +290,8 @@ public class TeamController : ControllerBase
             previousLeaderIds.Add(team.LeadId.Value);
         }
 
-        Guid? nextLeadId = null;
+        Guid? nextLeadId;
+        TeamMember? nextLeaderMembership = null;
 
         if (string.IsNullOrWhiteSpace(dto.LeadId))
         {
@@ -308,69 +309,96 @@ public class TeamController : ControllerBase
                 return BadRequest("Selected team lead must be an active member of this team.");
             }
 
-            nextLeadId = leadGuid;
+            var isExistingLeader = previousLeaderIds.Contains(leadGuid);
+            if (!isExistingLeader)
+            {
+                var isSupportAgent = await _context.UserRoles
+                    .AsNoTracking()
+                    .AnyAsync(userRole =>
+                        userRole.UserId == leadGuid &&
+                        userRole.Role.IsActive &&
+                        userRole.Role.Name == Roles.SupportAgent,
+                        cancellationToken);
 
-            await SetSystemRoleAsync(
-                leadGuid,
-                Roles.TeamLeader,
-                cancellationToken);
+                if (!isSupportAgent)
+                {
+                    return BadRequest(
+                        "The new team leader must be an active SupportAgent member of this team.");
+                }
+            }
+
+            nextLeadId = leadGuid;
+            nextLeaderMembership = selectedMember;
         }
         else
         {
             return BadRequest("Invalid Lead ID format.");
         }
 
-        foreach (var otherLeader in team.TeamMembers.Where(member =>
-                     member.IsActive &&
-                     member.RoleInTeam == TeamMemberRole.TeamLeader &&
-                     member.UserId != nextLeadId))
-        {
-            otherLeader.RoleInTeam = TeamMemberRole.Member;
-        }
-
-        if (nextLeadId.HasValue)
-        {
-            var nextLeaderMembership = team.TeamMembers.Single(member =>
-                member.UserId == nextLeadId.Value &&
-                member.IsActive);
-            nextLeaderMembership.RoleInTeam = TeamMemberRole.TeamLeader;
-        }
-
-        team.LeadId = nextLeadId;
-
-        foreach (var previousLeaderId in previousLeaderIds.Where(
-                     userId => userId != nextLeadId))
-        {
-            var leadsAnotherTeam = await _context.TeamMembers
-                .AnyAsync(member =>
-                    member.UserId == previousLeaderId &&
-                    member.TeamId != id &&
-                    member.IsActive &&
-                    member.Team.IsActive &&
-                    member.RoleInTeam == TeamMemberRole.TeamLeader,
-                    cancellationToken);
-
-            if (!leadsAnotherTeam)
-            {
-                leadsAnotherTeam = await _context.Teams
-                    .AnyAsync(otherTeam =>
-                        otherTeam.Id != id &&
-                        otherTeam.LeadId == previousLeaderId &&
-                        otherTeam.IsActive,
-                        cancellationToken);
-            }
-
-            if (!leadsAnotherTeam)
-            {
-                await SetSystemRoleAsync(
-                    previousLeaderId,
-                    Roles.SupportAgent,
-                    cancellationToken);
-            }
-        }
-
         try
         {
+            // First remove the current leader. This must be saved separately
+            // because PostgreSQL checks the filtered unique index per statement.
+            // Promoting the new leader in the same SaveChanges call can otherwise
+            // run before the demotion and cause a unique-constraint violation.
+            foreach (var otherLeader in team.TeamMembers.Where(member =>
+                         member.IsActive &&
+                         member.RoleInTeam == TeamMemberRole.TeamLeader &&
+                         member.UserId != nextLeadId))
+            {
+                otherLeader.RoleInTeam = TeamMemberRole.Member;
+            }
+
+            if (team.LeadId != nextLeadId)
+                team.LeadId = null;
+
+            foreach (var previousLeaderId in previousLeaderIds.Where(
+                         userId => userId != nextLeadId))
+            {
+                var leadsAnotherTeam = await _context.TeamMembers
+                    .AnyAsync(member =>
+                        member.UserId == previousLeaderId &&
+                        member.TeamId != id &&
+                        member.IsActive &&
+                        member.Team.IsActive &&
+                        member.RoleInTeam == TeamMemberRole.TeamLeader,
+                        cancellationToken);
+
+                if (!leadsAnotherTeam)
+                {
+                    leadsAnotherTeam = await _context.Teams
+                        .AnyAsync(otherTeam =>
+                            otherTeam.Id != id &&
+                            otherTeam.LeadId == previousLeaderId &&
+                            otherTeam.IsActive,
+                            cancellationToken);
+                }
+
+                if (!leadsAnotherTeam)
+                {
+                    await SetSystemRoleAsync(
+                        previousLeaderId,
+                        Roles.SupportAgent,
+                        cancellationToken);
+                }
+            }
+
+            await _context.SaveChangesAsync(cancellationToken);
+
+            // The old leader no longer occupies the unique index. The selected
+            // SupportAgent can now safely be promoted inside the same transaction.
+            if (nextLeadId.HasValue && nextLeaderMembership is not null)
+            {
+                await SetSystemRoleAsync(
+                    nextLeadId.Value,
+                    Roles.TeamLeader,
+                    cancellationToken);
+
+                nextLeaderMembership.RoleInTeam =
+                    TeamMemberRole.TeamLeader;
+                team.LeadId = nextLeadId.Value;
+            }
+
             await _context.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
         }
