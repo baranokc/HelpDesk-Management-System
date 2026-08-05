@@ -39,4 +39,23 @@ public interface INotificationService
         Guid commentAuthorId,
         bool isInternal,
         CancellationToken cancellationToken = default);
+
+    Task NotifyTicketStatusChangedAsync(
+        Guid ticketId,
+        string statusName,
+        Guid actorUserId,
+        CancellationToken cancellationToken = default);
+
+    Task NotifyTicketResolvedAsync(
+        Guid ticketId,
+        Guid actorUserId,
+        CancellationToken cancellationToken = default);
+
+    Task NotifyTicketClosedAsync(
+        Guid ticketId,
+        Guid actorUserId,
+        CancellationToken cancellationToken = default);
+
+    Task ProcessSlaAlertsAsync(
+        CancellationToken cancellationToken = default);
 }

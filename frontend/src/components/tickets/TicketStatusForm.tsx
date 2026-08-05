@@ -66,7 +66,11 @@ export function TicketStatusForm({
         options={statuses.map((status) => ({
           value: status.itemId,
           label: status.name,
-        }))}
+        })).filter(
+          (status) =>
+            status.label.toLowerCase() !== "resolved" &&
+            status.label.toLowerCase() !== "closed",
+        )}
         required
         value={statusId}
       />

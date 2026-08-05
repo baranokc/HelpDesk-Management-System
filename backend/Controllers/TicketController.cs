@@ -384,6 +384,62 @@ public class TicketController : ControllerBase
         }
     }
 
+    [HttpPost("{id:guid}/close")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.TeamLeader}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> CloseTicket(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var currentUserId = GetCurrentUserId();
+        var currentUserRole = GetCurrentUserRole();
+
+        if (currentUserId == Guid.Empty ||
+            string.IsNullOrWhiteSpace(currentUserRole))
+        {
+            return Unauthorized(new
+            {
+                message = "Invalid user identity."
+            });
+        }
+
+        if (!await _ticketService.CanProcessTicketAsync(
+                id,
+                currentUserId,
+                currentUserRole,
+                cancellationToken))
+        {
+            return NotFound(new { message = "Ticket not found." });
+        }
+
+        try
+        {
+            var success = await _ticketResolutionService.CloseTicketAsync(
+                id,
+                currentUserId,
+                cancellationToken);
+
+            if (!success)
+            {
+                return NotFound(new
+                {
+                    message = "Ticket not found or could not be closed."
+                });
+            }
+
+            return Ok(new
+            {
+                message = "Ticket successfully closed."
+            });
+        }
+        catch (InvalidOperationException exception)
+        {
+            return BadRequest(new { message = exception.Message });
+        }
+    }
+
     [HttpGet("{id:guid}/history")]
     [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.TeamLeader},{Roles.User}")]
     [ProducesResponseType(typeof(IReadOnlyCollection<TicketHistoryDto>), StatusCodes.Status200OK)]

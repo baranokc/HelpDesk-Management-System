@@ -17,6 +17,10 @@ export const ticketWorkflowService = {
     await api.post(`/tickets/${ticketId}/resolve`, dto);
   },
 
+  closeTicket: async (ticketId: string): Promise<void> => {
+    await api.post(`/tickets/${ticketId}/close`);
+  },
+
   getHistory: async (ticketId: string): Promise<TicketHistoryDto[]> => {
     const response = await api.get<TicketHistoryDto[]>(
       `/tickets/${ticketId}/history`,

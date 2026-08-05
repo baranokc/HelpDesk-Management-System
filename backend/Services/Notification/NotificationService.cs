@@ -11,6 +11,7 @@ namespace backend.Services.Notification;
 public sealed class NotificationService : INotificationService
 {
     private const string ClientEventName = "NotificationReceived";
+    private static readonly TimeSpan SlaWarningWindow = TimeSpan.FromMinutes(15);
 
     private readonly AppDbContext _db;
     private readonly IHubContext<NotificationHub> _hubContext;
@@ -242,6 +243,267 @@ public sealed class NotificationService : INotificationService
             "New ticket comment",
             $"{authorName} commented on {ticket.TicketNumber}: {ticket.TicketTitle}.",
             ticket.Id,
+            cancellationToken);
+    }
+
+    public Task NotifyTicketStatusChangedAsync(
+        Guid ticketId,
+        string statusName,
+        Guid actorUserId,
+        CancellationToken cancellationToken = default)
+    {
+        return NotifyTicketCreatorAsync(
+            ticketId,
+            actorUserId,
+            NotificationTypes.TicketStatusChanged,
+            "Ticket status updated",
+            (ticketNumber, ticketTitle) =>
+                $"{ticketNumber}: {ticketTitle} status changed to {statusName}.",
+            cancellationToken);
+    }
+
+    public Task NotifyTicketResolvedAsync(
+        Guid ticketId,
+        Guid actorUserId,
+        CancellationToken cancellationToken = default)
+    {
+        return NotifyTicketCreatorAsync(
+            ticketId,
+            actorUserId,
+            NotificationTypes.TicketResolved,
+            "Ticket resolved",
+            (ticketNumber, ticketTitle) =>
+                $"{ticketNumber}: {ticketTitle} has been resolved.",
+            cancellationToken);
+    }
+
+    public Task NotifyTicketClosedAsync(
+        Guid ticketId,
+        Guid actorUserId,
+        CancellationToken cancellationToken = default)
+    {
+        return NotifyTicketCreatorAsync(
+            ticketId,
+            actorUserId,
+            NotificationTypes.TicketClosed,
+            "Ticket closed",
+            (ticketNumber, ticketTitle) =>
+                $"{ticketNumber}: {ticketTitle} has been closed.",
+            cancellationToken);
+    }
+
+    public async Task ProcessSlaAlertsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var now = DateTime.UtcNow;
+        var warningCutoff = now.Add(SlaWarningWindow);
+
+        var records = await _db.SlaRecords
+            .AsNoTracking()
+            .Where(record =>
+                !record.IsPaused &&
+                !record.Ticket.IsDeleted &&
+                !record.Ticket.Status.IsClosed &&
+                record.ResolutionAt == null &&
+                ((record.FirstResponseAt == null &&
+                  record.FirstResponseDueAt <= warningCutoff) ||
+                 record.ResolutionDueAt <= warningCutoff))
+            .Select(record => new
+            {
+                record.TicketId,
+                record.Ticket.TicketNumber,
+                record.Ticket.TicketTitle,
+                record.Ticket.TeamId,
+                record.Ticket.AssignedToId,
+                record.FirstResponseDueAt,
+                record.FirstResponseAt,
+                record.ResolutionDueAt
+            })
+            .ToListAsync(cancellationToken);
+
+        if (records.Count == 0)
+            return;
+
+        var teamIds = records
+            .Where(record => record.TeamId.HasValue)
+            .Select(record => record.TeamId!.Value)
+            .Distinct()
+            .ToList();
+
+        var leaderAssignments = await _db.TeamMembers
+            .AsNoTracking()
+            .Where(teamMember =>
+                teamIds.Contains(teamMember.TeamId) &&
+                teamMember.RoleInTeam == TeamMemberRole.TeamLeader &&
+                teamMember.IsActive &&
+                teamMember.Team.IsActive &&
+                teamMember.User.IsActive &&
+                teamMember.User.Role != null &&
+                teamMember.User.Role.Name == Roles.TeamLeader &&
+                teamMember.User.Role.IsActive)
+            .Select(teamMember => new
+            {
+                teamMember.TeamId,
+                teamMember.UserId
+            })
+            .ToListAsync(cancellationToken);
+
+        var leadersByTeam = leaderAssignments
+            .GroupBy(item => item.TeamId)
+            .ToDictionary(
+                group => group.Key,
+                group => group
+                    .Select(item => item.UserId)
+                    .Distinct()
+                    .ToList());
+
+        foreach (var record in records)
+        {
+            var recipientUserIds = new HashSet<Guid>();
+
+            if (record.AssignedToId.HasValue)
+                recipientUserIds.Add(record.AssignedToId.Value);
+
+            if (record.TeamId.HasValue &&
+                leadersByTeam.TryGetValue(
+                    record.TeamId.Value,
+                    out var leaderUserIds))
+            {
+                recipientUserIds.UnionWith(leaderUserIds);
+            }
+
+            if (recipientUserIds.Count == 0)
+                continue;
+
+            if (!record.FirstResponseAt.HasValue &&
+                record.FirstResponseDueAt <= warningCutoff)
+            {
+                await SendSlaAlertAsync(
+                    recipientUserIds,
+                    record.TicketId,
+                    record.TicketNumber,
+                    record.TicketTitle,
+                    "first response",
+                    record.FirstResponseDueAt,
+                    now,
+                    NotificationTypes.SlaFirstResponseDueSoon,
+                    NotificationTypes.SlaFirstResponseBreached,
+                    cancellationToken);
+            }
+
+            if (record.ResolutionDueAt <= warningCutoff)
+            {
+                await SendSlaAlertAsync(
+                    recipientUserIds,
+                    record.TicketId,
+                    record.TicketNumber,
+                    record.TicketTitle,
+                    "resolution",
+                    record.ResolutionDueAt,
+                    now,
+                    NotificationTypes.SlaResolutionDueSoon,
+                    NotificationTypes.SlaResolutionBreached,
+                    cancellationToken);
+            }
+        }
+    }
+
+    private async Task NotifyTicketCreatorAsync(
+        Guid ticketId,
+        Guid actorUserId,
+        string type,
+        string title,
+        Func<string, string, string> createMessage,
+        CancellationToken cancellationToken)
+    {
+        var ticket = await _db.Tickets
+            .AsNoTracking()
+            .Where(item => item.Id == ticketId && !item.IsDeleted)
+            .Select(item => new
+            {
+                item.Id,
+                item.TicketNumber,
+                item.TicketTitle,
+                item.CreatedById
+            })
+            .SingleOrDefaultAsync(cancellationToken);
+
+        if (ticket is null)
+            return;
+
+        await CreateAndSendAsync(
+            [ticket.CreatedById],
+            actorUserId,
+            type,
+            title,
+            createMessage(ticket.TicketNumber, ticket.TicketTitle),
+            ticket.Id,
+            cancellationToken);
+    }
+
+    private async Task SendSlaAlertAsync(
+        IEnumerable<Guid> recipientUserIds,
+        Guid ticketId,
+        string ticketNumber,
+        string ticketTitle,
+        string targetName,
+        DateTime dueAt,
+        DateTime now,
+        string dueSoonType,
+        string breachedType,
+        CancellationToken cancellationToken)
+    {
+        var isBreached = dueAt <= now;
+        var type = isBreached ? breachedType : dueSoonType;
+        var title = isBreached
+            ? "SLA target breached"
+            : "SLA target due soon";
+        var message = isBreached
+            ? $"The {targetName} SLA for {ticketNumber}: {ticketTitle} has been breached."
+            : $"The {targetName} SLA for {ticketNumber}: {ticketTitle} is due within 15 minutes.";
+
+        await CreateAndSendOnceAsync(
+            recipientUserIds,
+            type,
+            title,
+            message,
+            ticketId,
+            cancellationToken);
+    }
+
+    private async Task CreateAndSendOnceAsync(
+        IEnumerable<Guid> recipientUserIds,
+        string type,
+        string title,
+        string message,
+        Guid ticketId,
+        CancellationToken cancellationToken)
+    {
+        var recipients = recipientUserIds
+            .Where(userId => userId != Guid.Empty)
+            .Distinct()
+            .ToList();
+
+        if (recipients.Count == 0)
+            return;
+
+        var alreadyNotifiedUserIds = await _db.Notifications
+            .AsNoTracking()
+            .Where(notification =>
+                notification.TicketId == ticketId &&
+                notification.Type == type &&
+                recipients.Contains(notification.UserId))
+            .Select(notification => notification.UserId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        await CreateAndSendAsync(
+            recipients.Except(alreadyNotifiedUserIds),
+            Guid.Empty,
+            type,
+            title,
+            message,
+            ticketId,
             cancellationToken);
     }
 

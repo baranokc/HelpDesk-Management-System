@@ -54,7 +54,8 @@ public class TicketStatusController : ControllerBase
                 request.TicketId,
                 request.StatusId,
                 currentUserId,
-                request.Reason
+                request.Reason,
+                cancellationToken
             );
 
             if (!success)

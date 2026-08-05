@@ -9,4 +9,9 @@ public interface ITicketResolutionService
         TicketResolveDto dto,
         Guid resolvedById,
         CancellationToken cancellationToken = default);
+
+    Task<bool> CloseTicketAsync(
+        Guid ticketId,
+        Guid closedById,
+        CancellationToken cancellationToken = default);
 }

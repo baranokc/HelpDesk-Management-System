@@ -1,6 +1,7 @@
 using backend.Data;
 using backend.DTO.Ticket;
 using backend.Entities;
+using backend.Services.Notification;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -10,29 +11,43 @@ namespace backend.Services.TicketStatus;
 public class TicketStatusService : ITicketStatusService
 {
     private readonly AppDbContext _context;
+    private readonly INotificationService _notificationService;
 
-    public TicketStatusService(AppDbContext context)
+    public TicketStatusService(
+        AppDbContext context,
+        INotificationService notificationService)
     {
         _context = context;
+        _notificationService = notificationService;
     }
 
-    public async Task<bool> UpdateTicketStatusAsync(Guid ticketId, Guid newStatusId, Guid changedById, string? note = null)
+    public async Task<bool> UpdateTicketStatusAsync(
+        Guid ticketId,
+        Guid newStatusId,
+        Guid changedById,
+        string? note = null,
+        CancellationToken cancellationToken = default)
     {
         var ticket = await _context.Tickets
             .Include(t => t.Status)
-            .FirstOrDefaultAsync(t => t.Id == ticketId && !t.IsDeleted);
+            .FirstOrDefaultAsync(
+                t => t.Id == ticketId && !t.IsDeleted,
+                cancellationToken);
 
         if (ticket == null) return false;
 
         var newStatus = await _context.TicketStatuses
             .SingleOrDefaultAsync(status =>
-                status.Id == newStatusId && status.IsActive);
+                status.Id == newStatusId && status.IsActive,
+                cancellationToken);
 
         if (newStatus == null) return false;
 
         if (ticket.StatusId == newStatusId) return true;
 
-        if (ticket.ResolvedAt.HasValue || ticket.ClosedAt.HasValue)
+        if (ticket.Status.IsClosed ||
+            ticket.ResolvedAt.HasValue ||
+            ticket.ClosedAt.HasValue)
         {
             throw new InvalidOperationException(
                 "A resolved or closed ticket requires a dedicated reopen workflow before its status can be changed.");
@@ -66,7 +81,13 @@ public class TicketStatusService : ITicketStatusService
         };
 
         _context.TicketHistories.Add(historyLog);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
+        await _notificationService.NotifyTicketStatusChangedAsync(
+            ticket.Id,
+            newStatusName,
+            changedById,
+            cancellationToken);
+
         return true;
     }
 
