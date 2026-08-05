@@ -131,10 +131,19 @@ public class TicketService : ITicketService
                 PriorityName = t.Priority.Name,
                 CategoryName = t.Category.Name,
                 SubcategoryName = t.Subcategory != null ? t.Subcategory.Name : null,
+                CreatedById = t.CreatedById,
                 CreatedByName = t.CreatedBy.Name + " " + t.CreatedBy.LastName,
+                CreatedByAvatarUrl = t.CreatedBy.AvatarFileName == null
+                    ? null
+                    : "/uploads/avatars/" + t.CreatedBy.AvatarFileName,
+                AssignedToId = t.AssignedToId,
                 AssignedToName = t.AssignedTo != null
                     ? t.AssignedTo.Name + " " + t.AssignedTo.LastName
                     : null,
+                AssignedToAvatarUrl = t.AssignedTo != null &&
+                    t.AssignedTo.AvatarFileName != null
+                        ? "/uploads/avatars/" + t.AssignedTo.AvatarFileName
+                        : null,
                 CreatedAt = t.CreatedAt
             })
             .ToListAsync(cancellationToken);
@@ -229,6 +238,9 @@ public class TicketService : ITicketService
                 Comment = c.Comment,
                 CreatedById = c.UserId,
                 CreatedByName = c.User.Name + " " + c.User.LastName,
+                CreatedByAvatarUrl = c.User.AvatarFileName == null
+                    ? null
+                    : "/uploads/avatars/" + c.User.AvatarFileName,
                 // F5 yapıldığında rolün boş kalmasını engelleyen SQL subquery haritalaması:
                 CreatedByRole = (
                     from ur in _db.UserRoles
@@ -304,10 +316,18 @@ public class TicketService : ITicketService
             UrgencyLevelName = ticket.UrgencyLevel.Name,
             CreatedById = ticket.CreatedById,
             CreatedByName = $"{ticket.CreatedBy.Name} {ticket.CreatedBy.LastName}",
+            CreatedByAvatarUrl = string.IsNullOrWhiteSpace(
+                ticket.CreatedBy.AvatarFileName)
+                    ? null
+                    : $"/uploads/avatars/{ticket.CreatedBy.AvatarFileName}",
             AssignedToId = ticket.AssignedToId,
             AssignedToName = ticket.AssignedTo != null
                 ? $"{ticket.AssignedTo.Name} {ticket.AssignedTo.LastName}"
                 : null,
+            AssignedToAvatarUrl = ticket.AssignedTo is not null &&
+                !string.IsNullOrWhiteSpace(ticket.AssignedTo.AvatarFileName)
+                    ? $"/uploads/avatars/{ticket.AssignedTo.AvatarFileName}"
+                    : null,
             CreatedAt = ticket.CreatedAt,
             FirstResponseAt = ticket.FirstResponseAt,
             ResolvedAt = ticket.ResolvedAt,

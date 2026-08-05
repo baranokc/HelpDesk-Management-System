@@ -5,6 +5,7 @@ export interface Login {
 export interface LoginResponse {
     token : string;
     fullName : string;
+    avatarUrl? : string | null;
     email : string;
     role : string;
 }

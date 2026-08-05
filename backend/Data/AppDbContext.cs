@@ -48,6 +48,10 @@ public class AppDbContext : DbContext
             .HasForeignKey(u => u.ManagerId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        modelBuilder.Entity<User>()
+            .Property(user => user.AvatarFileName)
+            .HasMaxLength(255);
+
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.Entity<UserRole>()

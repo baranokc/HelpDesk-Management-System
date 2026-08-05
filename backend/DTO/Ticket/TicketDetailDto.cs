@@ -22,8 +22,10 @@ public class TicketDetailDto
     public string UrgencyLevelName {get; set; } = string.Empty;
     public Guid CreatedById {get; set; }
     public string CreatedByName {get; set; } = string.Empty;
+    public string? CreatedByAvatarUrl { get; set; }
     public Guid? AssignedToId {get; set; }
     public string? AssignedToName {get; set; }
+    public string? AssignedToAvatarUrl { get; set; }
     public DateTime CreatedAt {get; set; }
     public DateTime? FirstResponseAt {get; set; }
     public DateTime? ResolvedAt {get; set; }

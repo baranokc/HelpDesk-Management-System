@@ -4,6 +4,7 @@ export interface TicketCommentDto{
     comment : string;
     createdById : string;
     createdByName : string;
+    createdByAvatarUrl? : string | null;
     createdByRole? : string;
     createdAt: string;
     editedAt : string | null;

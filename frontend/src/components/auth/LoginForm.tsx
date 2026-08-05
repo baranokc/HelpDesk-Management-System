@@ -23,20 +23,15 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] =
-    useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(() =>
+    searchParams.get("registered") === "true"
+      ? "Account created successfully! You can now sign in."
+      : null,
+  );
   const [validationErrors, setValidationErrors] =
     useState<FormErrors>({});
 
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
-
-  useEffect(() => {
-    if (searchParams.get("registered") === "true") {
-      setSuccessMessage(
-        "Account created successfully! You can now sign in.",
-      );
-    }
-  }, [searchParams]);
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
@@ -70,7 +65,7 @@ export function LoginForm() {
     try {
       const loginResponse = await authService.login(result.data);
 
-      login(loginResponse.token);
+      login(loginResponse);
       router.replace("/tickets");
     } catch (caughtError: unknown) {
       const errorMessage =

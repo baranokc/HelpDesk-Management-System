@@ -1,3 +1,4 @@
+import { Avatar } from "@/src/components/ui/Avatar";
 import { Card } from "@/src/components/ui/Card";
 import type { TicketDetailDto } from "@/src/types/ticket";
 import { TicketPriorityBadge } from "./TicketPriorityBadge";
@@ -17,6 +18,34 @@ function DetailItem({
       </dt>
       <dd className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
         {value || "—"}
+      </dd>
+    </div>
+  );
+}
+
+function PersonDetailItem({
+  label,
+  name,
+  avatarUrl,
+}: {
+  label: string;
+  name?: string | null;
+  avatarUrl?: string | null;
+}) {
+  return (
+    <div className="flex flex-col border-b border-slate-200 py-3 last:border-0 dark:border-slate-800">
+      <dt className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+        {label}
+      </dt>
+      <dd className="mt-2 flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
+        {name ? (
+          <>
+            <Avatar avatarUrl={avatarUrl} name={name} size="xs" />
+            <span>{name}</span>
+          </>
+        ) : (
+          "—"
+        )}
       </dd>
     </div>
   );
@@ -70,9 +99,17 @@ export function TicketMetadata({ ticket }: { ticket: TicketDetailDto }) {
   return (
     <Card className="shadow-sm border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 transition-colors" title="Ticket information">
       <dl className="flex flex-col">
-        <DetailItem label="Created by" value={ticket.createdByName} />
+        <PersonDetailItem
+          avatarUrl={ticket.createdByAvatarUrl}
+          label="Created by"
+          name={ticket.createdByName}
+        />
         <DetailItem label="Assigned team" value={ticket.teamName} />
-        <DetailItem label="Assigned to" value={ticket.assignedToName} />
+        <PersonDetailItem
+          avatarUrl={ticket.assignedToAvatarUrl}
+          label="Assigned to"
+          name={ticket.assignedToName}
+        />
         <DetailItem label="Category" value={ticket.categoryName} />
         <DetailItem label="Subcategory" value={ticket.subcategoryName} />
         <DetailItem label="Impact" value={ticket.impactLevelName} />

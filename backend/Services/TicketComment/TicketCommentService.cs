@@ -49,7 +49,10 @@ public class TicketCommentService : ITicketCommentService
 
         if (ticket is null) return null;
 
-        var user = await _db.Users.AsNoTracking().SingleOrDefaultAsync(x => x.Id == userId, cancellationToken)
+        var user = await _db.Users
+            .AsNoTracking()
+            .Include(item => item.Role)
+            .SingleOrDefaultAsync(x => x.Id == userId, cancellationToken)
             ?? throw new InvalidOperationException("Comment owner was not found.");
         var entity = new Entities.TicketComment
         {
@@ -163,12 +166,29 @@ public class TicketCommentService : ITicketCommentService
             userId,
             entity.IsInternal,
             cancellationToken);
-        return new TicketCommentDto { Id = entity.Id, Comment = entity.Comment, CreatedById = userId, CreatedByName = user.Name + " " + user.LastName, CreatedAt = entity.CreatedAt, EditedAt = entity.EditedAt, IsInternal = entity.IsInternal, Attachments = attachments.ToList() };
+        return new TicketCommentDto
+        {
+            Id = entity.Id,
+            Comment = entity.Comment,
+            CreatedById = userId,
+            CreatedByName = user.Name + " " + user.LastName,
+            CreatedByAvatarUrl = string.IsNullOrWhiteSpace(user.AvatarFileName)
+                ? null
+                : $"/uploads/avatars/{user.AvatarFileName}",
+            CreatedByRole = user.Role?.Name ?? "User",
+            CreatedAt = entity.CreatedAt,
+            EditedAt = entity.EditedAt,
+            IsInternal = entity.IsInternal,
+            Attachments = attachments.ToList()
+        };
     }
 
     public async Task<TicketCommentDto?> UpdateCommentAsync(Guid ticketId, Guid commentId, TicketCommentUpdateDto dto, Guid userId, bool canManageAll, CancellationToken cancellationToken = default)
     {
-        var entity = await _db.TicketComments.Include(x => x.User).Include(x => x.Attachments)
+        var entity = await _db.TicketComments
+            .Include(x => x.User)
+                .ThenInclude(user => user.Role)
+            .Include(x => x.Attachments)
             .SingleOrDefaultAsync(x => x.Id == commentId && x.TicketId == ticketId, cancellationToken);
         if (entity is null) return null;
         if (!canManageAll && entity.UserId != userId) throw new UnauthorizedAccessException("You can update only your own comment.");
@@ -196,6 +216,8 @@ public class TicketCommentService : ITicketCommentService
     private static readonly System.Linq.Expressions.Expression<Func<Entities.TicketComment, TicketCommentDto>> MapExpression = x => new TicketCommentDto
     {
         Id = x.Id, Comment = x.Comment, CreatedById = x.UserId, CreatedByName = x.User.Name + " " + x.User.LastName,
+        CreatedByAvatarUrl = x.User.AvatarFileName == null ? null : "/uploads/avatars/" + x.User.AvatarFileName,
+        CreatedByRole = x.User.Role != null ? x.User.Role.Name : "User",
         CreatedAt = x.CreatedAt, EditedAt = x.EditedAt, IsInternal = x.IsInternal,
         Attachments = x.Attachments.OrderBy(a => a.UploadedAt).Select(a => new TicketAttachmentDto { Id = a.Id, FileName = a.FileName, ContentType = a.ContentType, FileSize = a.FileSize, DownloadUrl = a.FilePath, Description = a.Description, CommentId = a.TicketCommentId, UploadedById = a.UploaderId, UploadedByName = a.Uploader.Name + " " + a.Uploader.LastName, UploadedAt = a.UploadedAt }).ToList()
     };
@@ -203,6 +225,8 @@ public class TicketCommentService : ITicketCommentService
     private static TicketCommentDto ToDto(Entities.TicketComment x) => new()
     {
         Id = x.Id, Comment = x.Comment, CreatedById = x.UserId, CreatedByName = x.User.Name + " " + x.User.LastName,
+        CreatedByAvatarUrl = string.IsNullOrWhiteSpace(x.User.AvatarFileName) ? null : $"/uploads/avatars/{x.User.AvatarFileName}",
+        CreatedByRole = x.User.Role?.Name ?? "User",
         CreatedAt = x.CreatedAt, EditedAt = x.EditedAt, IsInternal = x.IsInternal,
         Attachments = x.Attachments.Select(a => new TicketAttachmentDto { Id = a.Id, FileName = a.FileName, ContentType = a.ContentType, FileSize = a.FileSize, DownloadUrl = a.FilePath, Description = a.Description, CommentId = a.TicketCommentId, UploadedById = a.UploaderId, UploadedAt = a.UploadedAt }).ToList()
     };

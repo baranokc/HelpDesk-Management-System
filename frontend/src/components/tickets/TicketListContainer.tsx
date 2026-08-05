@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Alert } from "@/src/components/ui/Alert";
+import { Avatar } from "@/src/components/ui/Avatar";
 import { Pagination } from "@/src/components/ui/Pagination";
 import { useAuth } from "@/src/context/AuthContext";
 import { getApiErrorMessage } from "@/src/lib/api";
@@ -262,7 +263,14 @@ export function TicketListContainer() {
                           <TicketPriorityBadge priority={ticket.priorityName} />
                         </td>
                         <td className="text-slate-600 dark:text-slate-300">
-                          {ticket.createdByName}
+                          <div className="flex items-center gap-2">
+                            <Avatar
+                              avatarUrl={ticket.createdByAvatarUrl}
+                              name={ticket.createdByName}
+                              size="xs"
+                            />
+                            <span>{ticket.createdByName}</span>
+                          </div>
                         </td>
                         <td className="text-right">
                           <Link

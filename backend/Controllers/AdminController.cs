@@ -18,24 +18,45 @@ public class AdminController : ControllerBase
     }
 
     [HttpGet("stats")]
-    public async Task<IActionResult> GetOverviewStats()
+    public async Task<IActionResult> GetOverviewStats(CancellationToken cancellationToken)
     {
         var oneWeekAgo = DateTime.UtcNow.AddDays(-7);
 
-        var totalUsers = await _context.Users.CountAsync(u => u.IsActive);
-        var usersThisWeek = await _context.Users.CountAsync(u => u.IsActive && u.CreatedAt >= oneWeekAgo);
+        var totalUsers = await _context.Users.CountAsync(
+            user => user.IsActive,
+            cancellationToken);
 
-        var activeTeams = await _context.Teams.CountAsync(t => t.IsActive);
+        var usersThisWeek = await _context.Users.CountAsync(
+            user =>
+                user.IsActive &&
+                user.CreatedAt >= oneWeekAgo,
+            cancellationToken);
 
-        var isDbConnected = await _context.Database.CanConnectAsync();
+        var activeTeams = await _context.Teams.CountAsync(
+            team => team.IsActive,
+            cancellationToken);
+
+        var categoriesCount = await _context.TicketCategories.CountAsync(
+            category => category.IsActive,
+            cancellationToken);
+
+        var subcategoriesCount =
+            await _context.TicketSubCategories.CountAsync(
+                subcategory =>
+                    subcategory.IsActive &&
+                    subcategory.Category.IsActive,
+                cancellationToken);
+
+        var isDbConnected =
+            await _context.Database.CanConnectAsync(cancellationToken);
 
         return Ok(new
         {
             totalUsers,
             usersThisWeek,
             activeTeams,
-            categoriesCount = 0, 
-            subcategoriesCount = 0,
+            categoriesCount,
+            subcategoriesCount,
             systemStatus = isDbConnected ? "Healthy" : "Degraded"
         });
     }

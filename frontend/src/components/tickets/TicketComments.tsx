@@ -2,6 +2,7 @@
 
 import type { TicketAttachmentDto } from "@/src/types/ticket-attachment";
 import type { TicketCommentDto } from "@/src/types/ticket-comment";
+import { Avatar } from "@/src/components/ui/Avatar";
 import { Badge } from "@/src/components/ui/Badge";
 import { Dropdown } from "@/src/components/ui/Dropdown";
 import { EmptyState } from "@/src/components/ui/EmptyState";
@@ -110,6 +111,13 @@ export function TicketComments({
 
         return (
           <article className="chat chat-start" key={comment.id}>
+            <div className="chat-image avatar">
+              <Avatar
+                avatarUrl={comment.createdByAvatarUrl}
+                name={comment.createdByName}
+                size="md"
+              />
+            </div>
             <div className="chat-header mb-1.5 flex items-center gap-2">
               <span className="font-bold text-slate-900 dark:text-white">
                 {comment.createdByName}

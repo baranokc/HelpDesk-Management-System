@@ -10,8 +10,12 @@ export interface TicketListDto {
     priorityName : string;
     categoryName : string;
     subcategoryName? : string | null;
+    createdById : string;
     createdByName : string;
+    createdByAvatarUrl? : string | null;
+    assignedToId? : string | null;
     assignedToName? : string | null;
+    assignedToAvatarUrl? : string | null;
     createdAt : string;
 }
 
@@ -56,8 +60,10 @@ export interface TicketDetailDto {
     urgencyLevelName : string;
     createdById : string;
     createdByName : string;
+    createdByAvatarUrl? : string | null;
     assignedToId? : string | null;
     assignedToName? : string | null;
+    assignedToAvatarUrl? : string | null;
     createdAt : string;
     firstResponseAt? : string | null;
     resolvedAt? : string | null;

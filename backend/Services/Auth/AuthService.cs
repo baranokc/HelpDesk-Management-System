@@ -76,6 +76,9 @@ public class AuthService : IAuthService
             Token = GenerateJwtToken(user, ledTeamIds),
             Email = user.Email,
             FullName = $"{user.Name} {user.LastName}",
+            AvatarUrl = string.IsNullOrWhiteSpace(user.AvatarFileName)
+                ? null
+                : $"/uploads/avatars/{Uri.EscapeDataString(user.AvatarFileName)}",
             Role = user.Role?.Name ?? Roles.User,
         };
     }
@@ -88,6 +91,7 @@ public class AuthService : IAuthService
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString() ),
             new Claim(ClaimTypes.Email , user.Email),
             new Claim(ClaimTypes.Role , user.Role?.Name ?? "User"),
+            new Claim("session_version", user.SessionVersion.ToString()),
             new Claim("led_team_ids",string.Join(",", ledTeamIds.Select(teamId => teamId.ToString())))
         };
         var tokenDescriptor = new SecurityTokenDescriptor

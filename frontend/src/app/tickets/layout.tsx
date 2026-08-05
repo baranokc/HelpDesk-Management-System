@@ -6,6 +6,7 @@ import Link from "next/link";
 import { LinkButton } from "@/src/components/ui/Button";
 import { NotificationBell } from "@/src/components/ui/NotificationBell";
 import { ThemeToggle } from "@/src/components/ui/ThemeToggle";
+import { Avatar } from "@/src/components/ui/Avatar";
 import { useAuth } from "@/src/context/AuthContext";
 import { getTicketViewLabel } from "@/src/lib/ticketPermissions";
 
@@ -19,9 +20,10 @@ export default function TicketsLayout({
   const { user, isAuthenticated, loading, logout } = useAuth();
   const viewLabel = getTicketViewLabel(user?.role);
   const isCreateTicketPage = pathname === "/tickets/new";
-  const isTicketsSection = pathname.startsWith("/tickets") && !isCreateTicketPage;
+  const isTicketsSection = pathname === "/tickets";
   const isTeamManagementPage = pathname.startsWith("/tickets/team-management",);
   const isMyWorkPage = pathname.startsWith("/tickets/my-work");
+  const isProfilePage = pathname === "/tickets/profile";
 
 
   useEffect(() => {
@@ -34,32 +36,12 @@ export default function TicketsLayout({
     logout();
   };
 
-  const userObj = user as unknown as {
-    firstName?: string;
-    lastName?: string;
-    fullName?: string;
-  };
-
-  const fullNameFromParts =
-    userObj?.firstName || userObj?.lastName
-      ? `${userObj.firstName ?? ""} ${userObj.lastName ?? ""}`.trim()
-      : null;
-
   const displayName =
-    fullNameFromParts ||
-    userObj?.fullName ||
+    user?.fullName ||
     user?.email?.split("@")[0] ||
     "User";
 
   const userRole = user?.role || "Member";
-
-  const avatarInitials = displayName
-    .split(" ")
-    .filter(Boolean)
-    .map((word) => word[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
 
   if (loading || !isAuthenticated) {
     return (
@@ -133,10 +115,12 @@ export default function TicketsLayout({
                 role="button"
                 className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-1.5 pr-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
               >
-                {/* Avatar Dairesi */}
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-blue-600 font-bold text-xs text-white shadow-sm">
-                  {avatarInitials}
-                </div>
+                <Avatar
+                  avatarUrl={user?.avatarUrl}
+                  className="shadow-sm"
+                  name={displayName}
+                  size="sm"
+                />
 
                 {/* Kullanıcı Adı & Rolü */}
                 <div className="hidden sm:flex flex-col text-left max-w-[120px]">
@@ -181,10 +165,14 @@ export default function TicketsLayout({
 
                 {/* Profil Butonu */}
                 <li>
-                  <button
-                    type="button"
-                    onClick={(e) => e.preventDefault()}
-                    className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg py-2"
+                  <Link
+                    aria-current={isProfilePage ? "page" : undefined}
+                    href="/tickets/profile"
+                    className={`flex items-center gap-2 rounded-lg py-2 text-xs font-semibold ${
+                      isProfilePage
+                        ? "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300"
+                        : "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                    }`}
                   >
                     <svg
                       className="h-4 w-4 text-slate-500 dark:text-slate-400"
@@ -200,7 +188,7 @@ export default function TicketsLayout({
                       />
                     </svg>
                     Profile
-                  </button>
+                  </Link>
                 </li>
 
   {/* 🛡️ ADMIN PANEL BUTONU (SADECE ADMIN VE SUPPORT AGENT İÇİN) */}

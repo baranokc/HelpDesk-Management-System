@@ -17,6 +17,7 @@ using backend.Services.Notification;
 using backend.Services.TeamManagement;
 using backend.Services.Category;
 using backend.Services.Sla;
+using backend.Services.Profile;
 using Microsoft.OpenApi;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -95,6 +96,7 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<ITeamManagementService, TeamManagementService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<ISlaService, SlaService>();
+builder.Services.AddScoped<IProfileService, ProfileService>();
 
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
@@ -157,7 +159,8 @@ builder.Services.AddAuthentication(options =>
                     RoleName = user.Role != null
                         ? user.Role.Name
                         : null,
-                    RoleIsActive = user.Role != null && user.Role.IsActive
+                    RoleIsActive = user.Role != null && user.Role.IsActive,
+                    user.SessionVersion
                 })
                 .SingleOrDefaultAsync();
 
@@ -167,6 +170,16 @@ builder.Services.AddAuthentication(options =>
                 string.IsNullOrWhiteSpace(currentUser.RoleName))
             {
                 context.Fail("The user account or role is inactive.");
+                return;
+            }
+
+            var sessionVersionClaim = context.Principal?
+                .FindFirstValue("session_version");
+
+            if (!int.TryParse(sessionVersionClaim, out var sessionVersion) ||
+                sessionVersion != currentUser.SessionVersion)
+            {
+                context.Fail("The user session is no longer valid.");
                 return;
             }
 
@@ -218,6 +231,13 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
+var avatarDirectory = Path.Combine(
+    builder.Environment.WebRootPath ??
+        Path.Combine(builder.Environment.ContentRootPath, "wwwroot"),
+    "uploads",
+    "avatars");
+Directory.CreateDirectory(avatarDirectory);
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -236,6 +256,8 @@ using (var scope = app.Services.CreateScope())
 app.UseRouting();
 
 app.UseCors("AllowNextJS");
+
+app.UseStaticFiles();
 
 app.UseAuthentication();
 app.UseAuthorization();
