@@ -64,6 +64,17 @@ public class AppDbContext : DbContext
             .HasForeignKey(tm => tm.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        modelBuilder.Entity<TeamMember>()
+            .HasIndex(tm => new
+            {
+                tm.TeamId,
+                tm.RoleInTeam,
+                tm.IsActive
+            })
+            .HasDatabaseName("IX_TeamMembers_OneActiveLeaderPerTeam")
+            .IsUnique()
+            .HasFilter("\"IsActive\" = TRUE AND \"RoleInTeam\" = 2");
+
         modelBuilder.Entity<Team>()
             .HasOne(t => t.Lead)
             .WithMany()

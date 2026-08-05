@@ -228,7 +228,7 @@ export default function UserManagementPage() {
             User Management
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            Live database users — manage access permissions and roles.
+            Manage access roles. Team leaders are appointed from Team Management.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -352,7 +352,9 @@ export default function UserManagementPage() {
                           className="select select-sm select-bordered bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs disabled:opacity-50"
                         >
                           <option value="Admin">Admin</option>
-                          <option value="TeamLeader">TeamLeader</option>
+                          <option value="TeamLeader" disabled>
+                            TeamLeader (Team Management only)
+                          </option>
                           <option value="SupportAgent">SupportAgent</option>
                           <option value="User">User</option>
                         </select>

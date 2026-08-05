@@ -78,9 +78,15 @@ public class UsersController : ControllerBase
         if (roleEntity == null)
             return BadRequest("Invalid role name.");
 
-        var canRemainTeamMember =
-            roleEntity.Name == Roles.SupportAgent ||
-            roleEntity.Name == Roles.TeamLeader;
+        if (roleEntity.Name == Roles.TeamLeader)
+        {
+            return BadRequest(
+                "The TeamLeader role can only be assigned from Team Management. " +
+                "Add the user to the intended team as a SupportAgent first, then " +
+                "select that user as the team's leader.");
+        }
+
+        var canRemainTeamMember = roleEntity.Name == Roles.SupportAgent;
 
         await using var transaction = await _context.Database
             .BeginTransactionAsync(cancellationToken);
@@ -147,47 +153,6 @@ public class UsersController : ControllerBase
                     });
                 }
             }
-        }
-        else if (roleEntity.Name == Roles.TeamLeader)
-        {
-            var memberships = await _context.TeamMembers
-                .Where(member =>
-                    member.UserId == userGuid &&
-                    member.Team.IsActive)
-                .ToListAsync(cancellationToken);
-
-            var activeMemberships = memberships
-                .Where(member => member.IsActive)
-                .ToList();
-
-            if (activeMemberships.Count == 0 && memberships.Count == 1)
-            {
-                memberships[0].IsActive = true;
-                memberships[0].JoinedAt = DateTime.UtcNow;
-                activeMemberships.Add(memberships[0]);
-            }
-
-            if (activeMemberships.Count == 0)
-            {
-                return BadRequest(
-                    "The user must be an active member of at least one team " +
-                    "before being promoted to TeamLeader. If multiple inactive " +
-                    "memberships exist, reactivate the intended team first.");
-            }
-
-            foreach (var membership in activeMemberships)
-                membership.RoleInTeam = TeamMemberRole.TeamLeader;
-
-            var teamIds = activeMemberships
-                .Select(membership => membership.TeamId)
-                .ToArray();
-
-            var teams = await _context.Teams
-                .Where(team => teamIds.Contains(team.Id))
-                .ToListAsync(cancellationToken);
-
-            foreach (var team in teams)
-                team.LeadId = userGuid;
         }
         else if (roleEntity.Name == Roles.SupportAgent)
         {
