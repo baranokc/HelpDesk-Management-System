@@ -20,7 +20,13 @@ import { TicketAssignmentForm } from "./TicketAssignmentForm";
 import { TicketResolveForm } from "./TicketResolveForm";
 import { TicketStatusForm } from "./TicketStatusForm";
 
-type ActionName = "upload" | "assign" | "unassign" | "status" | "resolve";
+type ActionName =
+  | "upload"
+  | "assign"
+  | "unassign"
+  | "status"
+  | "resolve"
+  | "close";
 
 interface TicketActionsProps {
   ticket: TicketDetailDto;
@@ -51,10 +57,22 @@ const canAssign =
 const isAssigned = Boolean(ticket.assignedToId);
 const normalizedStatus = ticket.statusName.trim().toLowerCase();
 
+const canUpdateStatus =
+  canManageWorkflow &&
+  normalizedStatus !== "resolved" &&
+  normalizedStatus !== "closed" &&
+  normalizedStatus !== "cancelled";
+
 const canResolve =
   canManageWorkflow &&
   normalizedStatus !== "resolved" &&
-  normalizedStatus !== "closed";
+  normalizedStatus !== "closed" &&
+  normalizedStatus !== "cancelled";
+
+const canClose =
+  canManageWorkflow &&
+  normalizedStatus === "resolved" &&
+  !ticket.closedAt;
 
   const secondaryBtnStyle =
     "dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 hover:!bg-slate-900 hover:!text-white dark:hover:!bg-white dark:hover:!text-slate-900 transition-all shadow-sm";
@@ -145,6 +163,14 @@ const canResolve =
     );
   };
 
+  const handleClose = async () => {
+    await runAction(
+      "close",
+      () => ticketWorkflowService.closeTicket(ticket.id),
+      "The ticket could not be closed.",
+    );
+  };
+
   const errorAlert = actionError ? (
     <div className="mb-4">
       <Alert variant="error">{actionError}</Alert>
@@ -163,14 +189,16 @@ const canResolve =
             Upload files
           </Button>
 
-          <Button
-            className={secondaryBtnStyle}
-            onClick={() => openAction("status")}
-            size="sm"
-            variant="secondary"
-          >
-            Update status
-          </Button>
+          {canUpdateStatus && (
+            <Button
+              className={secondaryBtnStyle}
+              onClick={() => openAction("status")}
+              size="sm"
+              variant="secondary"
+            >
+              Update status
+            </Button>
+          )}
 
           {canAssign && (
             <Button
@@ -201,6 +229,16 @@ const canResolve =
               variant="secondary"
             >
               Resolve ticket
+            </Button>
+          )}
+
+          {canClose && (
+            <Button
+              onClick={() => openAction("close")}
+              size="sm"
+              variant="danger"
+            >
+              Close ticket
             </Button>
           )}
         </div>
@@ -296,6 +334,38 @@ const canResolve =
               Remove assignment
             </Button>
           </div>
+        </div>
+      </Modal>
+
+      <Modal
+        onClose={closeAction}
+        open={activeAction === "close"}
+        title="Close ticket"
+      >
+        {errorAlert}
+
+        <p className="text-sm text-slate-600 dark:text-slate-300">
+          The ticket will be moved from Resolved to Closed. The ticket creator
+          will receive a notification.
+        </p>
+
+        <div className="mt-6 flex justify-end gap-3">
+          <Button
+            className={secondaryBtnStyle}
+            onClick={closeAction}
+            type="button"
+            variant="secondary"
+          >
+            Cancel
+          </Button>
+          <Button
+            loading={loadingAction === "close"}
+            onClick={() => void handleClose()}
+            type="button"
+            variant="danger"
+          >
+            Close ticket
+          </Button>
         </div>
       </Modal>
     </>
