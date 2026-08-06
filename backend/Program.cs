@@ -25,7 +25,7 @@ using Microsoft.IdentityModel.Tokens;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Http.Features;
-
+using backend.Services.SatisfactionSurvey;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -95,6 +95,8 @@ builder.Services.AddScoped<ITeamManagementService, TeamManagementService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<ISlaService, SlaService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
+builder.Services.AddScoped<ISatisfactionSurveyService, SatisfactionSurveyService>();
+
 
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");

@@ -7,6 +7,7 @@ using backend.Services.TicketHistory;
 using backend.Services.TicketResolution;
 using backend.Services.TicketUnassignment;
 using backend.Services.TicketAttachment;
+using backend.Services.SatisfactionSurvey;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using backend.Entities;
@@ -23,19 +24,22 @@ public class TicketController : ControllerBase
     private readonly ITicketResolutionService _ticketResolutionService;
     private readonly ITicketHistoryService _ticketHistoryService;
     private readonly ITicketAssignmentService _ticketAssignmentService;
+    private readonly ISatisfactionSurveyService _satisfactionSurveyService;
 
     public TicketController(
         ITicketService ticketService,
         ITicketAssignmentService ticketAssignmentService,
         ITicketUnassignmentService ticketUnassignmentService,
         ITicketResolutionService ticketResolutionService,
-        ITicketHistoryService ticketHistoryService)
+        ITicketHistoryService ticketHistoryService,
+        ISatisfactionSurveyService satisfactionSurveyService)
     {
         _ticketService = ticketService;
         _ticketAssignmentService = ticketAssignmentService;
         _ticketUnassignmentService = ticketUnassignmentService;
         _ticketResolutionService = ticketResolutionService;
         _ticketHistoryService = ticketHistoryService;
+        _satisfactionSurveyService = satisfactionSurveyService;
     }
 
     private Guid GetCurrentUserId()
@@ -47,7 +51,8 @@ public class TicketController : ControllerBase
             ? userId
             : Guid.Empty;
     }
-        private string GetCurrentUserRole()
+
+    private string GetCurrentUserRole()
     {
         return User.FindFirstValue(ClaimTypes.Role)
                ?? string.Empty;
@@ -472,6 +477,7 @@ public class TicketController : ControllerBase
 
         return Ok(history);
     }
+
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.TeamLeader},{Roles.User}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -514,5 +520,76 @@ public class TicketController : ControllerBase
                 StatusCodes.Status403Forbidden,
                 new { message = exception.Message });
         }
+    }
+
+    [HttpPost("{id:guid}/survey")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.TeamLeader},{Roles.User}")]
+    [ProducesResponseType(typeof(SatisfactionSurveyDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SubmitSatisfactionSurvey(
+        Guid id,
+        [FromBody] CreateSatisfactionSurveyDto dto,
+        CancellationToken cancellationToken)
+    {
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId == Guid.Empty)
+        {
+            return Unauthorized(new { message = "Invalid user identity." });
+        }
+
+        try
+        {
+            var result = await _satisfactionSurveyService.SubmitSurveyAsync(
+                id,
+                dto,
+                currentUserId,
+                cancellationToken);
+
+            if (result is null)
+            {
+                return NotFound(new { message = "Ticket not found." });
+            }
+
+            return Ok(result);
+        }
+        catch (ArgumentException exception)
+        {
+            return BadRequest(new { message = exception.Message });
+        }
+        catch (InvalidOperationException exception)
+        {
+            return BadRequest(new { message = exception.Message });
+        }
+    }
+
+    [HttpGet("{id:guid}/survey")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.TeamLeader},{Roles.User}")]
+    [ProducesResponseType(typeof(SatisfactionSurveyDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetSatisfactionSurvey(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var currentUserId = GetCurrentUserId();
+        var currentUserRole = GetCurrentUserRole();
+
+        if (currentUserId == Guid.Empty || string.IsNullOrWhiteSpace(currentUserRole))
+        {
+            return Unauthorized(new { message = "Invalid user identity." });
+        }
+
+        var survey = await _satisfactionSurveyService.GetSurveyByTicketIdAsync(
+            id,
+            currentUserId,
+            currentUserRole,
+            cancellationToken);
+
+        if (survey is null)
+        {
+            return NotFound(new { message = "Survey not found for this ticket." });
+        }
+
+        return Ok(survey);
     }
 }

@@ -48,6 +48,7 @@ public class AppDbContext : DbContext
     public DbSet<SlaRecord> SlaRecords { get; set; } = null!;
     public DbSet<SlaPause> SlaPauses { get; set; } = null!;
     public DbSet<FaqItem> FaqItems { get; set; } = null!;
+    public DbSet<SatisfactionSurvey> SatisfactionSurveys { get; set; } = null!;
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

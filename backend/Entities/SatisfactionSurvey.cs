@@ -9,6 +9,7 @@ public class SatisfactionSurvey
     public int Rating {get; set; }
     public int CommunicationRating {get; set; }
     public int SolutionRating {get; set; }
-    public string Comment {get; set; } = string.Empty;
+    public int SpeedRating { get; set; }
+    public string Comment { get; set; } = string.Empty;
     public DateTime CreatedAt {get;set; } = DateTime.UtcNow;
 }
