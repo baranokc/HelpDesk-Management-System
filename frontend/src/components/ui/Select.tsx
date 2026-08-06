@@ -12,7 +12,7 @@ export function Select({
   label,
   error,
   options,
-  placeholder = "Seçiniz",
+  placeholder = "Select",
   hint,
   className = "",
   ...props
