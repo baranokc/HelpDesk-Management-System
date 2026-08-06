@@ -26,8 +26,7 @@ public class SatisfactionSurveyService : ISatisfactionSurveyService
         CancellationToken cancellationToken)
     {
         // 1. Puan Doğrulaması (1-5 arası)
-        if (dto.Rating < 1 || dto.Rating > 5 ||
-            dto.CommunicationRating < 1 || dto.CommunicationRating > 5 ||
+        if (dto.CommunicationRating < 1 || dto.CommunicationRating > 5 ||
             dto.SolutionRating < 1 || dto.SolutionRating > 5 ||
             dto.SpeedRating < 1 || dto.SpeedRating > 5)
         {
@@ -72,14 +71,20 @@ public class SatisfactionSurveyService : ISatisfactionSurveyService
         // 6. Kaydetme
         try
         {
+            var overallRating = CalculateOverallRating(
+                dto.CommunicationRating,
+                dto.SolutionRating,
+                dto.SpeedRating);
+
             var survey = new Entities.SatisfactionSurvey
             {
                 Id = Guid.NewGuid(),
                 TicketId = ticketId,
                 UserId = userId,
-                Rating = dto.Rating,
+                Rating = overallRating,
                 CommunicationRating = dto.CommunicationRating,
                 SolutionRating = dto.SolutionRating,
+                SpeedRating = dto.SpeedRating,
                 Comment = dto.Comment ?? string.Empty,
                 CreatedAt = DateTime.UtcNow
             };
@@ -95,6 +100,7 @@ public class SatisfactionSurveyService : ISatisfactionSurveyService
                 Rating = survey.Rating,
                 CommunicationRating = survey.CommunicationRating,
                 SolutionRating = survey.SolutionRating,
+                SpeedRating = survey.SpeedRating,
                 Comment = survey.Comment,
                 CreatedAt = survey.CreatedAt
             };
@@ -159,12 +165,24 @@ public class SatisfactionSurveyService : ISatisfactionSurveyService
                 TotalSurveysCount = count,
                 AverageRating = count > 0 ? Math.Round(teamSurveys.Average(s => s.Rating), 1) : 0,
                 AverageCommunicationRating = count > 0 ? Math.Round(teamSurveys.Average(s => s.CommunicationRating), 1) : 0,
-                AverageSolutionRating = count > 0 ? Math.Round(teamSurveys.Average(s => s.SolutionRating), 1) : 0
+                AverageSolutionRating = count > 0 ? Math.Round(teamSurveys.Average(s => s.SolutionRating), 1) : 0,
+                AverageSpeedRating = count > 0 ? Math.Round(teamSurveys.Average(s => s.SpeedRating), 1) : 0
             };
         })
         .OrderByDescending(t => t.AverageRating)
         .ToList();
 
         return stats;
+    }
+
+    private static double CalculateOverallRating(
+        int communicationRating,
+        int solutionRating,
+        int speedRating)
+    {
+        return Math.Round(
+            (communicationRating + solutionRating + speedRating) / 3.0,
+            1,
+            MidpointRounding.AwayFromZero);
     }
 }

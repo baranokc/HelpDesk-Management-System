@@ -2,32 +2,35 @@
 
 import { useEffect, useState } from "react";
 import { Star, CheckCircle2, MessageSquare } from "lucide-react";
-import { surveyService, type SatisfactionSurveyDto } from "@/src/services/surveyService";
+import {
+  surveyService,
+  type SatisfactionSurveyDto,
+} from "@/src/services/surveyService";
 
 interface CsatSurveyCardProps {
   ticketId: string;
   ticketStatus: string;
 }
 
-export function CsatSurveyCard({ ticketId, ticketStatus }: CsatSurveyCardProps) {
-  const [existingSurvey, setExistingSurvey] = useState<SatisfactionSurveyDto | null>(null);
+export function CsatSurveyCard({
+  ticketId,
+  ticketStatus,
+}: CsatSurveyCardProps) {
+  const [existingSurvey, setExistingSurvey] =
+    useState<SatisfactionSurveyDto | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const [rating, setRating] = useState(0);
   const [communicationRating, setCommunicationRating] = useState(0);
   const [solutionRating, setSolutionRating] = useState(0);
+  const [speedRating, setSpeedRating] = useState(0);
   const [comment, setComment] = useState("");
 
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
 
   const isEligible = ticketStatus === "Resolved" || ticketStatus === "Closed";
 
   useEffect(() => {
-    if (!isEligible) {
-      setLoading(false);
-      return;
-    }
+    if (!isEligible) return;
 
     async function loadSurvey() {
       const data = await surveyService.getSurvey(ticketId);
@@ -43,18 +46,23 @@ export function CsatSurveyCard({ ticketId, ticketStatus }: CsatSurveyCardProps) 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (rating === 0 || communicationRating === 0 || solutionRating === 0) return;
+    if (
+      communicationRating === 0 ||
+      solutionRating === 0 ||
+      speedRating === 0
+    ) {
+      return;
+    }
 
     setSubmitting(true);
     try {
       const result = await surveyService.submitSurvey(ticketId, {
-        rating,
         communicationRating,
         solutionRating,
+        speedRating,
         comment: comment.trim(),
       });
       setExistingSurvey(result);
-      setSubmitted(true);
     } catch (err) {
       console.error("Failed to submit satisfaction survey", err);
     } finally {
@@ -62,7 +70,11 @@ export function CsatSurveyCard({ ticketId, ticketStatus }: CsatSurveyCardProps) 
     }
   };
 
-  const renderStarPicker = (currentValue: number, onChange: (val: number) => void, readOnly = false) => (
+  const renderStarPicker = (
+    currentValue: number,
+    onChange: (val: number) => void,
+    readOnly = false,
+  ) => (
     <div className="flex items-center gap-1">
       {[1, 2, 3, 4, 5].map((star) => (
         <button
@@ -84,8 +96,8 @@ export function CsatSurveyCard({ ticketId, ticketStatus }: CsatSurveyCardProps) 
     </div>
   );
 
-  if (existingSurvey || submitted) {
-    const surveyData = existingSurvey || { rating, communicationRating, solutionRating, comment };
+  if (existingSurvey) {
+    const surveyData = existingSurvey;
 
     return (
       <div className="rounded-2xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/40 dark:bg-emerald-950/20 p-6 shadow-sm space-y-4">
@@ -94,33 +106,52 @@ export function CsatSurveyCard({ ticketId, ticketStatus }: CsatSurveyCardProps) 
           <span>Satisfaction Survey Submitted</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+        <div className="grid grid-cols-1 gap-4 pt-1 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-1 bg-white/60 dark:bg-slate-900/40 p-3 rounded-xl border border-emerald-100 dark:border-emerald-900/40">
-            <p className="text-[11px] font-bold text-slate-500 uppercase">Overall Experience</p>
-            {renderStarPicker(surveyData.rating, () => {}, true)}
+            <p className="text-[11px] font-bold text-slate-500 uppercase">
+              Overall Experience
+            </p>
+            <div className="flex items-center gap-2">
+              {renderStarPicker(surveyData.rating, () => {}, true)}
+              <span className="text-xs font-bold text-amber-700 dark:text-amber-400">
+                {surveyData.rating.toFixed(1)} / 5
+              </span>
+            </div>
           </div>
 
           <div className="space-y-1 bg-white/60 dark:bg-slate-900/40 p-3 rounded-xl border border-emerald-100 dark:border-emerald-900/40">
-            <p className="text-[11px] font-bold text-slate-500 uppercase">Communication</p>
+            <p className="text-[11px] font-bold text-slate-500 uppercase">
+              Communication
+            </p>
             {renderStarPicker(surveyData.communicationRating, () => {}, true)}
           </div>
 
           <div className="space-y-1 bg-white/60 dark:bg-slate-900/40 p-3 rounded-xl border border-emerald-100 dark:border-emerald-900/40">
-            <p className="text-[11px] font-bold text-slate-500 uppercase">Solution Quality</p>
+            <p className="text-[11px] font-bold text-slate-500 uppercase">
+              Solution Quality
+            </p>
             {renderStarPicker(surveyData.solutionRating, () => {}, true)}
+          </div>
+
+          <div className="space-y-1 bg-white/60 dark:bg-slate-900/40 p-3 rounded-xl border border-emerald-100 dark:border-emerald-900/40">
+            <p className="text-[11px] font-bold text-slate-500 uppercase">
+              Response Speed
+            </p>
+            {renderStarPicker(surveyData.speedRating, () => {}, true)}
           </div>
         </div>
 
         {surveyData.comment && (
           <p className="text-xs text-slate-600 dark:text-slate-300 italic bg-white/80 dark:bg-slate-900/60 p-3 rounded-xl border border-emerald-100 dark:border-emerald-900/40">
-            "{surveyData.comment}"
+            “{surveyData.comment}”
           </p>
         )}
       </div>
     );
   }
 
-  const isFormValid = rating > 0 && communicationRating > 0 && solutionRating > 0;
+  const isFormValid =
+    communicationRating > 0 && solutionRating > 0 && speedRating > 0;
 
   return (
     <form
@@ -142,18 +173,24 @@ export function CsatSurveyCard({ ticketId, ticketStatus }: CsatSurveyCardProps) 
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
         <div className="space-y-2 bg-white dark:bg-slate-800/80 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700">
-          <label className="text-xs font-bold text-slate-700 dark:text-slate-200 block">Overall Experience *</label>
-          {renderStarPicker(rating, setRating)}
-        </div>
-
-        <div className="space-y-2 bg-white dark:bg-slate-800/80 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700">
-          <label className="text-xs font-bold text-slate-700 dark:text-slate-200 block">Communication *</label>
+          <label className="text-xs font-bold text-slate-700 dark:text-slate-200 block">
+            Communication *
+          </label>
           {renderStarPicker(communicationRating, setCommunicationRating)}
         </div>
 
         <div className="space-y-2 bg-white dark:bg-slate-800/80 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700">
-          <label className="text-xs font-bold text-slate-700 dark:text-slate-200 block">Solution Quality *</label>
+          <label className="text-xs font-bold text-slate-700 dark:text-slate-200 block">
+            Solution Quality *
+          </label>
           {renderStarPicker(solutionRating, setSolutionRating)}
+        </div>
+
+        <div className="space-y-2 bg-white dark:bg-slate-800/80 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700">
+          <label className="text-xs font-bold text-slate-700 dark:text-slate-200 block">
+            Response Speed *
+          </label>
+          {renderStarPicker(speedRating, setSpeedRating)}
         </div>
       </div>
 

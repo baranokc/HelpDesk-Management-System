@@ -16,6 +16,15 @@ public sealed class TeamTicketStatsDto
     public int CompletedCount { get; set; }
 }
 
+public sealed class CsatStatsDto
+{
+    public double AverageRating { get; set; }
+    public double AverageCommunicationRating { get; set; }
+    public double AverageSolutionRating { get; set; }
+    public double AverageSpeedRating { get; set; }
+    public int TotalSurveysCount { get; set; }
+}
+
 public sealed class TeamMemberTicketDto
 {
     public Guid Id { get; set; }
@@ -40,6 +49,7 @@ public sealed class TeamMemberSummaryDto
     public string Title { get; set; } = string.Empty;
     public string RoleInTeam { get; set; } = string.Empty;
     public DateTime JoinedAt { get; set; }
+    public CsatStatsDto Csat { get; set; } = new();
     public IReadOnlyCollection<TeamMemberTicketDto> RecentTickets { get; set; } = [];
 }
 
@@ -50,6 +60,7 @@ public sealed class TeamManagementOverviewDto
     public string TeamDescription { get; set; } = string.Empty;
     public IReadOnlyCollection<ManagedTeamDto> ManagedTeams { get; set; } = [];
     public TeamTicketStatsDto Stats { get; set; } = new();
+    public CsatStatsDto Csat { get; set; } = new();
     public IReadOnlyCollection<TeamMemberSummaryDto> Members { get; set; } = [];
 }
 

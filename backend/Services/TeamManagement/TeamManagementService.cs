@@ -4,6 +4,7 @@ using backend.DTO.Common;
 using backend.DTO.TeamManagement;
 using backend.Entities;
 using Microsoft.EntityFrameworkCore;
+using SatisfactionSurveyEntity = backend.Entities.SatisfactionSurvey;
 using TicketEntity = backend.Entities.Ticket;
 
 namespace backend.Services.TeamManagement;
@@ -60,6 +61,12 @@ public sealed class TeamManagementService : ITeamManagementService
             teamTicketQuery,
             cancellationToken);
 
+        var csat = await GetCsatStatsAsync(
+            _db.SatisfactionSurveys
+                .AsNoTracking()
+                .Where(survey => survey.Ticket.TeamId == selectedTeamId),
+            cancellationToken);
+
         var memberRows = await _db.TeamMembers
             .AsNoTracking()
             .Where(member =>
@@ -85,6 +92,43 @@ public sealed class TeamManagementService : ITeamManagementService
             })
             .ToListAsync(cancellationToken);
 
+        var memberCsatRows = await _db.SatisfactionSurveys
+            .AsNoTracking()
+            .Where(survey =>
+                survey.Ticket.TeamId == selectedTeamId &&
+                survey.Ticket.AssignedToId.HasValue)
+            .GroupBy(survey => survey.Ticket.AssignedToId!.Value)
+            .Select(group => new
+            {
+                UserId = group.Key,
+                AverageRating = group.Average(survey => survey.Rating),
+                AverageCommunicationRating = group.Average(
+                    survey => survey.CommunicationRating),
+                AverageSolutionRating = group.Average(
+                    survey => survey.SolutionRating),
+                AverageSpeedRating = group.Average(
+                    survey => survey.SpeedRating),
+                TotalSurveysCount = group.Count()
+            })
+            .ToListAsync(cancellationToken);
+
+        var memberCsatByUserId = memberCsatRows.ToDictionary(
+            row => row.UserId,
+            row => new CsatStatsDto
+            {
+                AverageRating = Math.Round(row.AverageRating, 1),
+                AverageCommunicationRating = Math.Round(
+                    row.AverageCommunicationRating,
+                    1),
+                AverageSolutionRating = Math.Round(
+                    row.AverageSolutionRating,
+                    1),
+                AverageSpeedRating = Math.Round(
+                    row.AverageSpeedRating,
+                    1),
+                TotalSurveysCount = row.TotalSurveysCount
+            });
+
         var members = new List<TeamMemberSummaryDto>(memberRows.Count);
         foreach (var member in memberRows)
         {
@@ -102,6 +146,8 @@ public sealed class TeamManagementService : ITeamManagementService
                 Title = FormatTeamRole(member.RoleInTeam),
                 RoleInTeam = member.RoleInTeam.ToString(),
                 JoinedAt = member.JoinedAt,
+                Csat = memberCsatByUserId.GetValueOrDefault(member.UserId)
+                    ?? new CsatStatsDto(),
                 RecentTickets = recentTickets
             });
         }
@@ -113,6 +159,7 @@ public sealed class TeamManagementService : ITeamManagementService
             TeamDescription = team.Description,
             ManagedTeams = managedTeams,
             Stats = stats,
+            Csat = csat,
             Members = members
         };
     }
@@ -869,6 +916,43 @@ public sealed class TeamManagementService : ITeamManagementService
                 "Closed",
                 "Cancelled")
         };
+    }
+
+    private static async Task<CsatStatsDto> GetCsatStatsAsync(
+        IQueryable<SatisfactionSurveyEntity> query,
+        CancellationToken cancellationToken)
+    {
+        var stats = await query
+            .GroupBy(_ => 1)
+            .Select(group => new
+            {
+                AverageRating = group.Average(survey => survey.Rating),
+                AverageCommunicationRating = group.Average(
+                    survey => survey.CommunicationRating),
+                AverageSolutionRating = group.Average(
+                    survey => survey.SolutionRating),
+                AverageSpeedRating = group.Average(
+                    survey => survey.SpeedRating),
+                TotalSurveysCount = group.Count()
+            })
+            .SingleOrDefaultAsync(cancellationToken);
+
+        return stats is null
+            ? new CsatStatsDto()
+            : new CsatStatsDto
+            {
+                AverageRating = Math.Round(stats.AverageRating, 1),
+                AverageCommunicationRating = Math.Round(
+                    stats.AverageCommunicationRating,
+                    1),
+                AverageSolutionRating = Math.Round(
+                    stats.AverageSolutionRating,
+                    1),
+                AverageSpeedRating = Math.Round(
+                    stats.AverageSpeedRating,
+                    1),
+                TotalSurveysCount = stats.TotalSurveysCount
+            };
     }
 
     private static string FormatTeamRole(TeamMemberRole role)

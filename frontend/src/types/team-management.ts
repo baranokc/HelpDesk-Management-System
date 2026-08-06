@@ -12,6 +12,14 @@ export interface TeamTicketStatsDto {
   completedCount: number;
 }
 
+export interface CsatStatsDto {
+  averageRating: number;
+  averageCommunicationRating: number;
+  averageSolutionRating: number;
+  averageSpeedRating: number;
+  totalSurveysCount: number;
+}
+
 export interface TeamMemberTicketDto {
   id: string;
   ticketNumber: string;
@@ -34,6 +42,7 @@ export interface TeamMemberSummaryDto {
   title: string;
   roleInTeam: string;
   joinedAt: string;
+  csat: CsatStatsDto;
   recentTickets: TeamMemberTicketDto[];
 }
 
@@ -43,6 +52,7 @@ export interface TeamManagementOverviewDto {
   teamDescription: string;
   managedTeams: ManagedTeamDto[];
   stats: TeamTicketStatsDto;
+  csat: CsatStatsDto;
   members: TeamMemberSummaryDto[];
 }
 

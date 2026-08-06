@@ -9,5 +9,6 @@ public class TeamSatisfactionStatsDto
     public double AverageRating { get; set; }
     public double AverageCommunicationRating { get; set; }
     public double AverageSolutionRating { get; set; }
+    public double AverageSpeedRating { get; set; }
     public int TotalSurveysCount { get; set; }
 }

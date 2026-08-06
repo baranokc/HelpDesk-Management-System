@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Gauge, MessageSquare, Star, Zap } from "lucide-react";
 import { Alert } from "@/src/components/ui/Alert";
 import { TicketPriorityBadge } from "@/src/components/tickets/TicketPriorityBadge";
 import { TicketStatsCards } from "@/src/components/tickets/TicketStatsCards";
@@ -27,7 +28,7 @@ function OverviewSkeleton() {
         <div className="skeleton h-8 w-64 bg-slate-200 dark:bg-slate-800" />
         <div className="skeleton h-4 w-96 max-w-full bg-slate-200 dark:bg-slate-800" />
       </div>
-      <TicketStatsCards loading />
+      <TicketStatsCards loading showCsat />
       {[1, 2, 3].map((item) => (
         <div
           className="skeleton h-48 w-full rounded-xl bg-slate-200 dark:bg-slate-800"
@@ -42,8 +43,9 @@ export function TeamManagementContainer() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [selectedTeamId, setSelectedTeamId] = useState<string>();
-  const [overview, setOverview] =
-    useState<TeamManagementOverviewDto | null>(null);
+  const [overview, setOverview] = useState<TeamManagementOverviewDto | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,9 +65,8 @@ export function TeamManagementContainer() {
       setError(null);
 
       try {
-        const response = await teamManagementService.getOverview(
-          selectedTeamId,
-        );
+        const response =
+          await teamManagementService.getOverview(selectedTeamId);
 
         if (!cancelled) {
           setOverview(response);
@@ -139,10 +140,13 @@ export function TeamManagementContainer() {
       {overview && (
         <>
           <TicketStatsCards
+            csatAverage={overview.csat.averageRating}
+            csatSurveyCount={overview.csat.totalSurveysCount}
             completedCount={overview.stats.completedCount}
             inProgressCount={overview.stats.inProgressCount}
             loading={loading}
             openCount={overview.stats.openCount}
+            showCsat
             totalCount={overview.stats.totalCount}
             totalDescription="Tickets assigned to this team"
           />
@@ -153,7 +157,8 @@ export function TeamManagementContainer() {
                 Users
               </h2>
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                Active team members and their five most recently assigned active tickets.
+                Active team members and their five most recently assigned active
+                tickets.
               </p>
             </div>
 
@@ -169,8 +174,8 @@ export function TeamManagementContainer() {
                     href={`/tickets/team-management/${member.teamMemberId}`}
                     key={member.teamMemberId}
                   >
-                    <div className="flex flex-col gap-2 border-b border-slate-100 px-5 py-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
+                    <div className="flex flex-col gap-4 border-b border-slate-100 px-5 py-4 dark:border-slate-800 lg:flex-row lg:items-center">
+                      <div className="min-w-0 lg:flex-1">
                         <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400">
                           {member.fullName} - {member.title}
                         </h3>
@@ -178,6 +183,44 @@ export function TeamManagementContainer() {
                           Team member since {formatDate(member.joinedAt)}
                         </p>
                       </div>
+
+                      <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2.5 dark:border-slate-700 dark:bg-slate-800/50">
+                        {member.csat.totalSurveysCount > 0 ? (
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
+                            <span className="flex items-center gap-1.5 font-bold text-amber-700 dark:text-amber-400">
+                              <Star className="h-4 w-4 fill-current" />
+                              Overall {member.csat.averageRating.toFixed(1)}
+                            </span>
+                            <span className="flex items-center gap-1.5 font-semibold text-blue-700 dark:text-blue-400">
+                              <MessageSquare className="h-4 w-4" />
+                              Communication{" "}
+                              {member.csat.averageCommunicationRating.toFixed(
+                                1,
+                              )}
+                            </span>
+                            <span className="flex items-center gap-1.5 font-semibold text-emerald-700 dark:text-emerald-400">
+                              <Zap className="h-4 w-4" />
+                              Solution{" "}
+                              {member.csat.averageSolutionRating.toFixed(1)}
+                            </span>
+                            <span className="flex items-center gap-1.5 font-semibold text-violet-700 dark:text-violet-400">
+                              <Gauge className="h-4 w-4" />
+                              Speed {member.csat.averageSpeedRating.toFixed(1)}
+                            </span>
+                            <span className="font-medium text-slate-500 dark:text-slate-400">
+                              {member.csat.totalSurveysCount}{" "}
+                              {member.csat.totalSurveysCount === 1
+                                ? "survey"
+                                : "surveys"}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                            No CSAT surveys yet
+                          </span>
+                        )}
+                      </div>
+
                       <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
                         View member details →
                       </span>
