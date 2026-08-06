@@ -80,7 +80,6 @@ export default function AdminLayout({
     );
   }
 
-  // Management Hub sırasına göre sıralandı:
   const navItems = [
     { label: "Overview", href: "/admin", icon: <OverviewIcon /> },
     { label: "User Management", href: "/admin/users", icon: <UsersIcon /> },
@@ -114,12 +113,16 @@ export default function AdminLayout({
                   href={item.href}
                   className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
                     isActive
-                      ? "bg-primary text-white shadow-sm"
+                      ? "bg-primary text-white shadow-sm [&_svg]:!text-white"
                       : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
                   }`}
                 >
-                  {item.icon}
-                  {item.label}
+                  <span className={`flex h-6 w-6 items-center justify-center rounded-lg transition-colors ${
+                    isActive ? "bg-white/20" : ""
+                  }`}>
+                    {item.icon}
+                  </span>
+                  <span>{item.label}</span>
                 </Link>
               );
             })}

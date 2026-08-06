@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { Alert } from "@/src/components/ui/Alert";
 import { Card } from "@/src/components/ui/Card";
 import { LoadingSpinner } from "@/src/components/ui/LoadingSpinner";
+import { ConfirmModal } from "@/src/components/ui/ConfirmModal";
 import { getApiErrorMessage } from "@/src/lib/api";
 import { teamService } from "@/src/services/teamService";
 import type { TeamDto, CreateTeamDto, EligibleAgentDto } from "@/src/types/team";
@@ -67,6 +68,10 @@ export default function TeamsPage() {
   const [editingTeam, setEditingTeam] = useState<TeamDto | null>(null);
   const [formData, setFormData] = useState<CreateTeamDto>({ name: "", description: "" });
   const [submitting, setSubmitting] = useState(false);
+
+  // Silme Modalı için State'ler
+  const [teamToDelete, setTeamToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [deletingTeam, setDeletingTeam] = useState(false);
 
   const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
   const [selectedTeamDetails, setSelectedTeamDetails] = useState<TeamDto | null>(null);
@@ -185,15 +190,25 @@ export default function TeamsPage() {
     }
   };
 
-  const handleDeleteTeam = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to delete "${name}" team?`)) return;
+  // Silme Modalını Tetikleme
+  const openDeleteModal = (id: string, name: string) => {
+    setTeamToDelete({ id, name });
+  };
 
+  // Onaylandığında Silme İşlemini Gerçekleştirme
+  const handleConfirmDeleteTeam = async () => {
+    if (!teamToDelete) return;
+
+    setDeletingTeam(true);
     setError(null);
     try {
-      await teamService.deleteTeam(id);
-      setTeams((prev) => prev.filter((t) => t.id !== id));
+      await teamService.deleteTeam(teamToDelete.id);
+      setTeams((prev) => prev.filter((t) => t.id !== teamToDelete.id));
+      setTeamToDelete(null);
     } catch (err: unknown) {
       setError(getApiErrorMessage(err, "Failed to delete team."));
+    } finally {
+      setDeletingTeam(false);
     }
   };
 
@@ -425,7 +440,7 @@ export default function TeamsPage() {
                         <EditIcon />
                       </button>
                       <button
-                        onClick={() => void handleDeleteTeam(team.id, team.name)}
+                        onClick={() => openDeleteModal(team.id, team.name)}
                         className="btn btn-xs btn-ghost text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400"
                         title="Delete Team"
                       >
@@ -439,6 +454,19 @@ export default function TeamsPage() {
           </div>
         )}
       </Card>
+
+{/* SİLME ONAY MODALI */}
+<ConfirmModal
+  open={!!teamToDelete}
+  title="Delete Team"
+  description={`Are you sure you want to delete "${teamToDelete?.name || ""}" team? This action cannot be undone.`}
+  confirmLabel="Yes, Delete Team"
+  cancelLabel="Cancel"
+  variant="danger"
+  loading={deletingTeam}
+  onClose={() => setTeamToDelete(null)}
+  onConfirm={handleConfirmDeleteTeam}
+/>
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
