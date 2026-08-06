@@ -278,3 +278,4 @@ C:/Users/Mesutcan/source/repos/HelpDesk-Management-System/backend/obj/Debug/net1
 /Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/obj/Debug/net10.0/backend.pdb
 /Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/obj/Debug/net10.0/backend.genruntimeconfig.cache
 /Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/obj/Debug/net10.0/ref/backend.dll
+/Users/baranokcuoglu/Desktop/HelpDesk-Management-System/backend/bin/Debug/net10.0/backend.staticwebassets.runtime.json
