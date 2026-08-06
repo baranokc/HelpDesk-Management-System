@@ -10,6 +10,25 @@ import { Avatar } from "@/src/components/ui/Avatar";
 import { useAuth } from "@/src/context/AuthContext";
 import { getTicketViewLabel } from "@/src/lib/ticketPermissions";
 
+// Rol bazlı renk sınıfı belirleyici
+const getRoleTextColor = (role?: string): string => {
+  const normalized = role?.toLowerCase().trim();
+  switch (normalized) {
+    case "admin":
+    case "0":
+      return "text-purple-600 dark:text-purple-400 font-bold";
+    case "teamleader":
+    case "1":
+      return "text-rose-600 dark:text-rose-400 font-bold";
+    case "supportagent":
+    case "2":
+      return "text-blue-600 dark:text-blue-400 font-bold";
+    default:
+      // Dark mode'da kaybolmayan koyu gri/açık gri siyah dengesi
+      return "text-slate-900 dark:text-slate-200 font-semibold";
+  }
+};
+
 export default function MainLayout({
   children,
 }: {
@@ -41,7 +60,7 @@ export default function MainLayout({
     user?.email?.split("@")[0] ||
     "User";
 
-  const userRole = user?.role || "Member";
+  const userRole = user?.role || "User";
 
   if (loading || !isAuthenticated) {
     return (
@@ -67,7 +86,7 @@ export default function MainLayout({
               href="/tickets"
               className="inline-flex items-center gap-2 text-xl font-bold text-slate-900 dark:text-white"
             >
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-content font-black text-sm">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 text-white font-black text-sm shadow-sm">
                 HD
               </div>
               <span>HelpDesk</span>
@@ -124,26 +143,27 @@ export default function MainLayout({
               <div
                 tabIndex={0}
                 role="button"
-                className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-1.5 pr-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
+                className="flex items-center gap-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-1.5 pr-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
               >
                 <Avatar
                   avatarUrl={user?.avatarUrl}
-                  className="shadow-sm"
+                  className="shadow-sm border border-slate-200 dark:border-slate-700"
                   name={displayName}
                   size="sm"
                 />
 
-                <div className="hidden sm:flex flex-col text-left max-w-[120px]">
+                <div className="hidden sm:flex flex-col text-left max-w-[130px]">
                   <span className="text-xs font-bold text-slate-900 dark:text-white leading-tight truncate">
                     {displayName}
                   </span>
-                  <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 leading-tight capitalize">
+                  {/* Dinamik Rol Rengi */}
+                  <span className={`text-[10px] leading-tight capitalize truncate ${getRoleTextColor(user?.role)}`}>
                     {userRole}
                   </span>
                 </div>
 
                 <svg
-                  className="h-4 w-4 text-slate-400 dark:text-slate-500"
+                  className="h-4 w-4 text-slate-400 dark:text-slate-500 ml-0.5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -204,7 +224,7 @@ export default function MainLayout({
                       className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg py-2"
                     >
                       <svg
-                        className="h-4 w-4 text-blue-600 dark:text-blue-400"
+                        className="h-4 w-4 text-purple-600 dark:text-purple-400"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -228,13 +248,13 @@ export default function MainLayout({
                       href="/tickets/team-management"
                       className={`flex items-center gap-2 rounded-lg py-2 text-xs font-semibold ${
                         isTeamManagementPage
-                          ? "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300"
+                          ? "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"
                           : "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
                       }`}
                     >
                       <span
                         aria-hidden="true"
-                        className="w-4 text-center text-base leading-none text-slate-500 dark:text-slate-400"
+                        className="w-4 text-center text-base leading-none text-rose-500 dark:text-rose-400"
                       >
                         ⚙
                       </span>
@@ -256,7 +276,7 @@ export default function MainLayout({
                     >
                       <span
                         aria-hidden="true"
-                        className="w-4 text-center text-base leading-none text-slate-500 dark:text-slate-400"
+                        className="w-4 text-center text-base leading-none text-blue-500 dark:text-blue-400"
                       >
                         ▤
                       </span>

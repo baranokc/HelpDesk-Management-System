@@ -32,7 +32,7 @@ const normalizeRole = (roleData: any): string => {
   return r;
 };
 
-// Akıllı Profil Resmi / Avatar Bileşeni (wwwroot + Port 5269 Uyumlu)
+// Akıllı Profil Resmi Bileşeni (Light & Dark Uyumlu)
 function UserAvatar({ avatarSrc, fullName }: { avatarSrc?: string | null; fullName: string }) {
   const [hasError, setHasError] = useState(false);
 
@@ -46,11 +46,9 @@ function UserAvatar({ avatarSrc, fullName }: { avatarSrc?: string | null; fullNa
     if (src.startsWith("http://") || src.startsWith("https://") || src.startsWith("data:")) {
       return src;
     }
-    
     const baseURL = api.defaults.baseURL || "http://localhost:5269/api";
     const cleanBase = baseURL.replace(/\/api\/?$/, "");
     const cleanSrc = src.startsWith("/") ? src : `/${src}`;
-
     return `${cleanBase}${cleanSrc}`;
   };
 
@@ -58,7 +56,7 @@ function UserAvatar({ avatarSrc, fullName }: { avatarSrc?: string | null; fullNa
 
   if (!finalSrc || hasError) {
     return (
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-xs font-black text-white shadow-sm">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-xs font-black text-white shadow-sm ring-1 ring-slate-200 dark:ring-slate-700/80">
         {getInitials(fullName)}
       </div>
     );
@@ -69,7 +67,7 @@ function UserAvatar({ avatarSrc, fullName }: { avatarSrc?: string | null; fullNa
       src={finalSrc}
       alt={fullName}
       onError={() => setHasError(true)}
-      className="h-9 w-9 shrink-0 rounded-full object-cover border border-slate-200 shadow-sm"
+      className="h-9 w-9 shrink-0 rounded-full object-cover border border-slate-200 dark:border-slate-700 shadow-sm"
     />
   );
 }
@@ -146,7 +144,6 @@ export default function AdminUsersPage() {
     }
   };
 
-  // İstatistikler
   const stats = useMemo(() => {
     const total = users.length;
     const admins = users.filter((u) => normalizeRole(u.role) === "Admin").length;
@@ -158,7 +155,6 @@ export default function AdminUsersPage() {
     return { total, admins, support, standardUsers };
   }, [users]);
 
-  // Filtreleme ve Hiyerarşik Sıralama (Admin -> TeamLeader -> SupportAgent -> User)
   const filteredUsers = useMemo(() => {
     const rolePriority: Record<string, number> = {
       Admin: 1,
@@ -190,29 +186,29 @@ export default function AdminUsersPage() {
     switch (role) {
       case "Admin":
         return (
-          <span className="inline-flex items-center gap-1 rounded-lg bg-purple-50 px-2.5 py-1 text-xs font-bold text-purple-700 border border-purple-200">
-            <ShieldAlert className="h-3.5 w-3.5 text-purple-600" />
+          <span className="inline-flex items-center gap-1 rounded-lg bg-purple-50 dark:bg-purple-950/60 px-2.5 py-1 text-xs font-bold text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/80">
+            <ShieldAlert className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
             Admin
           </span>
         );
       case "TeamLeader":
         return (
-          <span className="inline-flex items-center gap-1 rounded-lg bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700 border border-rose-200">
-            <ShieldCheck className="h-3.5 w-3.5 text-rose-600" />
+          <span className="inline-flex items-center gap-1 rounded-lg bg-rose-50 dark:bg-rose-950/60 px-2.5 py-1 text-xs font-bold text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/80">
+            <ShieldCheck className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
             Team Leader
           </span>
         );
       case "SupportAgent":
         return (
-          <span className="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700 border border-blue-200">
-            <UserCheck className="h-3.5 w-3.5 text-blue-600" />
+          <span className="inline-flex items-center gap-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 px-2.5 py-1 text-xs font-bold text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/80">
+            <UserCheck className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
             Support Agent
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 border border-slate-200">
-            <Users className="h-3.5 w-3.5 text-slate-500" />
+          <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+            <Users className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
             User
           </span>
         );
@@ -221,12 +217,13 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-6">
+      {/* ÜST BİLGİ VE REFRESH */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
             User Management
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Manage access roles. Team leaders are appointed from Team Management.
           </p>
         </div>
@@ -234,7 +231,7 @@ export default function AdminUsersPage() {
         <button
           onClick={() => void fetchUsers()}
           disabled={loading}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-50 cursor-pointer"
+          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm transition-all hover:bg-slate-50 dark:hover:bg-slate-800/80 cursor-pointer"
         >
           <RotateCw className={`h-3.5 w-3.5 ${loading ? "animate-spin text-indigo-500" : ""}`} />
           <span>Refresh</span>
@@ -243,39 +240,42 @@ export default function AdminUsersPage() {
 
       {/* METRİK KARTLARI */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex items-center justify-between">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Users</span>
-            <div className="text-2xl font-black text-slate-900 mt-0.5">{stats.total}</div>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Total Users</span>
+            <div className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{stats.total}</div>
           </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400">
             <Users className="h-5 w-5" />
           </div>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex items-center justify-between">
+
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Administrators</span>
-            <div className="text-2xl font-black text-slate-900 mt-0.5">{stats.admins}</div>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Administrators</span>
+            <div className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{stats.admins}</div>
           </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400">
             <ShieldAlert className="h-5 w-5" />
           </div>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex items-center justify-between">
+
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Support Staff</span>
-            <div className="text-2xl font-black text-slate-900 mt-0.5">{stats.support}</div>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Support Staff</span>
+            <div className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{stats.support}</div>
           </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400">
             <UserCheck className="h-5 w-5" />
           </div>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex items-center justify-between">
+
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Standard Users</span>
-            <div className="text-2xl font-black text-slate-900 mt-0.5">{stats.standardUsers}</div>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Standard Users</span>
+            <div className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{stats.standardUsers}</div>
           </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
             <Users className="h-5 w-5" />
           </div>
         </div>
@@ -285,22 +285,22 @@ export default function AdminUsersPage() {
       {successMsg && <Alert variant="success">{successMsg}</Alert>}
 
       {/* ARAMA VE FİLTRE BAR */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="relative w-full sm:w-80">
           <input
             type="text"
             placeholder="Search by name or email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs pl-9 pr-3 py-2 focus:outline-none focus:border-indigo-500"
+            className="w-full rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-xs pl-9 pr-3 py-2 focus:outline-none focus:border-indigo-500 dark:focus:border-indigo-400"
           />
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 dark:text-slate-500" />
         </div>
         <div className="flex items-center gap-3 self-end sm:self-auto">
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs px-3 py-2 font-semibold focus:outline-none focus:border-indigo-500"
+            className="rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs px-3 py-2 font-semibold focus:outline-none focus:border-indigo-500 dark:focus:border-indigo-400"
           >
             <option value="ALL">All Roles</option>
             <option value="Admin">Admin</option>
@@ -308,27 +308,27 @@ export default function AdminUsersPage() {
             <option value="SupportAgent">Support Agent</option>
             <option value="User">User</option>
           </select>
-          <span className="text-xs font-semibold text-slate-500">
-            Showing: <b className="text-slate-800">{filteredUsers.length}</b> / {users.length}
+          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+            Showing: <b className="text-slate-800 dark:text-slate-200">{filteredUsers.length}</b> / {users.length}
           </span>
         </div>
       </div>
 
       {/* KULLANICI TABLOSU */}
-      <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-sm">
         {loading ? (
           <div className="p-12 flex justify-center">
             <LoadingSpinner label="Loading users list..." />
           </div>
         ) : filteredUsers.length === 0 ? (
           <div className="p-12 text-center space-y-2">
-            <UserX className="h-10 w-10 mx-auto text-slate-300" />
-            <p className="text-sm font-semibold text-slate-600">No users match your criteria.</p>
+            <UserX className="h-10 w-10 mx-auto text-slate-300 dark:text-slate-600" />
+            <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">No users match your criteria.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-[11px] uppercase font-bold text-slate-500 border-b border-slate-100">
+              <thead className="bg-slate-50/80 dark:bg-slate-800/50 text-[11px] uppercase font-bold text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
                 <tr>
                   <th className="px-6 py-3.5">User</th>
                   <th className="px-6 py-3.5">Email</th>
@@ -337,7 +337,7 @@ export default function AdminUsersPage() {
                   <th className="px-6 py-3.5 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-medium">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
                 {filteredUsers.map((u) => {
                   const isSelf = currentUser?.id === u.id;
                   const isUpdating = updatingUserId === u.id;
@@ -345,15 +345,15 @@ export default function AdminUsersPage() {
                   const avatarSrc = u.avatarUrl || u.profilePictureUrl;
 
                   return (
-                    <tr key={u.id} className="hover:bg-slate-50/60 transition-colors">
+                    <tr key={u.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <UserAvatar avatarSrc={avatarSrc} fullName={u.fullName} />
                           <div>
-                            <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                            <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
                               <span>{u.fullName}</span>
                               {isSelf && (
-                                <span className="rounded bg-indigo-100 text-indigo-700 text-[10px] font-extrabold px-1.5 py-0.5">
+                                <span className="rounded bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 text-[10px] font-extrabold px-1.5 py-0.5 border border-indigo-200 dark:border-indigo-800/80">
                                   You
                                 </span>
                               )}
@@ -362,9 +362,9 @@ export default function AdminUsersPage() {
                         </div>
                       </td>
 
-                      <td className="px-6 py-4 text-slate-600">
+                      <td className="px-6 py-4 text-slate-600 dark:text-slate-400">
                         <div className="flex items-center gap-1.5">
-                          <Mail className="h-3.5 w-3.5 text-slate-400" />
+                          <Mail className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
                           <span>{u.email}</span>
                         </div>
                       </td>
@@ -376,7 +376,7 @@ export default function AdminUsersPage() {
                           value={currentNormRole}
                           disabled={isSelf || isUpdating}
                           onChange={(e) => void handleRoleChange(u, e.target.value)}
-                          className="rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-800 px-3 py-1.5 focus:outline-none focus:border-indigo-500 disabled:opacity-50 cursor-pointer"
+                          className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-200 px-3 py-1.5 focus:outline-none focus:border-indigo-500 dark:focus:border-indigo-400 disabled:opacity-50 cursor-pointer"
                         >
                           <option value="Admin">Admin</option>
                           <option value="TeamLeader" disabled={currentNormRole !== "TeamLeader"}>
@@ -391,7 +391,7 @@ export default function AdminUsersPage() {
                         <button
                           onClick={() => setUserToDelete(u)}
                           disabled={isSelf || isUpdating}
-                          className="inline-flex items-center justify-center h-8 w-8 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors disabled:opacity-30 cursor-pointer"
+                          className="inline-flex items-center justify-center h-8 w-8 rounded-xl text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors disabled:opacity-30 cursor-pointer"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
