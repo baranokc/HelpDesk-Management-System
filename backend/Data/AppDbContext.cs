@@ -47,6 +47,7 @@ public class AppDbContext : DbContext
     public DbSet<SlaPolicy> SlaPolicies { get; set; } = null!;
     public DbSet<SlaRecord> SlaRecords { get; set; } = null!;
     public DbSet<SlaPause> SlaPauses { get; set; } = null!;
+    public DbSet<FaqItem> FaqItems { get; set; } = null!;
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -59,7 +60,7 @@ public class AppDbContext : DbContext
         {
             if (httpContext.User?.Identity?.IsAuthenticated == true)
             {
-                var userIdClaim = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? 
+                var userIdClaim = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ??
                                   httpContext.User.FindFirstValue("sub");
                 if (Guid.TryParse(userIdClaim, out var parsedId))
                 {
