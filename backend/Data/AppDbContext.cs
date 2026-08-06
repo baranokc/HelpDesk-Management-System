@@ -54,6 +54,7 @@ public class AppDbContext : DbContext
     public DbSet<SlaHoliday> SlaHolidays { get; set; } = null!;
     public DbSet<SatisfactionSurvey> SatisfactionSurveys { get; set; } = null!;
     public DbSet<FaqItem> FaqItems { get; set; } = null!;
+    public DbSet<PasswordResetToken> PasswordResetTokens { get; set; } = null!;
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -83,7 +84,10 @@ public class AppDbContext : DbContext
 
         foreach (var entry in ChangeTracker.Entries())
         {
-            if (entry.Entity is AuditLog || entry.State == EntityState.Detached || entry.State == EntityState.Unchanged)
+            if (entry.Entity is AuditLog ||
+                entry.Entity is PasswordResetToken ||
+                entry.State == EntityState.Detached ||
+                entry.State == EntityState.Unchanged)
                 continue;
 
             var auditEntry = new AuditLog
@@ -117,6 +121,9 @@ public class AppDbContext : DbContext
                 if (property.IsTemporary) continue;
 
                 string propertyName = property.Metadata.Name;
+
+                if (entry.Entity is User && propertyName == nameof(User.PasswordHash))
+                    continue;
 
                 if (property.Metadata.IsPrimaryKey())
                 {
@@ -182,6 +189,21 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<UserRole>()
             .HasKey(ur => new { ur.UserId, ur.RoleId });
+
+        modelBuilder.Entity<PasswordResetToken>(entity =>
+        {
+            entity.Property(token => token.TokenHash)
+                .HasMaxLength(64)
+                .IsRequired();
+
+            entity.HasOne(token => token.User)
+                .WithMany()
+                .HasForeignKey(token => token.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(token => token.TokenHash).IsUnique();
+            entity.HasIndex(token => new { token.UserId, token.ExpiresAt, token.UsedAt });
+        });
         
         modelBuilder.Entity<User>()
             .HasOne(u => u.Manager)

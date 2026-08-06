@@ -54,12 +54,9 @@ public class TicketAssignmentService : ITicketAssignmentService
                 "Team was not found or is inactive.");
         }
 
-        if (currentUserRole == Roles.TeamLeader &&
-            ticket.TeamId != assignmentDto.TeamId)
-        {
-            throw new UnauthorizedAccessException(
-                "Team leaders can assign tickets only within the ticket's current team.");
-        }
+        var sourceTeamId = ticket.TeamId;
+        var isCrossTeamTransfer =
+            sourceTeamId.HasValue && sourceTeamId.Value != team.Id;
 
         var assignedByQuery = _context.TeamMembers
             .Include(tm => tm.User)
@@ -75,8 +72,14 @@ public class TicketAssignmentService : ITicketAssignmentService
 
         if (currentUserRole == Roles.TeamLeader)
         {
+            if (!sourceTeamId.HasValue)
+            {
+                throw new UnauthorizedAccessException(
+                    "A team leader can transfer only a ticket that belongs to their team.");
+            }
+
             assignedByQuery = assignedByQuery.Where(tm =>
-                tm.TeamId == assignmentDto.TeamId &&
+                tm.TeamId == sourceTeamId.Value &&
                 tm.RoleInTeam == TeamMemberRole.TeamLeader);
         }
         else
@@ -93,34 +96,42 @@ public class TicketAssignmentService : ITicketAssignmentService
             if (currentUserRole == Roles.TeamLeader)
             {
                 throw new UnauthorizedAccessException(
-                    "You are not an active leader of the selected team.");
+                    "You are not an active leader of the ticket's current team.");
             }
 
             throw new ArgumentException(
                 "The logged-in user is not an active team member.");
         }
 
-        var targetAssignedToId =
-            assignmentDto.TeamMemberId ?? assignedBy.Id;
+        // Cross-team transfers always enter the destination team's queue.
+        // The destination team leader chooses the new assignee afterwards.
+        var targetAssignedToId = isCrossTeamTransfer
+            ? (Guid?)null
+            : assignmentDto.TeamMemberId ?? assignedBy.Id;
 
-        var assignedTo = await _context.TeamMembers
-            .Include(tm => tm.User)
-            .FirstOrDefaultAsync(
-                tm =>
-                    tm.Id == targetAssignedToId &&
-                    tm.TeamId == assignmentDto.TeamId &&
-                    tm.IsActive &&
-                    tm.User.IsActive &&
-                    tm.User.UserRoles.Any(userRole =>
-                        userRole.Role.IsActive &&
-                        (userRole.Role.Name == Roles.SupportAgent ||
-                         userRole.Role.Name == Roles.TeamLeader)),
-                cancellationToken);
+        TeamMember? assignedTo = null;
 
-        if (assignedTo is null)
+        if (targetAssignedToId.HasValue)
         {
-            throw new ArgumentException(
-                "The selected team member was not found or does not belong to the selected team.");
+            assignedTo = await _context.TeamMembers
+                .Include(tm => tm.User)
+                .FirstOrDefaultAsync(
+                    tm =>
+                        tm.Id == targetAssignedToId.Value &&
+                        tm.TeamId == assignmentDto.TeamId &&
+                        tm.IsActive &&
+                        tm.User.IsActive &&
+                        tm.User.UserRoles.Any(userRole =>
+                            userRole.Role.IsActive &&
+                            (userRole.Role.Name == Roles.SupportAgent ||
+                             userRole.Role.Name == Roles.TeamLeader)),
+                    cancellationToken);
+
+            if (assignedTo is null)
+            {
+                throw new ArgumentException(
+                    "The selected team member was not found or does not belong to the selected team.");
+            }
         }
 
         var changedAt = DateTime.UtcNow;
@@ -128,21 +139,22 @@ public class TicketAssignmentService : ITicketAssignmentService
             ? $"{ticket.AssignedTo.Name} {ticket.AssignedTo.LastName}"
             : ticket.Team?.Name ?? "Unassigned";
 
-        var newAssignment =
-            $"{team.Name} / {assignedTo.User.Name} {assignedTo.User.LastName}";
+        var newAssignment = assignedTo is null
+            ? $"{team.Name} / Team queue"
+            : $"{team.Name} / {assignedTo.User.Name} {assignedTo.User.LastName}";
 
         var assignment = new Entities.TicketAssignment
         {
             Id = Guid.NewGuid(),
             TicketId = ticket.Id,
             TeamId = team.Id,
-            AssignedToId = assignedTo.Id,
+            AssignedToId = assignedTo?.Id,
             AssignedById = assignedBy.Id,
             AssignedAt = changedAt
         };
 
         ticket.TeamId = team.Id;
-        ticket.AssignedToId = assignedTo.UserId;
+        ticket.AssignedToId = assignedTo?.UserId;
 
         if (ticket.Status.Name.Equals(
                 "Open",
@@ -192,11 +204,21 @@ public class TicketAssignmentService : ITicketAssignmentService
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        await _notificationService.NotifyTicketAssignedAsync(
-            ticket.Id,
-            assignedTo.UserId,
-            createDto.AssignedById,
-            cancellationToken);
+        if (assignedTo is not null)
+        {
+            await _notificationService.NotifyTicketAssignedAsync(
+                ticket.Id,
+                assignedTo.UserId,
+                createDto.AssignedById,
+                cancellationToken);
+        }
+        else
+        {
+            await _notificationService.NotifyTeamLeadersOfTransferredTicketAsync(
+                ticket.Id,
+                createDto.AssignedById,
+                cancellationToken);
+        }
 
         return new TicketAssignmentResponseDto
         {
@@ -204,9 +226,10 @@ public class TicketAssignmentService : ITicketAssignmentService
             TicketId = ticket.Id,
             TeamId = team.Id,
             TeamName = team.Name,
-            TeamMemberId = assignedTo.Id,
-            TeamMemberName =
-                $"{assignedTo.User.Name} {assignedTo.User.LastName}",
+            TeamMemberId = assignedTo?.Id,
+            TeamMemberName = assignedTo is null
+                ? null
+                : $"{assignedTo.User.Name} {assignedTo.User.LastName}",
             AssignedById = assignedBy.Id,
             AssignedByName =
                 $"{assignedBy.User.Name} {assignedBy.User.LastName}",
@@ -230,9 +253,10 @@ public class TicketAssignmentService : ITicketAssignmentService
                 TeamId = x.TeamId,
                 TeamName = x.Team.Name,
                 TeamMemberId = x.AssignedToId,
-                TeamMemberName =
-                    x.AssignedToTeamMember.User.Name + " " +
-                    x.AssignedToTeamMember.User.LastName,
+                TeamMemberName = x.AssignedToTeamMember == null
+                    ? null
+                    : x.AssignedToTeamMember.User.Name + " " +
+                      x.AssignedToTeamMember.User.LastName,
                 AssignedById = x.AssignedById,
                 AssignedByName =
                     x.AssignedByTeamMember.User.Name + " " +
@@ -256,9 +280,10 @@ public class TicketAssignmentService : ITicketAssignmentService
                 TeamId = x.TeamId,
                 TeamName = x.Team.Name,
                 TeamMemberId = x.AssignedToId,
-                TeamMemberName =
-                    x.AssignedToTeamMember.User.Name + " " +
-                    x.AssignedToTeamMember.User.LastName,
+                TeamMemberName = x.AssignedToTeamMember == null
+                    ? null
+                    : x.AssignedToTeamMember.User.Name + " " +
+                      x.AssignedToTeamMember.User.LastName,
                 AssignedById = x.AssignedById,
                 AssignedByName =
                     x.AssignedByTeamMember.User.Name + " " +

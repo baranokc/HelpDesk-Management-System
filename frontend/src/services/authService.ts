@@ -21,6 +21,26 @@ export const authService = {
         const response = await api.post<UserResponse>('/auth/register',dto);
         return response.data;
     },
+    forgotPassword: async (email: string):
+    Promise<{ message: string }> => {
+        const response = await api.post<{ message: string }>(
+            '/auth/forgot-password',
+            { email }
+        );
+        return response.data;
+    },
+    resetPassword: async (dto: {
+        email: string;
+        token: string;
+        newPassword: string;
+        confirmNewPassword: string;
+    }): Promise<{ message: string }> => {
+        const response = await api.post<{ message: string }>(
+            '/auth/reset-password',
+            dto
+        );
+        return response.data;
+    },
     refreshSession: async (): Promise<LoginResponse> => {
         const response = await api.post<LoginResponse>('/auth/refresh');
 

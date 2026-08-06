@@ -50,17 +50,6 @@ public class LookupService : ILookupService
             .AsNoTracking()
             .Where(team => team.IsActive);
 
-        if (currentUserRole == Roles.TeamLeader)
-        {
-            query = query.Where(team =>
-                _db.TeamMembers.Any(teamMember =>
-                    teamMember.TeamId == team.Id &&
-                    teamMember.UserId == currentUserId &&
-                    teamMember.RoleInTeam == TeamMemberRole.TeamLeader &&
-                    teamMember.IsActive &&
-                    teamMember.User.IsActive));
-        }
-
         return await query
             .OrderBy(team => team.Name)
             .Select(team => new LookupItemDto<Guid>

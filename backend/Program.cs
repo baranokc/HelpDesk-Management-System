@@ -26,6 +26,8 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Http.Features;
 using backend.Services.SatisfactionSurvey;
+using backend.Services.Email;
+using backend.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,6 +45,12 @@ builder.Services.AddCors(options =>
 builder.Services.AddOpenApi();
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<TicketCreateDtoValidator>();
+
+builder.Services
+    .AddOptions<EmailSettings>()
+    .Bind(builder.Configuration.GetSection(EmailSettings.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 
 builder.Services.AddDbContext<AppDbContext>(options =>options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddHttpContextAccessor();
@@ -71,7 +79,7 @@ builder.Services.AddSwaggerGen(options =>
         Type = SecuritySchemeType.Http,
         Scheme = "bearer",
         BearerFormat = "JWT",
-        Description = "JWT token değerini giriniz."
+        Description = "JWT token deÄŸerini giriniz."
     });
 
     options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
@@ -81,6 +89,7 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 builder.Services.AddScoped<ILookupService, LookupService>();
+builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITicketService, TicketService>();
 builder.Services.AddScoped<ITicketAssignmentService, TicketAssignmentService>();

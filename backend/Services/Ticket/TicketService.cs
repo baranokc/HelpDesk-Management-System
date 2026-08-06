@@ -200,9 +200,7 @@ public class TicketService : ITicketService
                 record.FirstResponseAt,
                 record.ResolutionDueAt,
                 record.ResolutionAt,
-                record.IsPaused,
-                CalendarName = record.SlaCalendar.Name,
-                record.SlaCalendar.TimeZoneId
+                record.IsPaused
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -213,22 +211,18 @@ public class TicketService : ITicketService
         {
             sla = new TicketSlaSummaryDto
             {
-                CalendarName = slaRecord.CalendarName,
-                TimeZoneId = slaRecord.TimeZoneId,
                 FirstResponseDueAt = slaRecord.FirstResponseDueAt,
                 FirstResponseAt = slaRecord.FirstResponseAt,
                 FirstResponseStatus = GetSlaStatus(
                     slaRecord.FirstResponseDueAt,
                     slaRecord.FirstResponseAt,
-                    now,
-                    slaRecord.IsPaused),
+                    now),
                 ResolutionDueAt = slaRecord.ResolutionDueAt,
                 ResolutionAt = slaRecord.ResolutionAt,
                 ResolutionStatus = GetSlaStatus(
                     slaRecord.ResolutionDueAt,
                     slaRecord.ResolutionAt,
-                    now,
-                    slaRecord.IsPaused),
+                    now),
                 IsPaused = slaRecord.IsPaused
             };
         }
@@ -592,6 +586,44 @@ public class TicketService : ITicketService
             dto.UrgencyLevelId,
             cancellationToken);
 
+        var targetCategory = await _db.TicketCategories
+            .AsNoTracking()
+            .Where(category =>
+                category.Id == dto.CategoryId &&
+                category.IsActive)
+            .Select(category => new
+            {
+                category.DefaultTeamId,
+                TeamName = category.DefaultTeam == null
+                    ? null
+                    : category.DefaultTeam.Name,
+                HasActiveDefaultTeam =
+                    category.DefaultTeam != null &&
+                    category.DefaultTeam.IsActive
+            })
+            .SingleAsync(cancellationToken);
+
+        if (!targetCategory.DefaultTeamId.HasValue ||
+            !targetCategory.HasActiveDefaultTeam)
+        {
+            throw new InvalidOperationException(
+                "The selected category is not assigned to an active support team.");
+        }
+
+        var targetTeamId = targetCategory.DefaultTeamId.Value;
+        var teamChanged = ticket.TeamId != targetTeamId;
+
+        string? previousTeamName = null;
+
+        if (teamChanged && ticket.TeamId.HasValue)
+        {
+            previousTeamName = await _db.Teams
+                .AsNoTracking()
+                .Where(team => team.Id == ticket.TeamId.Value)
+                .Select(team => team.Name)
+                .SingleOrDefaultAsync(cancellationToken);
+        }
+
         ticket.TicketTitle = dto.TicketTitle.Trim();
         ticket.TicketDescription = dto.TicketDescription.Trim();
         ticket.Subject = dto.Subject.Trim();
@@ -601,7 +633,35 @@ public class TicketService : ITicketService
         ticket.ImpactLevelId = dto.ImpactLevelId;
         ticket.UrgencyLevelId = dto.UrgencyLevelId;
 
+        if (teamChanged)
+        {
+            ticket.TeamId = targetTeamId;
+            ticket.AssignedToId = null;
+
+            _db.TicketHistories.Add(new Entities.TicketHistory
+            {
+                TicketId = ticket.Id,
+                ActionType = Entities.TicketHistoryActionType.Assigned,
+                FieldName = "Assignment",
+                OldValue = previousTeamName ?? "Unassigned",
+                NewValue = $"{targetCategory.TeamName} / Team queue",
+                Description =
+                    "Automatically transferred because the ticket category was changed. " +
+                    "The previous user assignment was removed.",
+                ChangedById = changedByUserId,
+                ChangedAt = DateTime.UtcNow
+            });
+        }
+
         await _db.SaveChangesAsync(cancellationToken);
+
+        if (teamChanged)
+        {
+            await _notificationService.NotifyTeamLeadersOfTransferredTicketAsync(
+                ticket.Id,
+                changedByUserId,
+                cancellationToken);
+        }
 
         return await _db.Tickets
             .AsNoTracking()
@@ -740,14 +800,10 @@ public class TicketService : ITicketService
     private static string GetSlaStatus(
         DateTime dueAt,
         DateTime? completedAt,
-        DateTime now,
-        bool isPaused)
+        DateTime now)
     {
         if (completedAt.HasValue)
             return completedAt.Value <= dueAt ? "Met" : "Breached";
-
-        if (isPaused)
-            return "Pending";
 
         return now <= dueAt ? "Pending" : "Breached";
     }

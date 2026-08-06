@@ -764,7 +764,8 @@ public sealed class TeamManagementService : ITeamManagementService
                 AssignedAt = _db.TicketAssignments
                     .Where(assignment =>
                         assignment.TicketId == ticket.Id &&
-                        teamMemberIds.Contains(assignment.AssignedToId))
+                        assignment.AssignedToId.HasValue &&
+                        teamMemberIds.Contains(assignment.AssignedToId.Value))
                     .Max(assignment => (DateTime?)assignment.AssignedAt)
             })
             .OrderByDescending(item =>

@@ -162,6 +162,55 @@ public sealed class NotificationService : INotificationService
             cancellationToken);
     }
 
+    public async Task NotifyTeamLeadersOfTransferredTicketAsync(
+        Guid ticketId,
+        Guid actorUserId,
+        CancellationToken cancellationToken = default)
+    {
+        var ticket = await _db.Tickets
+            .AsNoTracking()
+            .Where(item =>
+                item.Id == ticketId &&
+                !item.IsDeleted &&
+                item.TeamId.HasValue)
+            .Select(item => new
+            {
+                item.Id,
+                item.TicketNumber,
+                item.TicketTitle,
+                TeamId = item.TeamId!.Value,
+                TeamName = item.Team!.Name
+            })
+            .SingleOrDefaultAsync(cancellationToken);
+
+        if (ticket is null)
+            return;
+
+        var leaderUserIds = await _db.TeamMembers
+            .AsNoTracking()
+            .Where(teamMember =>
+                teamMember.TeamId == ticket.TeamId &&
+                teamMember.RoleInTeam == TeamMemberRole.TeamLeader &&
+                teamMember.IsActive &&
+                teamMember.Team.IsActive &&
+                teamMember.User.IsActive &&
+                teamMember.User.Role != null &&
+                teamMember.User.Role.Name == Roles.TeamLeader &&
+                teamMember.User.Role.IsActive)
+            .Select(teamMember => teamMember.UserId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        await CreateAndSendAsync(
+            leaderUserIds,
+            actorUserId,
+            NotificationTypes.TicketAssigned,
+            "Ticket transferred to your team",
+            $"{ticket.TicketNumber}: {ticket.TicketTitle} was transferred to {ticket.TeamName} and is waiting for assignment.",
+            ticket.Id,
+            cancellationToken);
+    }
+
     public async Task NotifyTicketAssignedAsync(
         Guid ticketId,
         Guid assignedToUserId,

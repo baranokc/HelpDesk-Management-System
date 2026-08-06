@@ -18,11 +18,13 @@ import { Select } from "@/src/components/ui/Select";
 import { Textarea } from "@/src/components/ui/Textarea";
 
 interface TicketAssignmentFormProps {
+  currentTeamId?: string | null;
   loading?: boolean;
   onSubmit: (dto: TicketAssignmentDto) => Promise<void>;
 }
 
 export function TicketAssignmentForm({
+  currentTeamId,
   loading = false,
   onSubmit,
 }: TicketAssignmentFormProps) {
@@ -32,15 +34,23 @@ export function TicketAssignmentForm({
   const [teamMemberId, setTeamMemberId] = useState("");
   const [reason, setReason] = useState("");
   const [validationErrors, setValidationErrors] = useState<FormErrors>({});
+  const isCrossTeamTransfer = Boolean(
+    currentTeamId && teamId && currentTeamId !== teamId,
+  );
 
   useEffect(() => {
     lookupService.getTeams().then(setTeams);
   }, []);
 
   useEffect(() => {
-    if (!teamId) return;
+    if (!teamId || isCrossTeamTransfer) {
+      setMembers([]);
+      setTeamMemberId("");
+      return;
+    }
+
     lookupService.getTeamMembers(teamId).then(setMembers);
-  }, [teamId]);
+  }, [isCrossTeamTransfer, teamId]);
 
   const submit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -78,7 +88,7 @@ export function TicketAssignmentForm({
         value={teamId}
       />
       <Select
-        disabled={!teamId}
+        disabled={!teamId || isCrossTeamTransfer}
         error={validationErrors.teamMemberId}
         label="Team Member"
         onChange={(event) => setTeamMemberId(event.target.value)}
@@ -86,7 +96,11 @@ export function TicketAssignmentForm({
           value: member.teamMemberId,
           label: `${member.fullName} — ${member.roleInTeam}`,
         }))}
-        placeholder="Only assign to a team member"
+        placeholder={
+          isCrossTeamTransfer
+            ? "The new team leader will assign a member"
+            : "Only assign to a team member"
+        }
         value={teamMemberId}
       />
       <Textarea
@@ -99,7 +113,7 @@ export function TicketAssignmentForm({
       />
       <div className="flex justify-end">
         <Button loading={loading} type="submit">
-          Assign ticket
+          {isCrossTeamTransfer ? "Transfer to team" : "Assign ticket"}
         </Button>
       </div>
     </form>

@@ -58,6 +58,39 @@ public class AuthController : ControllerBase
         }
     }
 
+    [AllowAnonymous]
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword(
+        [FromBody] ForgotPasswordRequest dto,
+        CancellationToken cancellationToken)
+    {
+        await _authService.ForgotPasswordAsync(dto, cancellationToken);
+
+        return Ok(new
+        {
+            message = "If an active account exists for this email address, a password reset link has been sent."
+        });
+    }
+
+    [AllowAnonymous]
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword(
+        [FromBody] ResetPasswordRequest dto,
+        CancellationToken cancellationToken)
+    {
+        var result = await _authService.ResetPasswordAsync(dto, cancellationToken);
+
+        if (!result)
+        {
+            return BadRequest(new
+            {
+                message = "The password reset link is invalid, expired or has already been used."
+            });
+        }
+
+        return Ok(new { message = "Your password has been reset successfully." });
+    }
+
     [Authorize]
     [HttpPost("refresh")]
     public async Task<IActionResult> RefreshSession()
@@ -76,5 +109,3 @@ public class AuthController : ControllerBase
             : Ok(result);
     }
 }
-
-

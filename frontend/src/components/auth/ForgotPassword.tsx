@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Alert } from "@/src/components/ui/Alert";
 import { Button } from "@/src/components/ui/Button";
+import { authService } from "@/src/services/authService";
 
 interface ForgotPasswordModalProps {
   isOpen: boolean;
@@ -27,9 +28,9 @@ export function ForgotPasswordModal({
     setSuccess(false);
 
     try {
-      // Backend authService.forgotPassword(email) buraya bağlanabilir
+      await authService.forgotPassword(email.trim());
       setSuccess(true);
-    } catch (err: unknown) {
+    } catch {
       setError("Failed to send password reset email. Please try again.");
     } finally {
       setLoading(false);
@@ -49,7 +50,8 @@ export function ForgotPasswordModal({
         {success ? (
           <div className="mt-6 space-y-4">
             <Alert variant="success">
-              Password reset link has been sent to your email address.
+              If an active account exists for this email address, a password
+              reset link has been sent.
             </Alert>
 
             {/* BAŞARILI DURUMDAKİ CLOSE BUTONU */}

@@ -263,6 +263,7 @@ const canClose =
       >
         {errorAlert}
         <TicketAssignmentForm
+          currentTeamId={ticket.teamId}
           loading={loadingAction === "assign"}
           onSubmit={handleAssign}
         />

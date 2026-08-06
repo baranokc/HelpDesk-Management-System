@@ -28,6 +28,11 @@ public interface INotificationService
         Guid actorUserId,
         CancellationToken cancellationToken = default);
 
+    Task NotifyTeamLeadersOfTransferredTicketAsync(
+        Guid ticketId,
+        Guid actorUserId,
+        CancellationToken cancellationToken = default);
+
     Task NotifyTicketAssignedAsync(
         Guid ticketId,
         Guid assignedToUserId,
