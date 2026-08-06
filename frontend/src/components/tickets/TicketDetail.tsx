@@ -3,6 +3,7 @@ import { Card } from "@/src/components/ui/Card";
 import type { TicketDetailDto } from "@/src/types/ticket";
 import { TicketPriorityBadge } from "./TicketPriorityBadge";
 import { TicketStatusBadge } from "./TicketStatusBadge";
+import { CsatSurveyCard } from "@/src/components/tickets/CsatSurveyCard";
 
 function DetailItem({
   label,
@@ -122,5 +123,14 @@ export function TicketMetadata({ ticket }: { ticket: TicketDetailDto }) {
         )}
       </dl>
     </Card>
+  );
+}
+
+export function TicketSurvey({ ticket }: { ticket: TicketDetailDto }) {
+  return (
+    <CsatSurveyCard
+      ticketId={ticket.id}
+      ticketStatus={ticket.statusName}
+    />
   );
 }

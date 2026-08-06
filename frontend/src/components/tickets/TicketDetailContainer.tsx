@@ -21,7 +21,12 @@ import { CommentForm } from "./CommentForm";
 import { TicketActions } from "./TicketActions";
 import { TicketAttachments } from "./TicketAttachments";
 import { TicketComments } from "./TicketComments";
-import { TicketHeader, TicketMetadata, TicketSubject } from "./TicketDetail";
+import { 
+  TicketHeader, 
+  TicketMetadata, 
+  TicketSubject, 
+  TicketSurvey 
+} from "./TicketDetail";
 import { TicketDetailTabs } from "./TicketDetailTabs";
 import { TicketHistory } from "./TicketHistory";
 import { TicketSlaCard } from "./TicketSlaCard";
@@ -229,6 +234,9 @@ export function TicketDetailContainer({
         <div className="space-y-6 lg:col-span-2">
           <TicketHeader ticket={ticket} />
           <TicketSubject ticket={ticket} />
+          
+          {/* Müşteri Memnuniyeti Anketi Kartı */}
+          {user?.role === "User" && <TicketSurvey ticket={ticket} />}
 
           <div className="mt-8">
             <TicketDetailTabs
