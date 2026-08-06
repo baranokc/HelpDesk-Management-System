@@ -5,6 +5,22 @@ import type {
   TicketAttachmentUpdateDto,
 } from "@/src/types/ticket-attachment";
 
+async function getAttachmentBlob(
+  ticketId: string,
+  attachmentId: string,
+  signal?: AbortSignal,
+): Promise<Blob> {
+  const response = await api.get<Blob>(
+    `/tickets/${ticketId}/attachments/${attachmentId}/download`,
+    {
+      responseType: "blob",
+      signal,
+    },
+  );
+
+  return response.data;
+}
+
 export const ticketAttachmentService = {
   getByTicketId: async (
     ticketId: string,
@@ -55,14 +71,8 @@ export const ticketAttachmentService = {
     ticketId: string,
     attachment: TicketAttachmentDto,
   ): Promise<void> => {
-    const response = await api.get<Blob>(
-      `/tickets/${ticketId}/attachments/${attachment.id}/download`,
-      {
-        responseType: "blob",
-      },
-    );
-
-    const url = window.URL.createObjectURL(response.data);
+    const blob = await getAttachmentBlob(ticketId, attachment.id);
+    const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
 
     link.href = url;
@@ -74,6 +84,12 @@ export const ticketAttachmentService = {
 
     window.URL.revokeObjectURL(url);
   },
+
+  getPreviewBlob: async (
+    ticketId: string,
+    attachmentId: string,
+    signal?: AbortSignal,
+  ): Promise<Blob> => getAttachmentBlob(ticketId, attachmentId, signal),
 
   updateAttachment: async (
     ticketId: string,

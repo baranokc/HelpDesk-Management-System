@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/src/components/ui/Button";
+import { FileInput } from "@/src/components/ui/FileInput";
 import type { TicketCommentCreateDto } from "@/src/types/ticket-comment";
 
 interface CommentFormProps {
@@ -17,7 +18,7 @@ export function CommentForm({
 }: CommentFormProps) {
   const [commentText, setCommentText] = useState("");
   const [isInternal, setIsInternal] = useState(false);
-  const [files, setFiles] = useState<FileList | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,12 +27,12 @@ export function CommentForm({
     await onSubmit({
       comment: commentText,
       isInternal,
-      attachments: files ? Array.from(files) : [],
+      attachments: files,
     });
 
     setCommentText("");
     setIsInternal(false);
-    setFiles(null);
+    setFiles([]);
   };
 
   return (
@@ -54,21 +55,15 @@ export function CommentForm({
         </div>
       </div>
 
-      <div>
-        <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-300">
-          Files
-        </label>
-        <input
-          type="file"
-          multiple
-          onChange={(e) => setFiles(e.target.files)}
-          className="w-full text-sm text-slate-300 file:mr-4 file:rounded-md file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-blue-700"
-        />
-        <p className="mt-2.5 max-w-full break-words text-xs leading-relaxed text-slate-400">
-          Maximum 10 files; each file can be up to 10 MB. You can select files
-          together or add them in multiple selections.
-        </p>
-      </div>
+      <FileInput
+        accept=".jpg,.jpeg,.png,.pdf,.txt,.docx,.xlsx,.zip,.rar,.7z"
+        files={files}
+        label="Files"
+        maxFiles={10}
+        maxFileSizeMb={10}
+        multiple
+        onChange={setFiles}
+      />
 
       <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
         {canCreateInternal ? (

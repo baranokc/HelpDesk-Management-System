@@ -239,6 +239,7 @@ export function TicketDetailContainer({
                     attachments={ticketLevelAttachments}
                     downloadingAttachmentId={downloadingAttachmentId}
                     onDownload={handleDownloadAttachment}
+                    ticketId={ticketId}
                   />
                 </div>
               }
@@ -249,6 +250,7 @@ export function TicketDetailContainer({
                     comments={ticket.comments ?? []}
                     downloadingAttachmentId={downloadingAttachmentId}
                     onDownloadAttachment={handleDownloadAttachment}
+                    ticketId={ticketId}
                   />
                   <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-md transition-colors">
                     <h3 className="mb-4 text-base font-bold text-slate-900 dark:text-white">

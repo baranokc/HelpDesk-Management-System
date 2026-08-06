@@ -10,6 +10,7 @@ import { TicketAttachments } from "./TicketAttachments";
 
 interface TicketCommentsProps {
   comments: TicketCommentDto[];
+  ticketId: string;
   downloadingAttachmentId?: string | null;
   onDownloadAttachment: (attachment: TicketAttachmentDto) => Promise<void>;
   onEdit?: (comment: TicketCommentDto) => void;
@@ -84,6 +85,7 @@ function getCommentStyle(comment: TicketCommentDto) {
 
 export function TicketComments({
   comments,
+  ticketId,
   downloadingAttachmentId = null,
   onDownloadAttachment,
   canManage,
@@ -182,6 +184,7 @@ export function TicketComments({
                     onDelete={onDeleteAttachment}
                     onDownload={onDownloadAttachment}
                     onEditDescription={onEditAttachmentDescription}
+                    ticketId={ticketId}
                   />
                 </div>
               )}
