@@ -523,7 +523,7 @@ public class TicketController : ControllerBase
     }
 
     [HttpPost("{id:guid}/survey")]
-    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.TeamLeader},{Roles.User}")]
+    [Authorize(Roles = Roles.User)]
     [ProducesResponseType(typeof(SatisfactionSurveyDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -591,5 +591,14 @@ public class TicketController : ControllerBase
         }
 
         return Ok(survey);
+    }
+
+    [HttpGet("surveys/team-stats")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.TeamLeader}")]
+    [ProducesResponseType(typeof(List<TeamSatisfactionStatsDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetTeamSatisfactionStats(CancellationToken cancellationToken)
+    {
+        var stats = await _satisfactionSurveyService.GetTeamSatisfactionStatsAsync(cancellationToken);
+        return Ok(stats);
     }
 }

@@ -13,7 +13,8 @@ import {
   ServerOff,
   HelpCircle,
   History,
-  RotateCw
+  RotateCw,
+  Award
 } from "lucide-react";
 import { api } from "@/src/lib/api";
 
@@ -174,7 +175,7 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* YENİLENMİŞ MANAGEMENT HUB */}
+      {/* MANAGEMENT HUB */}
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -246,23 +247,54 @@ export default function AdminDashboardPage() {
             </div>
           </Link>
 
-          {/* Categories & Tags */}
+          {/* CSAT Analytics */}
           <Link
-            href="/admin/categories"
+            href="/admin/csat"
             className="group relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-amber-500/50 hover:shadow-lg hover:shadow-amber-500/5 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-amber-500/50 dark:hover:shadow-amber-500/10"
           >
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50 text-amber-600 transition-transform duration-300 group-hover:scale-110 dark:bg-amber-500/10 dark:text-amber-400">
-                  <FolderTree className="h-6 w-6" />
+                  <Award className="h-6 w-6" />
                 </div>
                 <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60">
-                  Taxonomy
+                  Quality
                 </span>
               </div>
               
               <div className="mt-4">
                 <h3 className="text-base font-bold text-slate-900 transition-colors group-hover:text-amber-600 dark:text-white dark:group-hover:text-amber-400">
+                  CSAT Analytics
+                </h3>
+                <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  View customer satisfaction ratings, team averages, and communication/solution breakdown scores.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400">
+              <span>View CSAT Reports</span>
+              <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            </div>
+          </Link>
+
+          {/* Categories & Tags */}
+          <Link
+            href="/admin/categories"
+            className="group relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-emerald-500/50 hover:shadow-lg hover:shadow-emerald-500/5 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-emerald-500/50 dark:hover:shadow-emerald-500/10"
+          >
+            <div>
+              <div className="flex items-center justify-between">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 transition-transform duration-300 group-hover:scale-110 dark:bg-emerald-500/10 dark:text-emerald-400">
+                  <FolderTree className="h-6 w-6" />
+                </div>
+                <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60">
+                  Taxonomy
+                </span>
+              </div>
+              
+              <div className="mt-4">
+                <h3 className="text-base font-bold text-slate-900 transition-colors group-hover:text-emerald-600 dark:text-white dark:group-hover:text-emerald-400">
                   Categories & Tags
                 </h3>
                 <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
@@ -271,7 +303,7 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            <div className="mt-6 flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400">
+            <div className="mt-6 flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
               <span>Manage Categories</span>
               <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </div>
@@ -311,20 +343,20 @@ export default function AdminDashboardPage() {
           {/* Audit Logs */}
           <Link
             href="/admin/audit-logs"
-            className="group relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-emerald-500/50 hover:shadow-lg hover:shadow-emerald-500/5 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-emerald-500/50 dark:hover:shadow-emerald-500/10"
+            className="group relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-slate-500/50 hover:shadow-lg hover:shadow-slate-500/5 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-500/50 dark:hover:shadow-slate-500/10"
           >
             <div>
               <div className="flex items-center justify-between">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 transition-transform duration-300 group-hover:scale-110 dark:bg-emerald-500/10 dark:text-emerald-400">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-600 transition-transform duration-300 group-hover:scale-110 dark:bg-slate-800 dark:text-slate-300">
                   <History className="h-6 w-6" />
                 </div>
-                <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60">
+                <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                   Security & Audit
                 </span>
               </div>
               
               <div className="mt-4">
-                <h3 className="text-base font-bold text-slate-900 transition-colors group-hover:text-emerald-600 dark:text-white dark:group-hover:text-emerald-400">
+                <h3 className="text-base font-bold text-slate-900 transition-colors group-hover:text-slate-600 dark:text-white dark:group-hover:text-slate-300">
                   Audit Logs
                 </h3>
                 <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
@@ -333,7 +365,7 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            <div className="mt-6 flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+            <div className="mt-6 flex items-center gap-1 text-xs font-bold text-slate-600 dark:text-slate-300">
               <span>View Audit Trail</span>
               <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </div>
