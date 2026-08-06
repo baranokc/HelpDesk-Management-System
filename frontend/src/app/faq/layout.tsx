@@ -1,6 +1,6 @@
 import MainLayout from "@/src/components/layouts/MainLayout";
 
-export default function TicketsLayout({
+export default function FaqLayout({
   children,
 }: {
   children: React.ReactNode;
