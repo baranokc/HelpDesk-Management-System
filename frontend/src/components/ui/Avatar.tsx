@@ -47,7 +47,8 @@ export function Avatar({
 
   const classes = [
     "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full",
-    "bg-blue-600 font-bold text-white ring-1 ring-slate-200 dark:ring-slate-700",
+    // DÜZELTME: bg-blue-600 yerine tatlı mor-indigo gradyanı eklendi
+    "bg-gradient-to-br from-indigo-500 to-purple-600 font-black text-white ring-1 ring-slate-200 dark:ring-slate-700/80 shadow-sm",
     sizeClasses[size],
     className,
   ]

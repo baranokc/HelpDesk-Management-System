@@ -303,14 +303,15 @@ export function TicketDetailContainer({
       </div>
 
       <ConfirmModal
-        confirmLabel="Delete ticket"
-        danger
+        open={deleteModalOpen}
+        title="Delete this ticket?"
         description="This ticket will be removed from active ticket lists. This action cannot be undone from the interface."
+        confirmText="Delete ticket"
+        cancelText="Cancel"
+        variant="danger"
         loading={deleting}
         onClose={() => setDeleteModalOpen(false)}
         onConfirm={handleDelete}
-        open={deleteModalOpen}
-        title="Delete this ticket?"
       />
     </div>
   );
