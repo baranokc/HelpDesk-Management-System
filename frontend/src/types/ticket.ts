@@ -29,6 +29,8 @@ export interface TicketPagedResultDto extends PagedResultDto<TicketListDto> {
 export type TicketSlaStatus = "Pending" | "Met" | "Breached";
 
 export interface TicketSlaSummaryDto {
+  calendarName: string;
+  timeZoneId: string;
   firstResponseDueAt: string;
   firstResponseAt?: string | null;
   firstResponseStatus: TicketSlaStatus;

@@ -18,4 +18,16 @@ public interface ISlaService
         TicketEntity ticket,
         DateTime resolvedAt,
         CancellationToken cancellationToken = default);
+
+    Task<bool> PauseAsync(
+        TicketEntity ticket,
+        Guid pausedById,
+        string reason,
+        DateTimeOffset pausedAt,
+        CancellationToken cancellationToken = default);
+
+    Task<bool> ResumeAsync(
+        TicketEntity ticket,
+        DateTimeOffset resumedAt,
+        CancellationToken cancellationToken = default);
 }

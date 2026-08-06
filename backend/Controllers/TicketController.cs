@@ -594,7 +594,7 @@ public class TicketController : ControllerBase
     }
 
     [HttpGet("surveys/team-stats")]
-    [Authorize(Roles = $"{Roles.Admin},{Roles.TeamLeader}")]
+    [Authorize(Roles = Roles.Admin)]
     [ProducesResponseType(typeof(List<TeamSatisfactionStatsDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetTeamSatisfactionStats(CancellationToken cancellationToken)
     {

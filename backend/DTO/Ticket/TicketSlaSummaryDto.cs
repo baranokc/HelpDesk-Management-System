@@ -2,6 +2,8 @@ namespace backend.DTO.Ticket;
 
 public class TicketSlaSummaryDto
 {
+    public string CalendarName { get; set; } = string.Empty;
+    public string TimeZoneId { get; set; } = string.Empty;
     public DateTime FirstResponseDueAt { get; set; }
     public DateTime? FirstResponseAt { get; set; }
     public string FirstResponseStatus { get; set; } = string.Empty;

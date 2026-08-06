@@ -2,6 +2,7 @@ using backend.Data;
 using backend.DTO.Ticket;
 using backend.Entities;
 using backend.Services.Notification;
+using backend.Services.Sla;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -12,13 +13,16 @@ public class TicketStatusService : ITicketStatusService
 {
     private readonly AppDbContext _context;
     private readonly INotificationService _notificationService;
+    private readonly ISlaService _slaService;
 
     public TicketStatusService(
         AppDbContext context,
-        INotificationService notificationService)
+        INotificationService notificationService,
+        ISlaService slaService)
     {
         _context = context;
         _notificationService = notificationService;
+        _slaService = slaService;
     }
 
     public async Task<bool> UpdateTicketStatusAsync(
@@ -62,8 +66,32 @@ public class TicketStatusService : ITicketStatusService
 
         string oldStatusName = ticket.Status?.Name ?? "Didn't specified";
         string newStatusName = newStatus.Name;
+        var changedAt = DateTime.UtcNow;
+        var wasWaitingForUser = oldStatusName.Equals(
+            "Waiting for User",
+            StringComparison.OrdinalIgnoreCase);
+        var isWaitingForUser = newStatusName.Equals(
+            "Waiting for User",
+            StringComparison.OrdinalIgnoreCase);
 
         ticket.StatusId = newStatusId;
+
+        if (!wasWaitingForUser && isWaitingForUser)
+        {
+            await _slaService.PauseAsync(
+                ticket,
+                changedById,
+                "Ticket status changed to Waiting for User.",
+                ToUtcOffset(changedAt),
+                cancellationToken);
+        }
+        else if (wasWaitingForUser && !isWaitingForUser)
+        {
+            await _slaService.ResumeAsync(
+                ticket,
+                ToUtcOffset(changedAt),
+                cancellationToken);
+        }
 
         var historyLog = new Entities.TicketHistory
         {
@@ -77,7 +105,7 @@ public class TicketStatusService : ITicketStatusService
                 ? null
                 : note.Trim(),
             ChangedById = changedById,
-            ChangedAt = DateTime.UtcNow
+            ChangedAt = changedAt
         };
 
         _context.TicketHistories.Add(historyLog);
@@ -89,6 +117,13 @@ public class TicketStatusService : ITicketStatusService
             cancellationToken);
 
         return true;
+    }
+
+    private static DateTimeOffset ToUtcOffset(DateTime value)
+    {
+        return new DateTimeOffset(
+            DateTime.SpecifyKind(value, DateTimeKind.Utc),
+            TimeSpan.Zero);
     }
 
     public async Task<List<TicketHistoryDto>> GetTicketHistoryAsync(Guid ticketId)

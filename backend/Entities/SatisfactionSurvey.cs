@@ -6,7 +6,7 @@ public class SatisfactionSurvey
     public Ticket Ticket { get; set; } = null!;
     public Guid UserId {get; set; }
     public User User { get; set; } = null!;
-    public int Rating {get; set; }
+    public double Rating { get; set; }
     public int CommunicationRating {get; set; }
     public int SolutionRating {get; set; }
     public int SpeedRating { get; set; }

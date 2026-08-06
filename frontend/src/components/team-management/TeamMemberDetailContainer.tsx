@@ -13,7 +13,12 @@ import { useAuth } from "@/src/context/AuthContext";
 import { getApiErrorMessage } from "@/src/lib/api";
 import { teamManagementService } from "@/src/services/teamManagementService";
 import type { PagedResultDto } from "@/src/types/common";
-import type { TeamMemberDetailDto, TeamMemberTicketDto, } from "@/src/types/team-management";
+import type {
+  TeamMemberDetailDto,
+  TeamMemberLeaveDto,
+  TeamMemberShiftDto,
+  TeamMemberTicketDto,
+} from "@/src/types/team-management";
 
 interface TeamMemberDetailContainerProps {
   teamMemberId?: string;
@@ -27,10 +32,49 @@ function formatDate(value: string): string {
   }).format(new Date(value));
 }
 
-function getRelationship(
-  created: boolean,
-  assigned: boolean,
-): string {
+function formatDateOnly(value: string): string {
+  return new Intl.DateTimeFormat("tr-TR", {
+    dateStyle: "medium",
+  }).format(new Date(`${value}T00:00:00`));
+}
+
+interface ShiftRow {
+  dayOfWeek: number;
+  label: string;
+  enabled: boolean;
+  startTime: string;
+  endTime: string;
+}
+
+const weekDays = [
+  { dayOfWeek: 1, label: "Monday" },
+  { dayOfWeek: 2, label: "Tuesday" },
+  { dayOfWeek: 3, label: "Wednesday" },
+  { dayOfWeek: 4, label: "Thursday" },
+  { dayOfWeek: 5, label: "Friday" },
+  { dayOfWeek: 6, label: "Saturday" },
+  { dayOfWeek: 0, label: "Sunday" },
+] as const;
+
+function normalizeTime(value: string): string {
+  return value.slice(0, 5);
+}
+
+function buildShiftRows(shifts: TeamMemberShiftDto[]): ShiftRow[] {
+  return weekDays.map((day) => {
+    const shift = shifts.find((item) => item.dayOfWeek === day.dayOfWeek);
+
+    return {
+      dayOfWeek: day.dayOfWeek,
+      label: day.label,
+      enabled: Boolean(shift),
+      startTime: shift ? normalizeTime(shift.startTime) : "09:00",
+      endTime: shift ? normalizeTime(shift.endTime) : "18:00",
+    };
+  });
+}
+
+function getRelationship(created: boolean, assigned: boolean): string {
   if (created && assigned) return "Created & Assigned";
   if (assigned) return "Assigned";
   return "Created";
@@ -159,6 +203,16 @@ export function TeamMemberDetailContainer({
   const [detail, setDetail] = useState<TeamMemberDetailDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [shiftRows, setShiftRows] = useState<ShiftRow[]>(() =>
+    buildShiftRows([]),
+  );
+  const [scheduleSaving, setScheduleSaving] = useState(false);
+  const [leaveSaving, setLeaveSaving] = useState(false);
+  const [leaveStartDate, setLeaveStartDate] = useState("");
+  const [leaveEndDate, setLeaveEndDate] = useState("");
+  const [leaveReason, setLeaveReason] = useState("");
+  const [editingLeaveId, setEditingLeaveId] = useState<string | null>(null);
   const requiredRole = selfView ? "SupportAgent" : "TeamLeader";
   const canViewPage = user?.role === requiredRole;
 
@@ -191,7 +245,10 @@ export function TeamMemberDetailContainer({
               25,
             );
 
-        if (!cancelled) setDetail(response);
+        if (!cancelled) {
+          setDetail(response);
+          setShiftRows(buildShiftRows(response.schedule.shifts));
+        }
       } catch (requestError: unknown) {
         if (!cancelled) {
           setError(
@@ -220,6 +277,173 @@ export function TeamMemberDetailContainer({
     teamMemberId,
   ]);
 
+  const updateShiftRow = (dayOfWeek: number, changes: Partial<ShiftRow>) => {
+    setShiftRows((current) =>
+      current.map((row) =>
+        row.dayOfWeek === dayOfWeek ? { ...row, ...changes } : row,
+      ),
+    );
+  };
+
+  const handleSaveSchedule = async () => {
+    if (!detail || selfView) return;
+
+    setScheduleSaving(true);
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      const schedule = await teamManagementService.updateMemberSchedule(
+        detail.teamMemberId,
+        {
+          shifts: shiftRows
+            .filter((row) => row.enabled)
+            .map((row) => ({
+              dayOfWeek: row.dayOfWeek,
+              startTime: `${row.startTime}:00`,
+              endTime: `${row.endTime}:00`,
+            })),
+        },
+      );
+
+      setDetail((current) => (current ? { ...current, schedule } : current));
+      setShiftRows(buildShiftRows(schedule.shifts));
+      setSuccessMessage("The weekly shift schedule was updated.");
+    } catch (requestError: unknown) {
+      setError(
+        getApiErrorMessage(
+          requestError,
+          "Failed to update the weekly shift schedule.",
+        ),
+      );
+    } finally {
+      setScheduleSaving(false);
+    }
+  };
+
+  const handleAddLeave = async () => {
+    if (!detail || selfView) return;
+
+    setLeaveSaving(true);
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      const request = {
+        startDate: leaveStartDate,
+        endDate: leaveEndDate,
+        reason: leaveReason.trim(),
+      };
+
+      const leave = editingLeaveId
+        ? await teamManagementService.updateMemberLeave(
+            detail.teamMemberId,
+            editingLeaveId,
+            request,
+          )
+        : await teamManagementService.addMemberLeave(
+            detail.teamMemberId,
+            request,
+          );
+
+      setDetail((current) =>
+        current
+          ? {
+              ...current,
+              schedule: {
+                ...current.schedule,
+                leaves: editingLeaveId
+                  ? current.schedule.leaves.map((item) =>
+                      item.id === leave.id ? leave : item,
+                    )
+                  : [leave, ...current.schedule.leaves],
+              },
+            }
+          : current,
+      );
+      setLeaveStartDate("");
+      setLeaveEndDate("");
+      setLeaveReason("");
+      setEditingLeaveId(null);
+      setSuccessMessage(
+        editingLeaveId
+          ? "The leave period was updated."
+          : "The leave period was added.",
+      );
+    } catch (requestError: unknown) {
+      setError(
+        getApiErrorMessage(
+          requestError,
+          editingLeaveId
+            ? "Failed to update the leave period."
+            : "Failed to add the leave period.",
+        ),
+      );
+    } finally {
+      setLeaveSaving(false);
+    }
+  };
+
+  const handleEditLeave = (leave: TeamMemberLeaveDto) => {
+    setEditingLeaveId(leave.id);
+    setLeaveStartDate(leave.startDate);
+    setLeaveEndDate(leave.endDate);
+    setLeaveReason(leave.reason);
+    setError(null);
+    setSuccessMessage(null);
+  };
+
+  const cancelLeaveEdit = () => {
+    setEditingLeaveId(null);
+    setLeaveStartDate("");
+    setLeaveEndDate("");
+    setLeaveReason("");
+  };
+
+  const handleDeleteLeave = async (leaveId: string) => {
+    if (!detail || selfView) return;
+
+    const confirmed = window.confirm(
+      "Remove this leave period from the team member?",
+    );
+    if (!confirmed) return;
+
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      await teamManagementService.deleteMemberLeave(
+        detail.teamMemberId,
+        leaveId,
+      );
+
+      setDetail((current) =>
+        current
+          ? {
+              ...current,
+              schedule: {
+                ...current.schedule,
+                leaves: current.schedule.leaves.filter(
+                  (leave) => leave.id !== leaveId,
+                ),
+              },
+            }
+          : current,
+      );
+      if (editingLeaveId === leaveId) {
+        setEditingLeaveId(null);
+        setLeaveStartDate("");
+        setLeaveEndDate("");
+        setLeaveReason("");
+      }
+      setSuccessMessage("The leave period was removed.");
+    } catch (requestError: unknown) {
+      setError(
+        getApiErrorMessage(requestError, "Failed to remove the leave period."),
+      );
+    }
+  };
+
   if (authLoading || !canViewPage) {
     return (
       <div className="flex min-h-80 items-center justify-center">
@@ -238,6 +462,7 @@ export function TeamMemberDetailContainer({
       </Link>
 
       {error && <Alert variant="error">{error}</Alert>}
+      {successMessage && <Alert variant="success">{successMessage}</Alert>}
 
       {!detail && loading && (
         <div className="space-y-6">
@@ -310,6 +535,246 @@ export function TeamMemberDetailContainer({
               </div>
             </dl>
           </section>
+
+          {!selfView && (
+            <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <div className="flex flex-col gap-3 border-b border-slate-100 pb-5 dark:border-slate-800 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                    Work Schedule & Leave
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                    {selfView
+                      ? "Your weekly shift and registered leave periods."
+                      : "Manage this team member's weekly shift and leave periods."}
+                  </p>
+                </div>
+                <span className="badge badge-outline h-8 border-slate-300 px-3 font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-300">
+                  {detail.schedule.timeZoneId}
+                </span>
+              </div>
+
+              <div className="mt-5 overflow-x-auto">
+                <table className="table min-w-[650px]">
+                  <thead className="text-xs font-semibold uppercase text-slate-600 dark:text-slate-400">
+                    <tr>
+                      <th>Working Day</th>
+                      <th>Start</th>
+                      <th>End</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {shiftRows.map((row) => (
+                      <tr key={row.dayOfWeek}>
+                        <td>
+                          <label className="flex cursor-pointer items-center gap-3 font-semibold text-slate-800 dark:text-slate-200">
+                            <input
+                              checked={row.enabled}
+                              className="checkbox checkbox-sm checkbox-primary"
+                              disabled={selfView}
+                              onChange={(event) =>
+                                updateShiftRow(row.dayOfWeek, {
+                                  enabled: event.target.checked,
+                                })
+                              }
+                              type="checkbox"
+                            />
+                            {row.label}
+                          </label>
+                        </td>
+                        <td>
+                          <input
+                            className="input input-bordered input-sm w-36 bg-white dark:border-slate-700 dark:bg-slate-950"
+                            disabled={selfView || !row.enabled}
+                            onChange={(event) =>
+                              updateShiftRow(row.dayOfWeek, {
+                                startTime: event.target.value,
+                              })
+                            }
+                            type="time"
+                            value={row.startTime}
+                          />
+                        </td>
+                        <td>
+                          <input
+                            className="input input-bordered input-sm w-36 bg-white dark:border-slate-700 dark:bg-slate-950"
+                            disabled={selfView || !row.enabled}
+                            onChange={(event) =>
+                              updateShiftRow(row.dayOfWeek, {
+                                endTime: event.target.value,
+                              })
+                            }
+                            type="time"
+                            value={row.endTime}
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {!selfView && (
+                <div className="mt-5 flex justify-end">
+                  <button
+                    className="btn btn-outline btn-primary min-w-40"
+                    disabled={scheduleSaving}
+                    onClick={() => void handleSaveSchedule()}
+                    type="button"
+                  >
+                    {scheduleSaving ? (
+                      <span className="loading loading-spinner loading-sm" />
+                    ) : (
+                      "Save Shift Schedule"
+                    )}
+                  </button>
+                </div>
+              )}
+
+              <div className="mt-8 border-t border-slate-100 pt-6 dark:border-slate-800">
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  Leave Periods
+                </h3>
+
+                {!selfView && (
+                  <div className="mt-4 grid gap-4 rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/50 md:grid-cols-2 xl:grid-cols-4">
+                    <label className="form-control">
+                      <span className="mb-1 text-xs font-semibold uppercase text-slate-500">
+                        Start Date
+                      </span>
+                      <input
+                        className="input input-bordered bg-white dark:border-slate-700 dark:bg-slate-950"
+                        onChange={(event) =>
+                          setLeaveStartDate(event.target.value)
+                        }
+                        type="date"
+                        value={leaveStartDate}
+                      />
+                    </label>
+                    <label className="form-control">
+                      <span className="mb-1 text-xs font-semibold uppercase text-slate-500">
+                        End Date
+                      </span>
+                      <input
+                        className="input input-bordered bg-white dark:border-slate-700 dark:bg-slate-950"
+                        min={leaveStartDate || undefined}
+                        onChange={(event) =>
+                          setLeaveEndDate(event.target.value)
+                        }
+                        type="date"
+                        value={leaveEndDate}
+                      />
+                    </label>
+                    <label className="form-control md:col-span-2 xl:col-span-1">
+                      <span className="mb-1 text-xs font-semibold uppercase text-slate-500">
+                        Reason
+                      </span>
+                      <input
+                        className="input input-bordered bg-white dark:border-slate-700 dark:bg-slate-950"
+                        maxLength={500}
+                        onChange={(event) => setLeaveReason(event.target.value)}
+                        placeholder="Annual leave, medical leave..."
+                        type="text"
+                        value={leaveReason}
+                      />
+                    </label>
+                    <div className="flex items-end gap-2">
+                      {editingLeaveId && (
+                        <button
+                          className="btn btn-outline"
+                          disabled={leaveSaving}
+                          onClick={cancelLeaveEdit}
+                          type="button"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                      <button
+                        className="btn btn-outline btn-primary w-full"
+                        disabled={
+                          leaveSaving ||
+                          !leaveStartDate ||
+                          !leaveEndDate ||
+                          !leaveReason.trim()
+                        }
+                        onClick={() => void handleAddLeave()}
+                        type="button"
+                      >
+                        {leaveSaving ? (
+                          <span className="loading loading-spinner loading-sm" />
+                        ) : editingLeaveId ? (
+                          "Save Leave"
+                        ) : (
+                          "Add Leave"
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-4 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800">
+                  {detail.schedule.leaves.length === 0 ? (
+                    <p className="px-5 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                      No leave period has been registered.
+                    </p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="table min-w-[700px]">
+                        <thead className="bg-slate-50 text-xs font-semibold uppercase text-slate-600 dark:bg-slate-800/50 dark:text-slate-400">
+                          <tr>
+                            <th>Date Range</th>
+                            <th>Reason</th>
+                            <th>Added By</th>
+                            {!selfView && (
+                              <th className="text-right">Action</th>
+                            )}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                          {detail.schedule.leaves.map((leave) => (
+                            <tr key={leave.id}>
+                              <td className="whitespace-nowrap font-semibold text-slate-800 dark:text-slate-200">
+                                {formatDateOnly(leave.startDate)} –{" "}
+                                {formatDateOnly(leave.endDate)}
+                              </td>
+                              <td className="text-slate-700 dark:text-slate-300">
+                                {leave.reason}
+                              </td>
+                              <td className="text-slate-600 dark:text-slate-400">
+                                {leave.createdByName}
+                              </td>
+                              {!selfView && (
+                                <td className="text-right">
+                                  <div className="flex justify-end gap-2">
+                                    <button
+                                      className="btn btn-outline btn-sm"
+                                      onClick={() => handleEditLeave(leave)}
+                                      type="button"
+                                    >
+                                      Edit
+                                    </button>
+                                    <button
+                                      className="btn btn-outline btn-error btn-sm"
+                                      onClick={() =>
+                                        void handleDeleteLeave(leave.id)
+                                      }
+                                      type="button"
+                                    >
+                                      Remove
+                                    </button>
+                                  </div>
+                                </td>
+                              )}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+          )}
 
           <TicketStatsCards
             completedCount={detail.stats.completedCount}

@@ -12,6 +12,14 @@ export interface TeamTicketStatsDto {
   completedCount: number;
 }
 
+export interface CsatStatsDto {
+  averageRating: number;
+  averageCommunicationRating: number;
+  averageSolutionRating: number;
+  averageSpeedRating: number;
+  totalSurveysCount: number;
+}
+
 export interface TeamMemberTicketDto {
   id: string;
   ticketNumber: string;
@@ -34,6 +42,7 @@ export interface TeamMemberSummaryDto {
   title: string;
   roleInTeam: string;
   joinedAt: string;
+  csat: CsatStatsDto;
   recentTickets: TeamMemberTicketDto[];
 }
 
@@ -43,6 +52,7 @@ export interface TeamManagementOverviewDto {
   teamDescription: string;
   managedTeams: ManagedTeamDto[];
   stats: TeamTicketStatsDto;
+  csat: CsatStatsDto;
   members: TeamMemberSummaryDto[];
 }
 
@@ -59,7 +69,45 @@ export interface TeamMemberDetailDto {
   systemRole: string;
   registeredAt: string;
   joinedAt: string;
+  schedule: TeamMemberScheduleDto;
   stats: TeamTicketStatsDto;
   activeTickets: PagedResultDto<TeamMemberTicketDto>;
   inactiveTickets: PagedResultDto<TeamMemberTicketDto>;
+}
+
+export interface TeamMemberScheduleDto {
+  timeZoneId: string;
+  shifts: TeamMemberShiftDto[];
+  leaves: TeamMemberLeaveDto[];
+}
+
+export interface TeamMemberShiftDto {
+  id: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+}
+
+export interface TeamMemberLeaveDto {
+  id: string;
+  startDate: string;
+  endDate: string;
+  reason: string;
+  createdById: string;
+  createdByName: string;
+  createdAt: string;
+}
+
+export interface UpdateTeamMemberScheduleDto {
+  shifts: Array<{
+    dayOfWeek: number;
+    startTime: string;
+    endTime: string;
+  }>;
+}
+
+export interface CreateTeamMemberLeaveDto {
+  startDate: string;
+  endDate: string;
+  reason: string;
 }

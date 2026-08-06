@@ -14,6 +14,9 @@ public class Team
     public Guid? LeadId { get; set; }
     public User? Lead { get; set; }
 
+    public Guid? SlaCalendarId { get; set; }
+    public SlaCalendar? SlaCalendar { get; set; }
+
     public ICollection<TeamMember> TeamMembers { get; set; } = new List<TeamMember>();
     public ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
     public ICollection<TicketCategory> TicketCategories { get; set; } = new List<TicketCategory>();

@@ -200,7 +200,9 @@ public class TicketService : ITicketService
                 record.FirstResponseAt,
                 record.ResolutionDueAt,
                 record.ResolutionAt,
-                record.IsPaused
+                record.IsPaused,
+                CalendarName = record.SlaCalendar.Name,
+                record.SlaCalendar.TimeZoneId
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -211,18 +213,22 @@ public class TicketService : ITicketService
         {
             sla = new TicketSlaSummaryDto
             {
+                CalendarName = slaRecord.CalendarName,
+                TimeZoneId = slaRecord.TimeZoneId,
                 FirstResponseDueAt = slaRecord.FirstResponseDueAt,
                 FirstResponseAt = slaRecord.FirstResponseAt,
                 FirstResponseStatus = GetSlaStatus(
                     slaRecord.FirstResponseDueAt,
                     slaRecord.FirstResponseAt,
-                    now),
+                    now,
+                    slaRecord.IsPaused),
                 ResolutionDueAt = slaRecord.ResolutionDueAt,
                 ResolutionAt = slaRecord.ResolutionAt,
                 ResolutionStatus = GetSlaStatus(
                     slaRecord.ResolutionDueAt,
                     slaRecord.ResolutionAt,
-                    now),
+                    now,
+                    slaRecord.IsPaused),
                 IsPaused = slaRecord.IsPaused
             };
         }
@@ -734,10 +740,14 @@ public class TicketService : ITicketService
     private static string GetSlaStatus(
         DateTime dueAt,
         DateTime? completedAt,
-        DateTime now)
+        DateTime now,
+        bool isPaused)
     {
         if (completedAt.HasValue)
             return completedAt.Value <= dueAt ? "Met" : "Breached";
+
+        if (isPaused)
+            return "Pending";
 
         return now <= dueAt ? "Pending" : "Breached";
     }

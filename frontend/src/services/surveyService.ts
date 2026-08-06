@@ -7,14 +7,15 @@ export interface SatisfactionSurveyDto {
   rating: number;
   communicationRating: number;
   solutionRating: number;
+  speedRating: number;
   comment: string;
   createdAt: string;
 }
 
 export interface CreateSatisfactionSurveyInput {
-  rating: number;
   communicationRating: number;
   solutionRating: number;
+  speedRating: number;
   comment?: string;
 }
 
@@ -24,25 +25,28 @@ export interface TeamSatisfactionStatsDto {
   averageRating: number;
   averageCommunicationRating: number;
   averageSolutionRating: number;
+  averageSpeedRating: number;
   totalSurveysCount: number;
 }
 
 export const surveyService = {
   submitSurvey: async (
     ticketId: string,
-    data: CreateSatisfactionSurveyInput
+    data: CreateSatisfactionSurveyInput,
   ): Promise<SatisfactionSurveyDto> => {
     const response = await api.post<SatisfactionSurveyDto>(
       `/tickets/${ticketId}/survey`,
-      data
+      data,
     );
     return response.data;
   },
 
-  getSurvey: async (ticketId: string): Promise<SatisfactionSurveyDto | null> => {
+  getSurvey: async (
+    ticketId: string,
+  ): Promise<SatisfactionSurveyDto | null> => {
     try {
       const response = await api.get<SatisfactionSurveyDto>(
-        `/tickets/${ticketId}/survey`
+        `/tickets/${ticketId}/survey`,
       );
       return response.data;
     } catch {
@@ -52,7 +56,7 @@ export const surveyService = {
 
   getTeamStats: async (): Promise<TeamSatisfactionStatsDto[]> => {
     const response = await api.get<TeamSatisfactionStatsDto[]>(
-      "/tickets/surveys/team-stats"
+      "/tickets/surveys/team-stats",
     );
     return response.data;
   },
