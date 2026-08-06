@@ -46,11 +46,23 @@ builder.Services.AddOpenApi();
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<TicketCreateDtoValidator>();
 
-builder.Services
-    .AddOptions<EmailSettings>()
-    .Bind(builder.Configuration.GetSection(EmailSettings.SectionName))
-    .ValidateDataAnnotations()
-    .ValidateOnStart();
+var emailEnabled = builder.Configuration
+    .GetValue<bool>("EmailSettings:Enabled");
+
+if (emailEnabled)
+{
+    builder.Services
+        .AddOptions<EmailSettings>()
+        .Bind(builder.Configuration.GetSection(EmailSettings.SectionName))
+        .ValidateDataAnnotations()
+        .ValidateOnStart();
+
+    builder.Services.AddScoped<IEmailService, SmtpEmailService>();
+}
+else
+{
+    builder.Services.AddScoped<IEmailService, DisabledEmailService>();
+}
 
 builder.Services.AddDbContext<AppDbContext>(options =>options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddHttpContextAccessor();
@@ -89,7 +101,7 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 builder.Services.AddScoped<ILookupService, LookupService>();
-builder.Services.AddScoped<IEmailService, SmtpEmailService>();
+//builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITicketService, TicketService>();
 builder.Services.AddScoped<ITicketAssignmentService, TicketAssignmentService>();

@@ -28,6 +28,8 @@ export function TicketEditContainer({ ticketId }: TicketEditContainerProps) {
 
   const secondaryBtnStyle =
     "dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 hover:!bg-slate-900 hover:!text-white dark:hover:!bg-white dark:hover:!text-slate-900 transition-all shadow-sm";
+  const backToTicketsButtonStyle =
+    "!border-purple-600 !text-purple-600 hover:!bg-purple-600 hover:!text-white dark:!border-purple-400 dark:!text-purple-300 dark:hover:!bg-purple-500 dark:hover:!text-white";
 
   const loadTicket = useCallback(async () => {
     setLoading(true);
@@ -56,8 +58,10 @@ export function TicketEditContainer({ ticketId }: TicketEditContainerProps) {
     setSaveError(null);
 
     try {
+      const categoryChanged = dto.categoryId !== ticket?.categoryId;
+
       await ticketService.update(ticketId, dto);
-      router.replace(`/tickets/${ticketId}`);
+      router.replace(categoryChanged ? "/tickets" : `/tickets/${ticketId}`);
       router.refresh();
     } catch (error: unknown) {
       setSaveError(
@@ -79,7 +83,11 @@ export function TicketEditContainer({ ticketId }: TicketEditContainerProps) {
     return (
       <div className="mx-auto max-w-3xl space-y-4">
         <Alert variant="error">{loadError ?? "Ticket not found."}</Alert>
-        <LinkButton href="/tickets" variant="secondary" className={secondaryBtnStyle}>
+        <LinkButton
+          className={backToTicketsButtonStyle}
+          href="/tickets"
+          variant="primary"
+        >
           Back to tickets
         </LinkButton>
       </div>
@@ -92,7 +100,11 @@ export function TicketEditContainer({ ticketId }: TicketEditContainerProps) {
         <Alert variant="error">
           You do not have permission to edit this ticket.
         </Alert>
-        <LinkButton href="/tickets" variant="secondary" className={secondaryBtnStyle}>
+        <LinkButton
+          className={backToTicketsButtonStyle}
+          href="/tickets"
+          variant="primary"
+        >
           Back to tickets
         </LinkButton>
       </div>

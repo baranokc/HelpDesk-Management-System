@@ -21,11 +21,11 @@ import { CommentForm } from "./CommentForm";
 import { TicketActions } from "./TicketActions";
 import { TicketAttachments } from "./TicketAttachments";
 import { TicketComments } from "./TicketComments";
-import { 
-  TicketHeader, 
-  TicketMetadata, 
-  TicketSubject, 
-  TicketSurvey 
+import {
+  TicketHeader,
+  TicketMetadata,
+  TicketSubject,
+  TicketSurvey,
 } from "./TicketDetail";
 import { TicketDetailTabs } from "./TicketDetailTabs";
 import { TicketHistory } from "./TicketHistory";
@@ -56,6 +56,8 @@ export function TicketDetailContainer({
   const [downloadingAttachmentId, setDownloadingAttachmentId] = useState<
     string | null
   >(null);
+  const backToTicketsButtonStyle =
+    "!border-purple-600 !text-purple-600 hover:!bg-purple-600 hover:!text-white dark:!border-purple-400 dark:!text-purple-300 dark:hover:!bg-purple-500 dark:hover:!text-white";
 
   const loadTicket = useCallback(
     async (showLoading = true) => {
@@ -177,7 +179,11 @@ export function TicketDetailContainer({
             Try again
           </Button>
 
-          <LinkButton href="/tickets" variant="secondary">
+          <LinkButton
+            className={backToTicketsButtonStyle}
+            href="/tickets"
+            variant="primary"
+          >
             Back to tickets
           </LinkButton>
         </div>
@@ -234,7 +240,7 @@ export function TicketDetailContainer({
         <div className="space-y-6 lg:col-span-2">
           <TicketHeader ticket={ticket} />
           <TicketSubject ticket={ticket} />
-          
+
           {/* Müşteri Memnuniyeti Anketi Kartı */}
           {user?.role === "User" && <TicketSurvey ticket={ticket} />}
 
@@ -303,15 +309,14 @@ export function TicketDetailContainer({
       </div>
 
       <ConfirmModal
-        open={deleteModalOpen}
-        title="Delete this ticket?"
+        confirmLabel="Delete ticket"
+        danger
         description="This ticket will be removed from active ticket lists. This action cannot be undone from the interface."
-        confirmText="Delete ticket"
-        cancelText="Cancel"
-        variant="danger"
         loading={deleting}
         onClose={() => setDeleteModalOpen(false)}
         onConfirm={handleDelete}
+        open={deleteModalOpen}
+        title="Delete this ticket?"
       />
     </div>
   );

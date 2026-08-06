@@ -142,7 +142,7 @@ public async Task<IActionResult> GetUsers(CancellationToken cancellationToken)
 
                 // KRİTİK DÜZELTME: Postgres FK RESTRICT hatasını önlemek için bağlı TicketAssignments temizlenir
                 var assignments = await _context.TicketAssignments
-                    .Where(ta => memberIds.Contains(ta.AssignedToId))
+                    .Where(ta => ta.AssignedToId.HasValue && memberIds.Contains(ta.AssignedToId.Value))
                     .ToListAsync(cancellationToken);
 
                 if (assignments.Any())
@@ -187,7 +187,7 @@ public async Task<IActionResult> GetUsers(CancellationToken cancellationToken)
         {
             var memberIds = userMemberships.Select(tm => tm.Id).ToList();
             var assignments = await _context.TicketAssignments
-                .Where(ta => memberIds.Contains(ta.AssignedToId))
+                .Where(ta => ta.AssignedToId.HasValue && memberIds.Contains(ta.AssignedToId.Value))
                 .ToListAsync(cancellationToken);
 
             if (assignments.Any())

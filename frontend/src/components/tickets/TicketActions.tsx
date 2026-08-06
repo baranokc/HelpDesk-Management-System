@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Alert } from "@/src/components/ui/Alert";
 import { Button } from "@/src/components/ui/Button";
 import { Card } from "@/src/components/ui/Card";
@@ -13,7 +14,10 @@ import { ticketAttachmentService } from "@/src/services/ticketAttachmentService"
 import { ticketWorkflowService } from "@/src/services/ticketWorkflowService";
 import type { TicketAssignmentDto } from "@/src/types/ticket-assignment";
 import type { TicketAttachmentCreateDto } from "@/src/types/ticket-attachment";
-import type { TicketResolveDto, TicketStatusUpdateDto, } from "@/src/types/ticket-status";
+import type {
+  TicketResolveDto,
+  TicketStatusUpdateDto,
+} from "@/src/types/ticket-status";
 import type { TicketDetailDto } from "@/src/types/ticket";
 import { AttachmentUploader } from "./AttachmentUploader";
 import { TicketAssignmentForm } from "./TicketAssignmentForm";
@@ -39,40 +43,37 @@ export function TicketActions({
   userRole,
   onChanged,
 }: TicketActionsProps) {
+  const router = useRouter();
   const [activeAction, setActiveAction] = useState<ActionName | null>(null);
   const [loadingAction, setLoadingAction] = useState<ActionName | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [unassignmentReason, setUnassignmentReason] = useState("");
   const [keepTeamAssignment, setKeepTeamAssignment] = useState(false);
 
-const canManageWorkflow =
-  userRole === "Admin" ||
-  userRole === "SupportAgent" ||
-  userRole === "TeamLeader";
+  const canManageWorkflow =
+    userRole === "Admin" ||
+    userRole === "SupportAgent" ||
+    userRole === "TeamLeader";
 
-const canAssign =
-  userRole === "Admin" ||
-  userRole === "TeamLeader";
+  const canAssign = userRole === "Admin" || userRole === "TeamLeader";
 
-const isAssigned = Boolean(ticket.assignedToId);
-const normalizedStatus = ticket.statusName.trim().toLowerCase();
+  const isAssigned = Boolean(ticket.assignedToId);
+  const normalizedStatus = ticket.statusName.trim().toLowerCase();
 
-const canUpdateStatus =
-  canManageWorkflow &&
-  normalizedStatus !== "resolved" &&
-  normalizedStatus !== "closed" &&
-  normalizedStatus !== "cancelled";
+  const canUpdateStatus =
+    canManageWorkflow &&
+    normalizedStatus !== "resolved" &&
+    normalizedStatus !== "closed" &&
+    normalizedStatus !== "cancelled";
 
-const canResolve =
-  canManageWorkflow &&
-  normalizedStatus !== "resolved" &&
-  normalizedStatus !== "closed" &&
-  normalizedStatus !== "cancelled";
+  const canResolve =
+    canManageWorkflow &&
+    normalizedStatus !== "resolved" &&
+    normalizedStatus !== "closed" &&
+    normalizedStatus !== "cancelled";
 
-const canClose =
-  canManageWorkflow &&
-  normalizedStatus === "resolved" &&
-  !ticket.closedAt;
+  const canClose =
+    canManageWorkflow && normalizedStatus === "resolved" && !ticket.closedAt;
 
   const secondaryBtnStyle =
     "dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 hover:!bg-slate-900 hover:!text-white dark:hover:!bg-white dark:hover:!text-slate-900 transition-all shadow-sm";
@@ -93,6 +94,7 @@ const canClose =
     action: ActionName,
     operation: () => Promise<unknown>,
     fallbackMessage: string,
+    refreshAfterSuccess = true,
   ): Promise<boolean> => {
     setLoadingAction(action);
     setActionError(null);
@@ -100,7 +102,11 @@ const canClose =
     try {
       await operation();
       setActiveAction(null);
-      await onChanged();
+
+      if (refreshAfterSuccess) {
+        await onChanged();
+      }
+
       return true;
     } catch (error: unknown) {
       setActionError(getApiErrorMessage(error, fallbackMessage));
@@ -123,11 +129,18 @@ const canClose =
   };
 
   const handleAssign = async (dto: TicketAssignmentDto) => {
-    await runAction(
+    const isCrossTeamTransfer = dto.teamId !== ticket.teamId;
+    const succeeded = await runAction(
       "assign",
       () => ticketAssignmentService.assignTicket(ticket.id, dto),
       "The ticket could not be assigned. Please check the selected team and member.",
+      !isCrossTeamTransfer,
     );
+
+    if (succeeded && isCrossTeamTransfer) {
+      router.replace("/tickets");
+      router.refresh();
+    }
   };
 
   const handleUnassign = async () => {

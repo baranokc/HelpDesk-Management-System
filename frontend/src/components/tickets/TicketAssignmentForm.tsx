@@ -3,16 +3,10 @@
 import { useEffect, useState } from "react";
 import type { SubmitEvent } from "react";
 import { lookupService } from "@/src/services/lookupService";
-import {
-  LookupItemDto,
-  TeamMemberLookupDto,
-} from "@/src/types/common";
+import { LookupItemDto, TeamMemberLookupDto } from "@/src/types/common";
 import { TicketAssignmentDto } from "@/src/types/ticket-assignment";
 import { ticketAssignmentSchema } from "@/src/schemas/assignmentSchemas";
-import {
-  FormErrors,
-  getFormErrors,
-} from "@/src/lib/validation";
+import { FormErrors, getFormErrors } from "@/src/lib/validation";
 import { Button } from "@/src/components/ui/Button";
 import { Select } from "@/src/components/ui/Select";
 import { Textarea } from "@/src/components/ui/Textarea";

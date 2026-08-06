@@ -13,6 +13,7 @@ export interface ConfirmModalProps {
   cancelText?: string;
   cancelLabel?: string;
   variant?: "danger" | "warning" | "info" | string;
+  danger?: boolean;
   loading?: boolean;
   isLoading?: boolean;
   onClose: () => void;
