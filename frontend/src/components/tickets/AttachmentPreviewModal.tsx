@@ -222,6 +222,7 @@ export function AttachmentPreviewModal({
           )}
 
           <Button
+            className="!border-blue-500 !bg-blue-600 font-semibold !text-white shadow-sm hover:!border-blue-400 hover:!bg-blue-500 dark:!border-blue-400 dark:!bg-blue-500 dark:hover:!bg-blue-400"
             loading={downloading}
             onClick={() => void onDownload(attachment)}
             size="sm"

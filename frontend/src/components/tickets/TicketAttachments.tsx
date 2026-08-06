@@ -93,7 +93,7 @@ export function TicketAttachments({
 
               <div className="flex shrink-0 items-center gap-1.5">
                 <Button
-                  className="h-8 px-2.5 text-xs"
+                  className="h-8 !border-blue-500 !bg-blue-600 px-2.5 text-xs font-semibold !text-white shadow-sm hover:!border-blue-400 hover:!bg-blue-500 dark:!border-blue-400 dark:!bg-blue-500 dark:hover:!bg-blue-400"
                   loading={isDownloading}
                   onClick={() => void onDownload(attachment)}
                   size="sm"
