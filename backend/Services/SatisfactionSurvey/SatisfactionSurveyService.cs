@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using backend.Data;
@@ -33,17 +35,31 @@ public class SatisfactionSurveyService : ISatisfactionSurveyService
 
         // 2. Bilet Kontrolü
         var ticket = await _context.Tickets
+            .Include(t => t.Status)
             .FirstOrDefaultAsync(t => t.Id == ticketId, cancellationToken);
 
         if (ticket is null) return null;
 
         // 3. Durum Kontrolü
-        if (ticket.Status.ToString() != "Resolved" && ticket.Status.ToString() != "Closed")
+        var statusValue = ticket.Status?.Name ?? ticket.Status?.ToString() ?? string.Empty;
+
+        bool isEligible = string.Equals(statusValue, "Resolved", StringComparison.OrdinalIgnoreCase) ||
+                         string.Equals(statusValue, "Closed", StringComparison.OrdinalIgnoreCase) ||
+                         statusValue == "2" || statusValue == "3";
+
+        if (!isEligible)
         {
-            throw new InvalidOperationException("Satisfaction survey can only be submitted for resolved or closed tickets.");
+            throw new InvalidOperationException($"Satisfaction survey can only be submitted for resolved or closed tickets. Current status in DB: '{statusValue}'");
         }
 
-        // 4. Tekrarlı Anket Kontrolü
+        // 4. Kullanıcı Var mı Kontrolü
+        var userExists = await _context.Users.AnyAsync(u => u.Id == userId, cancellationToken);
+        if (!userExists)
+        {
+            throw new InvalidOperationException($"User with ID '{userId}' was not found in database.");
+        }
+
+        // 5. Tekrarlı Anket Kontrolü
         var existingSurvey = await _context.SatisfactionSurveys
             .AnyAsync(s => s.TicketId == ticketId, cancellationToken);
 
@@ -52,33 +68,41 @@ public class SatisfactionSurveyService : ISatisfactionSurveyService
             throw new InvalidOperationException("A survey has already been submitted for this ticket.");
         }
 
-        // 5. Kaydetme
-        var survey = new Entities.SatisfactionSurvey
+        // 6. Kaydetme
+        try
         {
-            Id = Guid.NewGuid(),
-            TicketId = ticketId,
-            UserId = userId,
-            Rating = dto.Rating,
-            CommunicationRating = dto.CommunicationRating,
-            SolutionRating = dto.SolutionRating,
-            Comment = dto.Comment ?? string.Empty,
-            CreatedAt = DateTime.UtcNow
-        };
+            var survey = new Entities.SatisfactionSurvey
+            {
+                Id = Guid.NewGuid(),
+                TicketId = ticketId,
+                UserId = userId,
+                Rating = dto.Rating,
+                CommunicationRating = dto.CommunicationRating,
+                SolutionRating = dto.SolutionRating,
+                Comment = dto.Comment ?? string.Empty,
+                CreatedAt = DateTime.UtcNow
+            };
 
-        _context.SatisfactionSurveys.Add(survey);
-        await _context.SaveChangesAsync(cancellationToken);
+            _context.SatisfactionSurveys.Add(survey);
+            await _context.SaveChangesAsync(cancellationToken);
 
-        return new SatisfactionSurveyDto
+            return new SatisfactionSurveyDto
+            {
+                Id = survey.Id,
+                TicketId = survey.TicketId,
+                UserId = survey.UserId,
+                Rating = survey.Rating,
+                CommunicationRating = survey.CommunicationRating,
+                SolutionRating = survey.SolutionRating,
+                Comment = survey.Comment,
+                CreatedAt = survey.CreatedAt
+            };
+        }
+        catch (DbUpdateException ex)
         {
-            Id = survey.Id,
-            TicketId = survey.TicketId,
-            UserId = survey.UserId,
-            Rating = survey.Rating,
-            CommunicationRating = survey.CommunicationRating,
-            SolutionRating = survey.SolutionRating,
-            Comment = survey.Comment,
-            CreatedAt = survey.CreatedAt
-        };
+            var innerMessage = ex.InnerException?.Message ?? ex.Message;
+            throw new InvalidOperationException($"Database save error: {innerMessage}");
+        }
     }
 
     public async Task<SatisfactionSurveyDto?> GetSurveyByTicketIdAsync(
@@ -104,5 +128,41 @@ public class SatisfactionSurveyService : ISatisfactionSurveyService
             Comment = survey.Comment,
             CreatedAt = survey.CreatedAt
         };
+    }
+
+    public async Task<List<TeamSatisfactionStatsDto>> GetTeamSatisfactionStatsAsync(
+        CancellationToken cancellationToken)
+    {
+        var teams = await _context.Teams
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        var surveys = await _context.SatisfactionSurveys
+            .AsNoTracking()
+            .Include(s => s.Ticket)
+            .ToListAsync(cancellationToken);
+
+        var stats = teams.Select(team =>
+        {
+            var teamSurveys = surveys
+                .Where(s => s.Ticket != null && s.Ticket.TeamId == team.Id)
+                .ToList();
+
+            var count = teamSurveys.Count;
+
+            return new TeamSatisfactionStatsDto
+            {
+                TeamId = team.Id,
+                TeamName = team.Name,
+                TotalSurveysCount = count,
+                AverageRating = count > 0 ? Math.Round(teamSurveys.Average(s => s.Rating), 1) : 0,
+                AverageCommunicationRating = count > 0 ? Math.Round(teamSurveys.Average(s => s.CommunicationRating), 1) : 0,
+                AverageSolutionRating = count > 0 ? Math.Round(teamSurveys.Average(s => s.SolutionRating), 1) : 0
+            };
+        })
+        .OrderByDescending(t => t.AverageRating)
+        .ToList();
+
+        return stats;
     }
 }

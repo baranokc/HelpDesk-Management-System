@@ -18,4 +18,6 @@ public interface ISatisfactionSurveyService
         Guid currentUserId,
         string currentUserRole,
         CancellationToken cancellationToken);
+
+        Task<List<TeamSatisfactionStatsDto>> GetTeamSatisfactionStatsAsync(CancellationToken cancellationToken);
 }
