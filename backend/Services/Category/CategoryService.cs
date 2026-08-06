@@ -187,8 +187,46 @@ public sealed class CategoryService : ICategoryService
     {
         ValidateSubcategoryDto(dto);
 
+        try
+        {
+            return await CreateSubcategoryCoreAsync(
+                categoryId,
+                dto,
+                activeMatchIsSuccess: false,
+                cancellationToken: cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException exception)
+            when (IsSubcategoryConcurrencyException(exception))
+        {
+            // The inactive row may have been changed or removed after it was
+            // loaded. Clear stale tracking data and retry the operation once
+            // against the current database state.
+            _context.ChangeTracker.Clear();
+
+            try
+            {
+                return await CreateSubcategoryCoreAsync(
+                    categoryId,
+                    dto,
+                    activeMatchIsSuccess: true,
+                    cancellationToken: cancellationToken);
+            }
+            catch (DbUpdateConcurrencyException retryException)
+            {
+                throw new InvalidOperationException(
+                    "The subcategory was changed by another request. Refresh the category list and try again.",
+                    retryException);
+            }
+        }
+    }
+
+    private async Task<CategoryAdminDto?> CreateSubcategoryCoreAsync(
+        Guid categoryId,
+        SubcategoryUpsertDto dto,
+        bool activeMatchIsSuccess,
+        CancellationToken cancellationToken)
+    {
         var category = await _context.TicketCategories
-            .Include(item => item.Subcategories)
             .SingleOrDefaultAsync(
                 item => item.Id == categoryId && item.IsActive,
                 cancellationToken);
@@ -197,15 +235,24 @@ public sealed class CategoryService : ICategoryService
             return null;
 
         var name = dto.Name.Trim();
-        var existingSubcategory = category.Subcategories
+        var normalizedName = name.ToLower();
+        var existingSubcategory = await _context.TicketSubCategories
             .OrderByDescending(item => item.IsActive)
-            .FirstOrDefault(item => string.Equals(
-                item.Name,
-                name,
-                StringComparison.OrdinalIgnoreCase));
+            .FirstOrDefaultAsync(
+                item =>
+                    item.CategoryId == categoryId &&
+                    item.Name.ToLower() == normalizedName,
+                cancellationToken);
 
         if (existingSubcategory?.IsActive == true)
         {
+            if (activeMatchIsSuccess)
+            {
+                return await GetCategoryDtoAsync(
+                    categoryId,
+                    cancellationToken);
+            }
+
             throw new InvalidOperationException(
                 "An active subcategory with this name already exists in the category.");
         }
@@ -219,7 +266,7 @@ public sealed class CategoryService : ICategoryService
         }
         else
         {
-            category.Subcategories.Add(new TicketSubCategory
+            _context.TicketSubCategories.Add(new TicketSubCategory
             {
                 CategoryId = categoryId,
                 Name = name,
@@ -233,6 +280,14 @@ public sealed class CategoryService : ICategoryService
         return await GetCategoryDtoAsync(
             categoryId,
             cancellationToken);
+    }
+
+    private static bool IsSubcategoryConcurrencyException(
+        DbUpdateConcurrencyException exception)
+    {
+        return exception.Entries.Count > 0 &&
+               exception.Entries.All(entry =>
+                   entry.Entity is TicketSubCategory);
     }
 
     public async Task<CategoryAdminDto?> UpdateSubcategoryAsync(

@@ -157,7 +157,8 @@ interface SubcategoryDraft extends SubcategoryUpsertDto {
 interface SubcategoryMenuState {
   categoryId: string;
   left: number;
-  top: number;
+  top?: number;
+  bottom?: number;
   width: number;
   maxHeight: number;
 }
@@ -337,19 +338,45 @@ export function CategoryManagementContainer() {
     }
 
     const triggerRect = trigger.getBoundingClientRect();
-    const width = 288;
     const viewportPadding = 12;
-    const availableHeight = window.innerHeight - triggerRect.bottom - 20;
+    const gap = 8;
+    const width = Math.min(
+      288,
+      Math.max(0, window.innerWidth - viewportPadding * 2),
+    );
+    const category = categories.find((item) => item.id === categoryId);
+    const preferredHeight = Math.min(
+      320,
+      64 + Math.max(1, category?.subcategories.length ?? 0) * 48,
+    );
+    const spaceBelow = Math.max(
+      0,
+      window.innerHeight - triggerRect.bottom - gap - viewportPadding,
+    );
+    const spaceAbove = Math.max(
+      0,
+      triggerRect.top - gap - viewportPadding,
+    );
+    const openAbove =
+      spaceBelow < preferredHeight && spaceAbove > spaceBelow;
+    const availableHeight = openAbove ? spaceAbove : spaceBelow;
+    const maxLeft = Math.max(
+      viewportPadding,
+      window.innerWidth - width - viewportPadding,
+    );
 
     setSubcategoryMenu({
       categoryId,
       left: Math.min(
         Math.max(viewportPadding, triggerRect.left),
-        window.innerWidth - width - viewportPadding,
+        maxLeft,
       ),
-      top: triggerRect.bottom + 8,
+      top: openAbove ? undefined : triggerRect.bottom + gap,
+      bottom: openAbove
+        ? window.innerHeight - triggerRect.top + gap
+        : undefined,
       width,
-      maxHeight: Math.max(120, Math.min(320, availableHeight)),
+      maxHeight: Math.min(320, availableHeight),
     });
   };
 
@@ -823,10 +850,11 @@ export function CategoryManagementContainer() {
             style={{
               left: subcategoryMenu.left,
               top: subcategoryMenu.top,
+              bottom: subcategoryMenu.bottom,
               width: subcategoryMenu.width,
               maxHeight: subcategoryMenu.maxHeight,
             }}
-            className="fixed z-[60] overflow-y-auto rounded-xl border border-slate-200 bg-white p-2 shadow-2xl ring-1 ring-slate-900/5 dark:border-slate-700 dark:bg-slate-900 dark:ring-white/10"
+            className="fixed z-[60] overscroll-contain overflow-y-auto rounded-xl border border-slate-200 bg-white p-2 shadow-2xl ring-1 ring-slate-900/5 dark:border-slate-700 dark:bg-slate-900 dark:ring-white/10"
           >
             <div className="mb-1 border-b border-slate-100 px-2 py-2 dark:border-slate-800">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">

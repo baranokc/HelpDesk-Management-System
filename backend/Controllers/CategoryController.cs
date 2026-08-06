@@ -3,6 +3,7 @@ using backend.DTO.Category;
 using backend.Services.Category;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace backend.Controllers;
 
@@ -161,6 +162,13 @@ public class CategoryController : ControllerBase
         catch (InvalidOperationException exception)
         {
             return Conflict(new { message = exception.Message });
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return Conflict(new
+            {
+                message = "The subcategory was changed by another request. Refresh the category list and try again."
+            });
         }
     }
 
