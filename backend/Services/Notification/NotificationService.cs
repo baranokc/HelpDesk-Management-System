@@ -3,6 +3,7 @@ using backend.Data;
 using backend.DTO.Notification;
 using backend.Entities;
 using backend.Hubs;
+using backend.Services.Sla;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,15 +17,18 @@ public sealed class NotificationService : INotificationService
     private readonly AppDbContext _db;
     private readonly IHubContext<NotificationHub> _hubContext;
     private readonly ILogger<NotificationService> _logger;
+    private readonly IBusinessTimeCalculator _businessTimeCalculator;
 
     public NotificationService(
         AppDbContext db,
         IHubContext<NotificationHub> hubContext,
-        ILogger<NotificationService> logger)
+        ILogger<NotificationService> logger,
+        IBusinessTimeCalculator businessTimeCalculator)
     {
         _db = db;
         _hubContext = hubContext;
         _logger = logger;
+        _businessTimeCalculator = businessTimeCalculator;
     }
 
     public async Task<IReadOnlyCollection<NotificationDto>> GetForUserAsync(
@@ -296,30 +300,62 @@ public sealed class NotificationService : INotificationService
         CancellationToken cancellationToken = default)
     {
         var now = DateTime.UtcNow;
-        var warningCutoff = now.Add(SlaWarningWindow);
+        var nowOffset = new DateTimeOffset(
+            DateTime.SpecifyKind(now, DateTimeKind.Utc),
+            TimeSpan.Zero);
 
-        var records = await _db.SlaRecords
+        var calendars = await _db.SlaCalendars
             .AsNoTracking()
-            .Where(record =>
-                !record.IsPaused &&
-                !record.Ticket.IsDeleted &&
-                !record.Ticket.Status.IsClosed &&
-                record.ResolutionAt == null &&
-                ((record.FirstResponseAt == null &&
-                  record.FirstResponseDueAt <= warningCutoff) ||
-                 record.ResolutionDueAt <= warningCutoff))
-            .Select(record => new
-            {
-                record.TicketId,
-                record.Ticket.TicketNumber,
-                record.Ticket.TicketTitle,
-                record.Ticket.TeamId,
-                record.Ticket.AssignedToId,
-                record.FirstResponseDueAt,
-                record.FirstResponseAt,
-                record.ResolutionDueAt
-            })
+            .AsSplitQuery()
+            .Include(calendar => calendar.WorkingPeriods)
+            .Include(calendar => calendar.Holidays)
+            .Where(calendar => calendar.IsActive)
             .ToListAsync(cancellationToken);
+
+        var records = new List<SlaAlertCandidate>();
+
+        foreach (var calendar in calendars)
+        {
+            if (!_businessTimeCalculator.IsWorkingTime(
+                    nowOffset,
+                    calendar))
+            {
+                continue;
+            }
+
+            var warningCutoff = _businessTimeCalculator.AddWorkingTime(
+                    nowOffset,
+                    SlaWarningWindow,
+                    calendar)
+                .UtcDateTime;
+
+            var calendarRecords = await _db.SlaRecords
+                .AsNoTracking()
+                .Where(record =>
+                    record.SlaCalendarId == calendar.Id &&
+                    !record.IsPaused &&
+                    !record.Ticket.IsDeleted &&
+                    !record.Ticket.Status.IsClosed &&
+                    record.ResolutionAt == null &&
+                    ((record.FirstResponseAt == null &&
+                      record.FirstResponseDueAt <= warningCutoff) ||
+                     record.ResolutionDueAt <= warningCutoff))
+                .Select(record => new SlaAlertCandidate
+                {
+                    TicketId = record.TicketId,
+                    TicketNumber = record.Ticket.TicketNumber,
+                    TicketTitle = record.Ticket.TicketTitle,
+                    TeamId = record.Ticket.TeamId,
+                    AssignedToId = record.Ticket.AssignedToId,
+                    FirstResponseDueAt = record.FirstResponseDueAt,
+                    FirstResponseAt = record.FirstResponseAt,
+                    ResolutionDueAt = record.ResolutionDueAt,
+                    WarningCutoff = warningCutoff
+                })
+                .ToListAsync(cancellationToken);
+
+            records.AddRange(calendarRecords);
+        }
 
         if (records.Count == 0)
             return;
@@ -376,7 +412,7 @@ public sealed class NotificationService : INotificationService
                 continue;
 
             if (!record.FirstResponseAt.HasValue &&
-                record.FirstResponseDueAt <= warningCutoff)
+                record.FirstResponseDueAt <= record.WarningCutoff)
             {
                 await SendSlaAlertAsync(
                     recipientUserIds,
@@ -391,7 +427,7 @@ public sealed class NotificationService : INotificationService
                     cancellationToken);
             }
 
-            if (record.ResolutionDueAt <= warningCutoff)
+            if (record.ResolutionDueAt <= record.WarningCutoff)
             {
                 await SendSlaAlertAsync(
                     recipientUserIds,
@@ -460,7 +496,7 @@ public sealed class NotificationService : INotificationService
             : "SLA target due soon";
         var message = isBreached
             ? $"The {targetName} SLA for {ticketNumber}: {ticketTitle} has been breached."
-            : $"The {targetName} SLA for {ticketNumber}: {ticketTitle} is due within 15 minutes.";
+            : $"The {targetName} SLA for {ticketNumber}: {ticketTitle} is due within 15 working minutes.";
 
         await CreateAndSendOnceAsync(
             recipientUserIds,
@@ -575,5 +611,18 @@ public sealed class NotificationService : INotificationService
             CreatedAt = notification.CreatedAt,
             ReadAt = notification.ReadAt
         };
+    }
+
+    private sealed class SlaAlertCandidate
+    {
+        public Guid TicketId { get; set; }
+        public string TicketNumber { get; set; } = string.Empty;
+        public string TicketTitle { get; set; } = string.Empty;
+        public Guid? TeamId { get; set; }
+        public Guid? AssignedToId { get; set; }
+        public DateTime FirstResponseDueAt { get; set; }
+        public DateTime? FirstResponseAt { get; set; }
+        public DateTime ResolutionDueAt { get; set; }
+        public DateTime WarningCutoff { get; set; }
     }
 }

@@ -24,6 +24,8 @@ public class AppDbContext : DbContext
     public DbSet<Team> Teams { get; set; } = null!;
     public DbSet<Role> Roles { get; set; } = null!;
     public DbSet<TeamMember> TeamMembers { get; set; } = null!;
+    public DbSet<TeamMemberShift> TeamMemberShifts { get; set; } = null!;
+    public DbSet<TeamMemberLeave> TeamMemberLeaves { get; set; } = null!;
     public DbSet<UserRole> UserRoles { get; set; } = null!;
     public DbSet<Ticket> Tickets { get; set; } = null!;
     public DbSet<TicketAssignment> TicketAssignments { get; set; } = null!;
@@ -47,8 +49,11 @@ public class AppDbContext : DbContext
     public DbSet<SlaPolicy> SlaPolicies { get; set; } = null!;
     public DbSet<SlaRecord> SlaRecords { get; set; } = null!;
     public DbSet<SlaPause> SlaPauses { get; set; } = null!;
-    public DbSet<FaqItem> FaqItems { get; set; } = null!;
+    public DbSet<SlaCalendar> SlaCalendars { get; set; } = null!;
+    public DbSet<SlaWorkingPeriod> SlaWorkingPeriods { get; set; } = null!;
+    public DbSet<SlaHoliday> SlaHolidays { get; set; } = null!;
     public DbSet<SatisfactionSurvey> SatisfactionSurveys { get; set; } = null!;
+    public DbSet<FaqItem> FaqItems { get; set; } = null!;
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -211,11 +216,67 @@ public class AppDbContext : DbContext
             .IsUnique()
             .HasFilter("\"IsActive\" = TRUE AND \"RoleInTeam\" = 2");
 
+        modelBuilder.Entity<TeamMemberShift>(entity =>
+        {
+            entity.ToTable(
+                "TeamMemberShift",
+                table => table.HasCheckConstraint(
+                    "CK_TeamMemberShift_StartBeforeEnd",
+                    "\"StartTime\" < \"EndTime\""));
+
+            entity.HasOne(shift => shift.TeamMember)
+                .WithMany(member => member.Shifts)
+                .HasForeignKey(shift => shift.TeamMemberId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(shift => new
+                {
+                    shift.TeamMemberId,
+                    shift.DayOfWeek
+                })
+                .IsUnique();
+        });
+
+        modelBuilder.Entity<TeamMemberLeave>(entity =>
+        {
+            entity.ToTable(
+                "TeamMemberLeave",
+                table => table.HasCheckConstraint(
+                    "CK_TeamMemberLeave_DateRange",
+                    "\"StartDate\" <= \"EndDate\""));
+
+            entity.Property(leave => leave.Reason)
+                .HasMaxLength(500);
+
+            entity.HasOne(leave => leave.TeamMember)
+                .WithMany(member => member.Leaves)
+                .HasForeignKey(leave => leave.TeamMemberId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(leave => leave.CreatedBy)
+                .WithMany()
+                .HasForeignKey(leave => leave.CreatedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(leave => new
+                {
+                    leave.TeamMemberId,
+                    leave.StartDate,
+                    leave.EndDate
+                });
+        });
+
         modelBuilder.Entity<Team>()
             .HasOne(t => t.Lead)
             .WithMany()
             .HasForeignKey(t => t.LeadId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Team>()
+            .HasOne(team => team.SlaCalendar)
+            .WithMany(calendar => calendar.Teams)
+            .HasForeignKey(team => team.SlaCalendarId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.HasSequence<long>("TicketNumberSequence")
             .StartsAt(1)
@@ -321,6 +382,71 @@ public class AppDbContext : DbContext
                 .WithMany(policy => policy.SlaRecords)
                 .HasForeignKey(record => record.SlaPolicyId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(record => record.SlaCalendar)
+                .WithMany(calendar => calendar.SlaRecords)
+                .HasForeignKey(record => record.SlaCalendarId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<SlaCalendar>(entity =>
+        {
+            entity.ToTable("SlaCalendar");
+
+            entity.Property(calendar => calendar.Name)
+                .HasMaxLength(100);
+
+            entity.Property(calendar => calendar.TimeZoneId)
+                .HasMaxLength(100);
+
+            entity.HasIndex(calendar => calendar.IsDefault)
+                .HasDatabaseName("IX_SlaCalendar_OneActiveDefault")
+                .IsUnique()
+                .HasFilter("\"IsDefault\" = TRUE AND \"IsActive\" = TRUE");
+        });
+
+        modelBuilder.Entity<SlaWorkingPeriod>(entity =>
+        {
+            entity.ToTable(
+                "SlaWorkingPeriod",
+                table => table.HasCheckConstraint(
+                    "CK_SlaWorkingPeriod_StartBeforeEnd",
+                    "\"StartTime\" < \"EndTime\""));
+
+            entity.HasOne(period => period.SlaCalendar)
+                .WithMany(calendar => calendar.WorkingPeriods)
+                .HasForeignKey(period => period.SlaCalendarId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(period => new
+                {
+                    period.SlaCalendarId,
+                    period.DayOfWeek,
+                    period.StartTime,
+                    period.EndTime
+                })
+                .IsUnique();
+
+        });
+
+        modelBuilder.Entity<SlaHoliday>(entity =>
+        {
+            entity.ToTable("SlaHoliday");
+
+            entity.Property(holiday => holiday.Name)
+                .HasMaxLength(150);
+
+            entity.HasOne(holiday => holiday.SlaCalendar)
+                .WithMany(calendar => calendar.Holidays)
+                .HasForeignKey(holiday => holiday.SlaCalendarId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(holiday => new
+                {
+                    holiday.SlaCalendarId,
+                    holiday.Date
+                })
+                .IsUnique();
         });
 
         modelBuilder.Entity<SlaPause>(entity =>

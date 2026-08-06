@@ -96,6 +96,173 @@ public sealed class TeamManagementController : ControllerBase
         }
     }
 
+    [HttpPut("members/{teamMemberId:guid}/schedule")]
+    [Authorize(Roles = Roles.TeamLeader)]
+    [ProducesResponseType(
+        typeof(TeamMemberScheduleDto),
+        StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateMemberSchedule(
+        Guid teamMemberId,
+        [FromBody] UpdateTeamMemberScheduleDto dto,
+        CancellationToken cancellationToken)
+    {
+        if (CurrentUserId == Guid.Empty)
+            return Unauthorized(new { message = "Invalid user identity." });
+
+        try
+        {
+            var result = await _teamManagementService
+                .UpdateMemberScheduleAsync(
+                    CurrentUserId,
+                    teamMemberId,
+                    dto,
+                    cancellationToken);
+
+            return result is null
+                ? NotFound(new { message = "Team member was not found." })
+                : Ok(result);
+        }
+        catch (ArgumentException exception)
+        {
+            return BadRequest(new { message = exception.Message });
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                new { message = exception.Message });
+        }
+    }
+
+    [HttpPost("members/{teamMemberId:guid}/leaves")]
+    [Authorize(Roles = Roles.TeamLeader)]
+    [ProducesResponseType(
+        typeof(TeamMemberLeaveDto),
+        StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> AddMemberLeave(
+        Guid teamMemberId,
+        [FromBody] CreateTeamMemberLeaveDto dto,
+        CancellationToken cancellationToken)
+    {
+        if (CurrentUserId == Guid.Empty)
+            return Unauthorized(new { message = "Invalid user identity." });
+
+        try
+        {
+            var result = await _teamManagementService.AddMemberLeaveAsync(
+                CurrentUserId,
+                teamMemberId,
+                dto,
+                cancellationToken);
+
+            return result is null
+                ? NotFound(new { message = "Team member was not found." })
+                : StatusCode(StatusCodes.Status201Created, result);
+        }
+        catch (ArgumentException exception)
+        {
+            return BadRequest(new { message = exception.Message });
+        }
+        catch (InvalidOperationException exception)
+        {
+            return Conflict(new { message = exception.Message });
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                new { message = exception.Message });
+        }
+    }
+
+    [HttpPut("members/{teamMemberId:guid}/leaves/{leaveId:guid}")]
+    [Authorize(Roles = Roles.TeamLeader)]
+    [ProducesResponseType(
+        typeof(TeamMemberLeaveDto),
+        StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> UpdateMemberLeave(
+        Guid teamMemberId,
+        Guid leaveId,
+        [FromBody] CreateTeamMemberLeaveDto dto,
+        CancellationToken cancellationToken)
+    {
+        if (CurrentUserId == Guid.Empty)
+            return Unauthorized(new { message = "Invalid user identity." });
+
+        try
+        {
+            var result = await _teamManagementService.UpdateMemberLeaveAsync(
+                CurrentUserId,
+                teamMemberId,
+                leaveId,
+                dto,
+                cancellationToken);
+
+            return result is null
+                ? NotFound(new { message = "Leave period was not found." })
+                : Ok(result);
+        }
+        catch (ArgumentException exception)
+        {
+            return BadRequest(new { message = exception.Message });
+        }
+        catch (InvalidOperationException exception)
+        {
+            return Conflict(new { message = exception.Message });
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                new { message = exception.Message });
+        }
+    }
+
+    [HttpDelete("members/{teamMemberId:guid}/leaves/{leaveId:guid}")]
+    [Authorize(Roles = Roles.TeamLeader)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteMemberLeave(
+        Guid teamMemberId,
+        Guid leaveId,
+        CancellationToken cancellationToken)
+    {
+        if (CurrentUserId == Guid.Empty)
+            return Unauthorized(new { message = "Invalid user identity." });
+
+        try
+        {
+            var deleted = await _teamManagementService
+                .DeleteMemberLeaveAsync(
+                    CurrentUserId,
+                    teamMemberId,
+                    leaveId,
+                    cancellationToken);
+
+            return deleted
+                ? NoContent()
+                : NotFound(new { message = "Leave period was not found." });
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                new { message = exception.Message });
+        }
+    }
+
     [HttpGet("me")]
     [Authorize(Roles = Roles.SupportAgent)]
     [ProducesResponseType(

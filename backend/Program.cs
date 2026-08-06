@@ -93,9 +93,11 @@ builder.Services.AddScoped<ITicketHistoryService, TicketHistoryService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<ITeamManagementService, TeamManagementService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddSingleton<IBusinessTimeCalculator, BusinessTimeCalculator>();
 builder.Services.AddScoped<ISlaService, SlaService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<ISatisfactionSurveyService, SatisfactionSurveyService>();
+builder.Services.AddHostedService<SlaNotificationWorker>();
 
 
 

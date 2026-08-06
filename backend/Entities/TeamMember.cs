@@ -14,4 +14,8 @@ public class TeamMember
     public ICollection<TicketAssignment> AssignmentsReceived { get; set; } = new List<TicketAssignment>();
 
     public ICollection<TicketAssignment> AssignmentsCreated { get; set; }  = new List<TicketAssignment>();
+    public ICollection<TeamMemberShift> Shifts { get; set; } =
+        new List<TeamMemberShift>();
+    public ICollection<TeamMemberLeave> Leaves { get; set; } =
+        new List<TeamMemberLeave>();
 }   

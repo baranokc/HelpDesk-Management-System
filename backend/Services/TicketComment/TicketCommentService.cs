@@ -82,6 +82,9 @@ public class TicketCommentService : ITicketCommentService
             ticket.ResolvedAt.HasValue ||
             ticket.ClosedAt.HasValue;
 
+        var shouldPauseSla = false;
+        var shouldResumeSla = false;
+
         if (isAssignedTeamMember &&
             !isTicketCreator &&
             !entity.IsInternal &&
@@ -100,6 +103,7 @@ public class TicketCommentService : ITicketCommentService
                     "The active Waiting for User status was not found.");
 
             ticket.StatusId = waitingForUserStatus.Id;
+            shouldPauseSla = true;
 
             _db.TicketHistories.Add(new Entities.TicketHistory
             {
@@ -131,6 +135,7 @@ public class TicketCommentService : ITicketCommentService
                     "The active In Progress status was not found.");
 
             ticket.StatusId = inProgressStatus.Id;
+            shouldResumeSla = true;
 
             _db.TicketHistories.Add(new Entities.TicketHistory
             {
@@ -156,6 +161,27 @@ public class TicketCommentService : ITicketCommentService
             await _slaService.MarkFirstResponseAsync(
                 ticket,
                 entity.CreatedAt,
+                cancellationToken);
+        }
+
+        var slaEventAt = new DateTimeOffset(
+            DateTime.SpecifyKind(entity.CreatedAt, DateTimeKind.Utc),
+            TimeSpan.Zero);
+
+        if (shouldPauseSla)
+        {
+            await _slaService.PauseAsync(
+                ticket,
+                userId,
+                "Waiting for a response from the ticket creator.",
+                slaEventAt,
+                cancellationToken);
+        }
+        else if (shouldResumeSla)
+        {
+            await _slaService.ResumeAsync(
+                ticket,
+                slaEventAt,
                 cancellationToken);
         }
 

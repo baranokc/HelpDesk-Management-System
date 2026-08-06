@@ -26,19 +26,23 @@ public class SatisfactionSurveyService : ISatisfactionSurveyService
         // 1. Puan Doğrulaması (1-5 arası)
         if (dto.Rating < 1 || dto.Rating > 5 ||
             dto.CommunicationRating < 1 || dto.CommunicationRating > 5 ||
-            dto.SolutionRating < 1 || dto.SolutionRating > 5)
+            dto.SolutionRating < 1 || dto.SolutionRating > 5 ||
+            dto.SpeedRating < 1 || dto.SpeedRating > 5)
         {
             throw new ArgumentException("Ratings must be between 1 and 5.");
         }
 
         // 2. Bilet Kontrolü
         var ticket = await _context.Tickets
+            .AsNoTracking()
+            .Include(t => t.Status)
             .FirstOrDefaultAsync(t => t.Id == ticketId, cancellationToken);
 
         if (ticket is null) return null;
 
         // 3. Durum Kontrolü
-        if (ticket.Status.ToString() != "Resolved" && ticket.Status.ToString() != "Closed")
+        if (!string.Equals(ticket.Status.Name, "Resolved", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(ticket.Status.Name, "Closed", StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException("Satisfaction survey can only be submitted for resolved or closed tickets.");
         }
@@ -61,6 +65,7 @@ public class SatisfactionSurveyService : ISatisfactionSurveyService
             Rating = dto.Rating,
             CommunicationRating = dto.CommunicationRating,
             SolutionRating = dto.SolutionRating,
+            SpeedRating = dto.SpeedRating,
             Comment = dto.Comment ?? string.Empty,
             CreatedAt = DateTime.UtcNow
         };
@@ -76,6 +81,7 @@ public class SatisfactionSurveyService : ISatisfactionSurveyService
             Rating = survey.Rating,
             CommunicationRating = survey.CommunicationRating,
             SolutionRating = survey.SolutionRating,
+            SpeedRating = survey.SpeedRating,
             Comment = survey.Comment,
             CreatedAt = survey.CreatedAt
         };
@@ -101,6 +107,7 @@ public class SatisfactionSurveyService : ISatisfactionSurveyService
             Rating = survey.Rating,
             CommunicationRating = survey.CommunicationRating,
             SolutionRating = survey.SolutionRating,
+            SpeedRating = survey.SpeedRating,
             Comment = survey.Comment,
             CreatedAt = survey.CreatedAt
         };

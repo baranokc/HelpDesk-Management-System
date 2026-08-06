@@ -23,4 +23,29 @@ public interface ITeamManagementService
         int inactivePageNumber,
         int pageSize,
         CancellationToken cancellationToken = default);
+
+    Task<TeamMemberScheduleDto?> UpdateMemberScheduleAsync(
+        Guid leaderUserId,
+        Guid teamMemberId,
+        UpdateTeamMemberScheduleDto dto,
+        CancellationToken cancellationToken = default);
+
+    Task<TeamMemberLeaveDto?> AddMemberLeaveAsync(
+        Guid leaderUserId,
+        Guid teamMemberId,
+        CreateTeamMemberLeaveDto dto,
+        CancellationToken cancellationToken = default);
+
+    Task<TeamMemberLeaveDto?> UpdateMemberLeaveAsync(
+        Guid leaderUserId,
+        Guid teamMemberId,
+        Guid leaveId,
+        CreateTeamMemberLeaveDto dto,
+        CancellationToken cancellationToken = default);
+
+    Task<bool> DeleteMemberLeaveAsync(
+        Guid leaderUserId,
+        Guid teamMemberId,
+        Guid leaveId,
+        CancellationToken cancellationToken = default);
 }

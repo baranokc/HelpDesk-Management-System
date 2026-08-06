@@ -213,6 +213,10 @@ public sealed class TeamManagementService : ITeamManagementService
             pageSize,
             cancellationToken);
 
+        var schedule = await GetMemberScheduleAsync(
+            member.TeamMemberId,
+            cancellationToken);
+
         return new TeamMemberDetailDto
         {
             TeamId = member.TeamId,
@@ -227,6 +231,7 @@ public sealed class TeamManagementService : ITeamManagementService
             SystemRole = member.SystemRole,
             RegisteredAt = member.CreatedAt,
             JoinedAt = member.JoinedAt,
+            Schedule = schedule,
             Stats = stats,
             ActiveTickets = activeTickets,
             InactiveTickets = inactiveTickets
@@ -315,6 +320,10 @@ public sealed class TeamManagementService : ITeamManagementService
             pageSize,
             cancellationToken);
 
+        var schedule = await GetMemberScheduleAsync(
+            primaryMembership.TeamMemberId,
+            cancellationToken);
+
         return new TeamMemberDetailDto
         {
             TeamId = primaryMembership.TeamId,
@@ -338,10 +347,348 @@ public sealed class TeamManagementService : ITeamManagementService
             SystemRole = primaryMembership.SystemRole,
             RegisteredAt = primaryMembership.CreatedAt,
             JoinedAt = memberships.Min(member => member.JoinedAt),
+            Schedule = schedule,
             Stats = stats,
             ActiveTickets = activeTickets,
             InactiveTickets = inactiveTickets
         };
+    }
+
+    public async Task<TeamMemberScheduleDto?> UpdateMemberScheduleAsync(
+        Guid leaderUserId,
+        Guid teamMemberId,
+        UpdateTeamMemberScheduleDto dto,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(dto);
+        ValidateShifts(dto.Shifts);
+
+        var member = await GetManagedMemberForUpdateAsync(
+            leaderUserId,
+            teamMemberId,
+            includeShifts: true,
+            cancellationToken: cancellationToken);
+
+        if (member is null)
+            return null;
+
+        _db.TeamMemberShifts.RemoveRange(member.Shifts);
+
+        foreach (var shift in dto.Shifts.OrderBy(item => item.DayOfWeek))
+        {
+            member.Shifts.Add(new TeamMemberShift
+            {
+                Id = Guid.NewGuid(),
+                TeamMemberId = member.Id,
+                DayOfWeek = shift.DayOfWeek,
+                StartTime = shift.StartTime,
+                EndTime = shift.EndTime
+            });
+        }
+
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return await GetMemberScheduleAsync(
+            member.Id,
+            cancellationToken);
+    }
+
+    public async Task<TeamMemberLeaveDto?> AddMemberLeaveAsync(
+        Guid leaderUserId,
+        Guid teamMemberId,
+        CreateTeamMemberLeaveDto dto,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(dto);
+        var reason = ValidateLeave(dto);
+
+        var member = await GetManagedMemberForUpdateAsync(
+            leaderUserId,
+            teamMemberId,
+            includeShifts: false,
+            cancellationToken: cancellationToken);
+
+        if (member is null)
+            return null;
+
+        var overlaps = await _db.TeamMemberLeaves
+            .AsNoTracking()
+            .AnyAsync(leave =>
+                leave.TeamMemberId == member.Id &&
+                leave.StartDate <= dto.EndDate &&
+                leave.EndDate >= dto.StartDate,
+                cancellationToken);
+
+        if (overlaps)
+        {
+            throw new InvalidOperationException(
+                "The selected dates overlap an existing leave period.");
+        }
+
+        var leave = new TeamMemberLeave
+        {
+            Id = Guid.NewGuid(),
+            TeamMemberId = member.Id,
+            StartDate = dto.StartDate,
+            EndDate = dto.EndDate,
+            Reason = reason,
+            CreatedById = leaderUserId,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _db.TeamMemberLeaves.Add(leave);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return await GetLeaveDtoAsync(leave.Id, cancellationToken);
+    }
+
+    public async Task<TeamMemberLeaveDto?> UpdateMemberLeaveAsync(
+        Guid leaderUserId,
+        Guid teamMemberId,
+        Guid leaveId,
+        CreateTeamMemberLeaveDto dto,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(dto);
+        var reason = ValidateLeave(dto);
+
+        var member = await GetManagedMemberForUpdateAsync(
+            leaderUserId,
+            teamMemberId,
+            includeShifts: false,
+            cancellationToken: cancellationToken);
+
+        if (member is null)
+            return null;
+
+        var leave = await _db.TeamMemberLeaves.SingleOrDefaultAsync(
+            item =>
+                item.Id == leaveId &&
+                item.TeamMemberId == member.Id,
+            cancellationToken);
+
+        if (leave is null)
+            return null;
+
+        var overlaps = await _db.TeamMemberLeaves
+            .AsNoTracking()
+            .AnyAsync(item =>
+                item.TeamMemberId == member.Id &&
+                item.Id != leave.Id &&
+                item.StartDate <= dto.EndDate &&
+                item.EndDate >= dto.StartDate,
+                cancellationToken);
+
+        if (overlaps)
+        {
+            throw new InvalidOperationException(
+                "The selected dates overlap an existing leave period.");
+        }
+
+        leave.StartDate = dto.StartDate;
+        leave.EndDate = dto.EndDate;
+        leave.Reason = reason;
+
+        await _db.SaveChangesAsync(cancellationToken);
+        return await GetLeaveDtoAsync(leave.Id, cancellationToken);
+    }
+
+    public async Task<bool> DeleteMemberLeaveAsync(
+        Guid leaderUserId,
+        Guid teamMemberId,
+        Guid leaveId,
+        CancellationToken cancellationToken = default)
+    {
+        var member = await GetManagedMemberForUpdateAsync(
+            leaderUserId,
+            teamMemberId,
+            includeShifts: false,
+            cancellationToken: cancellationToken);
+
+        if (member is null)
+            return false;
+
+        var leave = await _db.TeamMemberLeaves.SingleOrDefaultAsync(
+            item =>
+                item.Id == leaveId &&
+                item.TeamMemberId == member.Id,
+            cancellationToken);
+
+        if (leave is null)
+            return false;
+
+        _db.TeamMemberLeaves.Remove(leave);
+        await _db.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    private async Task<TeamMember?> GetManagedMemberForUpdateAsync(
+        Guid leaderUserId,
+        Guid teamMemberId,
+        bool includeShifts,
+        CancellationToken cancellationToken)
+    {
+        IQueryable<TeamMember> query = _db.TeamMembers;
+
+        if (includeShifts)
+            query = query.Include(member => member.Shifts);
+
+        var member = await query.SingleOrDefaultAsync(item =>
+            item.Id == teamMemberId &&
+            item.IsActive &&
+            item.Team.IsActive &&
+            item.User.IsActive &&
+            item.User.UserRoles.Any(userRole =>
+                userRole.Role.IsActive &&
+                (userRole.Role.Name == Roles.SupportAgent ||
+                 userRole.Role.Name == Roles.TeamLeader)),
+            cancellationToken);
+
+        if (member is null)
+            return null;
+
+        var leadsTeam = await _db.TeamMembers
+            .AsNoTracking()
+            .AnyAsync(item =>
+                item.TeamId == member.TeamId &&
+                item.UserId == leaderUserId &&
+                item.RoleInTeam == TeamMemberRole.TeamLeader &&
+                item.IsActive &&
+                item.Team.IsActive &&
+                item.User.IsActive &&
+                item.User.UserRoles.Any(userRole =>
+                    userRole.Role.IsActive &&
+                    userRole.Role.Name == Roles.TeamLeader),
+                cancellationToken);
+
+        if (!leadsTeam)
+        {
+            throw new UnauthorizedAccessException(
+                "You can manage schedules only for members of teams that you actively lead.");
+        }
+
+        return member;
+    }
+
+    private async Task<TeamMemberScheduleDto> GetMemberScheduleAsync(
+        Guid teamMemberId,
+        CancellationToken cancellationToken)
+    {
+        var timeZoneId = await _db.TeamMembers
+            .AsNoTracking()
+            .Where(member => member.Id == teamMemberId)
+            .Select(member => member.Team.SlaCalendar != null
+                ? member.Team.SlaCalendar.TimeZoneId
+                : "Europe/Istanbul")
+            .SingleAsync(cancellationToken);
+
+        var shifts = await _db.TeamMemberShifts
+            .AsNoTracking()
+            .Where(shift => shift.TeamMemberId == teamMemberId)
+            .OrderBy(shift => shift.DayOfWeek)
+            .Select(shift => new TeamMemberShiftDto
+            {
+                Id = shift.Id,
+                DayOfWeek = shift.DayOfWeek,
+                StartTime = shift.StartTime,
+                EndTime = shift.EndTime
+            })
+            .ToListAsync(cancellationToken);
+
+        var leaves = await _db.TeamMemberLeaves
+            .AsNoTracking()
+            .Where(leave => leave.TeamMemberId == teamMemberId)
+            .OrderByDescending(leave => leave.StartDate)
+            .Select(leave => new TeamMemberLeaveDto
+            {
+                Id = leave.Id,
+                StartDate = leave.StartDate,
+                EndDate = leave.EndDate,
+                Reason = leave.Reason,
+                CreatedById = leave.CreatedById,
+                CreatedByName =
+                    leave.CreatedBy.Name + " " +
+                    leave.CreatedBy.LastName,
+                CreatedAt = leave.CreatedAt
+            })
+            .ToListAsync(cancellationToken);
+
+        return new TeamMemberScheduleDto
+        {
+            TimeZoneId = timeZoneId,
+            Shifts = shifts,
+            Leaves = leaves
+        };
+    }
+
+    private static void ValidateShifts(
+        IReadOnlyCollection<TeamMemberShiftUpsertDto> shifts)
+    {
+        if (shifts.Count > 7)
+            throw new ArgumentException(
+                "A weekly schedule can contain at most one shift per day.");
+
+        var duplicateDay = shifts
+            .GroupBy(shift => shift.DayOfWeek)
+            .FirstOrDefault(group => group.Count() > 1);
+
+        if (duplicateDay is not null)
+            throw new ArgumentException(
+                $"Only one shift can be defined for {duplicateDay.Key}.");
+
+        foreach (var shift in shifts)
+        {
+            if (!Enum.IsDefined(typeof(DayOfWeek), shift.DayOfWeek))
+                throw new ArgumentException("A shift contains an invalid day.");
+
+            if (shift.StartTime >= shift.EndTime)
+            {
+                throw new ArgumentException(
+                    $"Shift start time must be earlier than end time for {shift.DayOfWeek}.");
+            }
+        }
+    }
+
+    private static string ValidateLeave(CreateTeamMemberLeaveDto dto)
+    {
+        var reason = dto.Reason?.Trim() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new ArgumentException("Leave reason is required.");
+
+        if (reason.Length > 500)
+            throw new ArgumentException(
+                "Leave reason cannot exceed 500 characters.");
+
+        if (dto.EndDate < dto.StartDate)
+        {
+            throw new ArgumentException(
+                "Leave end date cannot be earlier than its start date.");
+        }
+
+        return reason;
+    }
+
+    private Task<TeamMemberLeaveDto> GetLeaveDtoAsync(
+        Guid leaveId,
+        CancellationToken cancellationToken)
+    {
+        return _db.TeamMemberLeaves
+            .AsNoTracking()
+            .Where(item => item.Id == leaveId)
+            .Select(item => new TeamMemberLeaveDto
+            {
+                Id = item.Id,
+                StartDate = item.StartDate,
+                EndDate = item.EndDate,
+                Reason = item.Reason,
+                CreatedById = item.CreatedById,
+                CreatedByName =
+                    item.CreatedBy.Name + " " +
+                    item.CreatedBy.LastName,
+                CreatedAt = item.CreatedAt
+            })
+            .SingleAsync(cancellationToken);
     }
 
     private async Task<PagedResultDto<TeamMemberTicketDto>>

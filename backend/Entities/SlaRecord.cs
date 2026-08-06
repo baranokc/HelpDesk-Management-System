@@ -7,6 +7,8 @@ public class SlaRecord
     public Ticket Ticket {get; set; } = null!;
     public Guid SlaPolicyId {get; set; }
     public SlaPolicy SlaPolicy {get; set; } = null!;
+    public Guid SlaCalendarId { get; set; }
+    public SlaCalendar SlaCalendar { get; set; } = null!;
     public DateTime FirstResponseDueAt {get; set; }
     public DateTime? FirstResponseAt {get; set; }
     public DateTime ResolutionDueAt {get; set; }
@@ -15,5 +17,7 @@ public class SlaRecord
     public string PauseReason {get; set; } = string.Empty;
     public DateTime? PausedAt {get; set; }
     public DateTime? ResumedAt {get; set; }
+    public TimeSpan? RemainingFirstResponseTime { get; set; }
+    public TimeSpan? RemainingResolutionTime { get; set; }
     public ICollection<SlaPause> Pauses { get; set; } = new List<SlaPause>();
 }

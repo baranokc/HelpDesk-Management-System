@@ -230,7 +230,7 @@ public class TeamController : ControllerBase
         {
             Id = Guid.NewGuid(),
             Name = dto.Name.Trim(),
-            Description = string.IsNullOrWhiteSpace(dto.Description) ? null : dto.Description.Trim(),
+            Description = string.IsNullOrWhiteSpace(dto.Description) ? string.Empty : dto.Description.Trim(),
             DepartmentId = targetDepartmentId ?? 0,
             LeadId = null,
             CreatedAt = DateTime.UtcNow
@@ -264,7 +264,7 @@ public class TeamController : ControllerBase
             return NotFound("Team not found.");
 
         team.Name = dto.Name.Trim();
-        team.Description = string.IsNullOrWhiteSpace(dto.Description) ? null : dto.Description.Trim();
+        team.Description = string.IsNullOrWhiteSpace(dto.Description) ? string.Empty : dto.Description.Trim();
         
         if (dto.DepartmentId.HasValue && dto.DepartmentId.Value > 0)
         {
@@ -513,6 +513,7 @@ public class TeamController : ControllerBase
         }
 
         var existingMember = await _context.TeamMembers
+            .Include(member => member.Shifts)
             .FirstOrDefaultAsync(tm =>
                 tm.TeamId == id &&
                 tm.UserId == userGuid,
@@ -527,19 +528,49 @@ public class TeamController : ControllerBase
             existingMember.RoleInTeam = TeamMemberRole.Member;
             existingMember.JoinedAt = DateTime.UtcNow;
 
+            if (existingMember.Shifts.Count == 0)
+                AddDefaultShifts(existingMember);
+
             await _context.SaveChangesAsync(cancellationToken);
             return Ok();
         }
 
-        _context.TeamMembers.Add(new TeamMember
+        var newMember = new TeamMember
         {
             TeamId = id,
             UserId = userGuid,
             JoinedAt = DateTime.UtcNow
-        });
+        };
+
+        AddDefaultShifts(newMember);
+        _context.TeamMembers.Add(newMember);
 
         await _context.SaveChangesAsync(cancellationToken);
         return Ok();
+    }
+
+    private static void AddDefaultShifts(TeamMember member)
+    {
+        var workingDays = new[]
+        {
+            DayOfWeek.Monday,
+            DayOfWeek.Tuesday,
+            DayOfWeek.Wednesday,
+            DayOfWeek.Thursday,
+            DayOfWeek.Friday
+        };
+
+        foreach (var day in workingDays)
+        {
+            member.Shifts.Add(new TeamMemberShift
+            {
+                Id = Guid.NewGuid(),
+                TeamMemberId = member.Id,
+                DayOfWeek = day,
+                StartTime = new TimeOnly(9, 0),
+                EndTime = new TimeOnly(18, 0)
+            });
+        }
     }
 
     [HttpDelete("{id:guid}/members/{userId:guid}")]

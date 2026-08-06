@@ -43,9 +43,15 @@ public static class DataSeeder
 
         await SafeSaveChangesAsync(context);
 
+        await SeedDefaultSlaCalendarAsync(context);
+
+        await SafeSaveChangesAsync(context);
+
         await SeedTeamsAsync(context);
 
         await SafeSaveChangesAsync(context);
+
+        await AssignDefaultSlaCalendarToTeamsAsync(context);
 
         await AssignTicketCategoriesToTeamsAsync(context);
 
@@ -193,7 +199,7 @@ public static class DataSeeder
                     Id = Guid.NewGuid(),
                     Name = "Low",
                     ResponseTime = TimeSpan.FromHours(8),
-                    ResolutionTime = TimeSpan.FromDays(3)
+                    ResolutionTime = TimeSpan.FromHours(24)
                 });
             }
 
@@ -204,7 +210,7 @@ public static class DataSeeder
                     Id = Guid.NewGuid(),
                     Name = "Medium",
                     ResponseTime = TimeSpan.FromHours(4),
-                    ResolutionTime = TimeSpan.FromDays(2)
+                    ResolutionTime = TimeSpan.FromHours(16)
                 });
             }
 
@@ -252,11 +258,11 @@ public static class DataSeeder
             {
                 ["Low"] = (
                     TimeSpan.FromHours(8),
-                    TimeSpan.FromDays(3),
+                    TimeSpan.FromHours(24),
                     "Low priority SLA policy."),
                 ["Medium"] = (
                     TimeSpan.FromHours(4),
-                    TimeSpan.FromDays(2),
+                    TimeSpan.FromHours(16),
                     "Medium priority SLA policy."),
                 ["High"] = (
                     TimeSpan.FromHours(2),
@@ -953,6 +959,103 @@ public static class DataSeeder
         catch (PostgresException ex) when (ex.SqlState == "42P01")
         {
             Console.WriteLine("[DataSeeder Warning] Teams tablosu bulunamadı.");
+        }
+    }
+
+    private static async Task SeedDefaultSlaCalendarAsync(
+        AppDbContext context)
+    {
+        try
+        {
+            var calendar = await context.SlaCalendars
+                .Include(item => item.WorkingPeriods)
+                .SingleOrDefaultAsync(item =>
+                    item.IsDefault &&
+                    item.IsActive);
+
+            if (calendar is null)
+            {
+                calendar = new SlaCalendar
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Turkey Standard Business Hours",
+                    TimeZoneId = "Europe/Istanbul",
+                    IsDefault = true,
+                    IsActive = true
+                };
+
+                await context.SlaCalendars.AddAsync(calendar);
+            }
+
+            if (calendar.WorkingPeriods.Count > 0)
+                return;
+
+            var workingDays = new[]
+            {
+                DayOfWeek.Monday,
+                DayOfWeek.Tuesday,
+                DayOfWeek.Wednesday,
+                DayOfWeek.Thursday,
+                DayOfWeek.Friday
+            };
+
+            foreach (var day in workingDays)
+            {
+                calendar.WorkingPeriods.Add(new SlaWorkingPeriod
+                {
+                    Id = Guid.NewGuid(),
+                    SlaCalendarId = calendar.Id,
+                    DayOfWeek = day,
+                    StartTime = new TimeOnly(8, 0),
+                    EndTime = new TimeOnly(12, 00)
+                });
+
+                calendar.WorkingPeriods.Add(new SlaWorkingPeriod
+                {
+                    Id = Guid.NewGuid(),
+                    SlaCalendarId = calendar.Id,
+                    DayOfWeek = day,
+                    StartTime = new TimeOnly(13, 00),
+                    EndTime = new TimeOnly(17, 0)
+                });
+            }
+        }
+        catch (PostgresException ex) when (ex.SqlState == "42P01")
+        {
+            Console.WriteLine(
+                "[DataSeeder Warning] SLA çalışma takvimi tabloları bulunamadı.");
+        }
+    }
+
+    private static async Task AssignDefaultSlaCalendarToTeamsAsync(
+        AppDbContext context)
+    {
+        try
+        {
+            var defaultCalendarId = await context.SlaCalendars
+                .AsNoTracking()
+                .Where(calendar =>
+                    calendar.IsDefault &&
+                    calendar.IsActive)
+                .Select(calendar => (Guid?)calendar.Id)
+                .SingleOrDefaultAsync();
+
+            if (!defaultCalendarId.HasValue)
+                return;
+
+            var teams = await context.Teams
+                .Where(team =>
+                    team.IsActive &&
+                    team.SlaCalendarId == null)
+                .ToListAsync();
+
+            foreach (var team in teams)
+                team.SlaCalendarId = defaultCalendarId.Value;
+        }
+        catch (PostgresException ex) when (ex.SqlState == "42P01")
+        {
+            Console.WriteLine(
+                "[DataSeeder Warning] Takımlara SLA çalışma takvimi atanamadı.");
         }
     }
 
