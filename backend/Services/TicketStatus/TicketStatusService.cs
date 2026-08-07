@@ -5,8 +5,6 @@ using backend.Services.Notification;
 using backend.Services.Sla;
 using Microsoft.EntityFrameworkCore;
 
-
-
 namespace backend.Services.TicketStatus;
 
 public class TicketStatusService : ITicketStatusService
@@ -74,24 +72,8 @@ public class TicketStatusService : ITicketStatusService
             "Waiting for User",
             StringComparison.OrdinalIgnoreCase);
 
+        // 1. ADIM: Biletin durumunu güncelle ve Log ekle
         ticket.StatusId = newStatusId;
-
-        if (!wasWaitingForUser && isWaitingForUser)
-        {
-            await _slaService.PauseAsync(
-                ticket,
-                changedById,
-                "Ticket status changed to Waiting for User.",
-                ToUtcOffset(changedAt),
-                cancellationToken);
-        }
-        else if (wasWaitingForUser && !isWaitingForUser)
-        {
-            await _slaService.ResumeAsync(
-                ticket,
-                ToUtcOffset(changedAt),
-                cancellationToken);
-        }
 
         var historyLog = new Entities.TicketHistory
         {
@@ -109,7 +91,29 @@ public class TicketStatusService : ITicketStatusService
         };
 
         _context.TicketHistories.Add(historyLog);
+
+        // 2. ADIM: SLA Servisinden ÖNCE SaveChanges çağırarak Concurrency çakışmasını engelle
         await _context.SaveChangesAsync(cancellationToken);
+
+        // 3. ADIM: SLA işlemlerini yürüt (kendi SaveChanges çağrısını rahatça yapsın)
+        if (!wasWaitingForUser && isWaitingForUser)
+        {
+            await _slaService.PauseAsync(
+                ticket,
+                changedById,
+                "Ticket status changed to Waiting for User.",
+                ToUtcOffset(changedAt),
+                cancellationToken);
+        }
+        else if (wasWaitingForUser && !isWaitingForUser)
+        {
+            await _slaService.ResumeAsync(
+                ticket,
+                ToUtcOffset(changedAt),
+                cancellationToken);
+        }
+
+        // 4. ADIM: Bildirim gönder
         await _notificationService.NotifyTicketStatusChangedAsync(
             ticket.Id,
             newStatusName,
@@ -147,7 +151,7 @@ public class TicketStatusService : ITicketStatusService
             .ToListAsync();
     }
 
-    public Task<List<TicketHistoryDto>>  GetTicketHistoryDtosAsync(Guid ticketId)
+    public Task<List<TicketHistoryDto>> GetTicketHistoryDtosAsync(Guid ticketId)
     {
         return GetTicketHistoryAsync(ticketId);
     }
