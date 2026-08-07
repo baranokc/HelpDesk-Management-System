@@ -2,9 +2,17 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  Wrench,
+  UploadCloud,
+  RefreshCw,
+  UserPlus,
+  UserMinus,
+  CheckCircle2,
+  XCircle,
+} from "lucide-react";
 import { Alert } from "@/src/components/ui/Alert";
 import { Button } from "@/src/components/ui/Button";
-import { Card } from "@/src/components/ui/Card";
 import { Checkbox } from "@/src/components/ui/Checkbox";
 import { Modal } from "@/src/components/ui/Modal";
 import { Textarea } from "@/src/components/ui/Textarea";
@@ -192,35 +200,59 @@ export function TicketActions({
 
   return (
     <>
-      <Card
-        className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 transition-colors shadow-sm"
-        description="Upload files and perform the workflow actions available for your role."
-        title="Ticket actions"
-      >
-        <div className="flex flex-wrap gap-3">
-          <Button onClick={() => openAction("upload")} size="sm">
-            Upload files
+      {/* KART DÜZENİ */}
+      <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl p-5 shadow-lg space-y-4">
+        <div className="space-y-1 pb-3 border-b border-slate-100 dark:border-slate-800/60">
+          <div className="flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-500 dark:text-indigo-400">
+              <Wrench className="h-4 w-4" />
+            </div>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+              Ticket Actions
+            </h3>
+          </div>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+            Upload files and perform the workflow actions available for your role.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <Button
+            onClick={() => openAction("upload")}
+            size="sm"
+            className="!inline-flex !items-center !justify-center !gap-2 !px-3.5 !py-2.5 !rounded-xl !text-xs !font-semibold
+                       !text-indigo-600 dark:!text-indigo-400 !bg-indigo-500/10 !border !border-indigo-500/20
+                       hover:!bg-indigo-500/20 hover:!border-indigo-500/40 transition-all active:scale-[0.98] shadow-sm"
+          >
+            <UploadCloud className="h-3.5 w-3.5 shrink-0" />
+            <span>Upload files</span>
           </Button>
 
           {canUpdateStatus && (
             <Button
-              className={secondaryBtnStyle}
               onClick={() => openAction("status")}
               size="sm"
               variant="secondary"
+              className="!inline-flex !items-center !justify-center !gap-2 !px-3.5 !py-2.5 !rounded-xl !text-xs !font-semibold
+                         !text-slate-700 dark:!text-slate-200 !bg-slate-100/80 dark:!bg-slate-800/60 !border !border-slate-200/80 dark:!border-slate-700/60
+                         hover:!bg-slate-200/80 dark:hover:!bg-slate-800 hover:!text-indigo-600 dark:hover:!text-indigo-400 hover:!border-indigo-500/30 transition-all active:scale-[0.98]"
             >
-              Update status
+              <RefreshCw className="h-3.5 w-3.5 shrink-0 text-sky-500" />
+              <span>Update status</span>
             </Button>
           )}
 
           {canAssign && (
             <Button
-              className={secondaryBtnStyle}
               onClick={() => openAction("assign")}
               size="sm"
               variant="secondary"
+              className="!inline-flex !items-center !justify-center !gap-2 !px-3.5 !py-2.5 !rounded-xl !text-xs !font-semibold
+                         !text-slate-700 dark:!text-slate-200 !bg-slate-100/80 dark:!bg-slate-800/60 !border !border-slate-200/80 dark:!border-slate-700/60
+                         hover:!bg-slate-200/80 dark:hover:!bg-slate-800 hover:!text-indigo-600 dark:hover:!text-indigo-400 hover:!border-indigo-500/30 transition-all active:scale-[0.98]"
             >
-              {isAssigned ? "Reassign ticket" : "Assign ticket"}
+              <UserPlus className="h-3.5 w-3.5 shrink-0 text-purple-400" />
+              <span>{isAssigned ? "Reassign ticket" : "Assign ticket"}</span>
             </Button>
           )}
 
@@ -229,19 +261,26 @@ export function TicketActions({
               onClick={() => openAction("unassign")}
               size="sm"
               variant="danger"
+              className="!inline-flex !items-center !justify-center !gap-2 !px-3.5 !py-2.5 !rounded-xl !text-xs !font-semibold
+                         !text-rose-600 dark:!text-rose-400 !bg-rose-500/10 !border !border-rose-500/20
+                         hover:!bg-rose-500/20 hover:!border-rose-500/40 transition-all active:scale-[0.98]"
             >
-              Remove assignment
+              <UserMinus className="h-3.5 w-3.5 shrink-0" />
+              <span>Remove assignment</span>
             </Button>
           )}
 
           {canResolve && (
             <Button
-              className={secondaryBtnStyle}
               onClick={() => openAction("resolve")}
               size="sm"
               variant="secondary"
+              className="!inline-flex !items-center !justify-center !gap-2 !px-3.5 !py-2.5 !rounded-xl !text-xs !font-semibold
+                         !text-emerald-600 dark:!text-emerald-400 !bg-emerald-500/10 !border !border-emerald-500/20
+                         hover:!bg-emerald-500/20 hover:!border-emerald-500/40 transition-all active:scale-[0.98] shadow-sm"
             >
-              Resolve ticket
+              <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+              <span>Resolve ticket</span>
             </Button>
           )}
 
@@ -250,13 +289,18 @@ export function TicketActions({
               onClick={() => openAction("close")}
               size="sm"
               variant="danger"
+              className="!inline-flex !items-center !justify-center !gap-2 !px-3.5 !py-2.5 !rounded-xl !text-xs !font-semibold
+                         !text-rose-600 dark:!text-rose-400 !bg-rose-500/10 !border !border-rose-500/20
+                         hover:!bg-rose-500/20 hover:!border-rose-500/40 transition-all active:scale-[0.98]"
             >
-              Close ticket
+              <XCircle className="h-3.5 w-3.5 shrink-0" />
+              <span>Close ticket</span>
             </Button>
           )}
         </div>
-      </Card>
+      </div>
 
+      {/* ORİJİNAL MODALLAR */}
       <Modal
         onClose={closeAction}
         open={activeAction === "upload"}
@@ -330,7 +374,7 @@ export function TicketActions({
             onChange={(event) => setKeepTeamAssignment(event.target.checked)}
           />
 
-          <div className="flex justify-end gap-3">
+          <div className="flex justify-end gap-3 pt-2">
             <Button
               className={secondaryBtnStyle}
               onClick={closeAction}
@@ -363,7 +407,7 @@ export function TicketActions({
           will receive a notification.
         </p>
 
-        <div className="mt-6 flex justify-end gap-3">
+        <div className="mt-6 flex justify-end gap-3 pt-2">
           <Button
             className={secondaryBtnStyle}
             onClick={closeAction}

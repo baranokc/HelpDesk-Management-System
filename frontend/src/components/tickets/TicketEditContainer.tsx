@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ArrowLeft, Edit3 } from "lucide-react";
 import { Alert } from "@/src/components/ui/Alert";
-import { LinkButton } from "@/src/components/ui/Button";
-import { Card } from "@/src/components/ui/Card";
 import { LoadingSpinner } from "@/src/components/ui/LoadingSpinner";
 import { useAuth } from "@/src/context/AuthContext";
 import { getApiErrorMessage } from "@/src/lib/api";
@@ -25,11 +25,6 @@ export function TicketEditContainer({ ticketId }: TicketEditContainerProps) {
   const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
-
-  const secondaryBtnStyle =
-    "dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 hover:!bg-slate-900 hover:!text-white dark:hover:!bg-white dark:hover:!text-slate-900 transition-all shadow-sm";
-  const backToTicketsButtonStyle =
-    "!border-purple-600 !text-purple-600 hover:!bg-purple-600 hover:!text-white dark:!border-purple-400 dark:!text-purple-300 dark:hover:!bg-purple-500 dark:hover:!text-white";
 
   const loadTicket = useCallback(async () => {
     setLoading(true);
@@ -76,20 +71,20 @@ export function TicketEditContainer({ ticketId }: TicketEditContainerProps) {
   };
 
   if (authLoading || loading) {
-    return <LoadingSpinner label="Loading ticket..." />;
+    return <LoadingSpinner label="Loading ticket details..." />;
   }
 
   if (loadError || !ticket) {
     return (
       <div className="mx-auto max-w-3xl space-y-4">
         <Alert variant="error">{loadError ?? "Ticket not found."}</Alert>
-        <LinkButton
-          className={backToTicketsButtonStyle}
+        <Link
           href="/tickets"
-          variant="primary"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20 transition-all"
         >
+          <ArrowLeft className="h-4 w-4" />
           Back to tickets
-        </LinkButton>
+        </Link>
       </div>
     );
   }
@@ -100,42 +95,58 @@ export function TicketEditContainer({ ticketId }: TicketEditContainerProps) {
         <Alert variant="error">
           You do not have permission to edit this ticket.
         </Alert>
-        <LinkButton
-          className={backToTicketsButtonStyle}
+        <Link
           href="/tickets"
-          variant="primary"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20 transition-all"
         >
+          <ArrowLeft className="h-4 w-4" />
           Back to tickets
-        </LinkButton>
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      <div className="flex justify-end">
-        <LinkButton
+    <div className="mx-auto max-w-4xl space-y-6 animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both">
+      {/* HEADER */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-100 dark:border-slate-800/60">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 dark:text-amber-400">
+              <Edit3 className="h-5 w-5" />
+            </div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+              Edit Ticket #{ticket.ticketNumber}
+            </h1>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Update ticket properties, category assignment or explanation details below.
+          </p>
+        </div>
+
+        <Link
           href={`/tickets/${ticketId}`}
-          size="sm"
-          variant="secondary"
-          className={secondaryBtnStyle}
+          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold
+                     text-slate-700 dark:text-slate-300
+                     bg-white/80 dark:bg-slate-900/80
+                     border border-slate-200 dark:border-slate-800
+                     hover:bg-slate-100 dark:hover:bg-slate-800
+                     hover:text-rose-600 dark:hover:text-rose-400
+                     transition-all shadow-sm active:scale-95 shrink-0 self-start sm:self-auto"
         >
-          Cancel
-        </LinkButton>
+          <span>Cancel</span>
+        </Link>
       </div>
 
-      <Card
-        className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 transition-colors shadow-sm"
-        description={`${ticket.ticketNumber} — update the ticket details below.`}
-        title="Edit ticket"
-      >
+      {/* FORM CARD */}
+      <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl p-6 sm:p-8 shadow-xl shadow-indigo-500/5">
         <TicketForm
           error={saveError ?? undefined}
           initialTicket={ticket}
           loading={saving}
           onSubmit={(dto) => handleSubmit(dto as TicketUpdateDto)}
         />
-      </Card>
+      </div>
     </div>
   );
 }

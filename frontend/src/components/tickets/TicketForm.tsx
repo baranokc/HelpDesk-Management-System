@@ -1,316 +1,432 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import type { SubmitEvent } from "react";
-import { lookupService } from "@/src/services/lookupService";
-import type { LookupItemDto } from "@/src/types/common";
-import type {
-  TicketCreateDto,
-  TicketDetailDto,
-  TicketUpdateDto,
-} from "@/src/types/ticket";
+import { useState, useEffect, useRef } from 'react';
 import {
-  ticketCreateSchema,
-  ticketUpdateSchema,
-} from "@/src/schemas/ticketSchemas";
-import { getFormErrors } from "@/src/lib/validation";
-import type { FormErrors } from "@/src/lib/validation";
-import { Alert } from "@/src/components/ui/Alert";
-import { Button } from "@/src/components/ui/Button";
-import { FileInput } from "@/src/components/ui/FileInput";
-import { Input } from "@/src/components/ui/Input";
-import { Select } from "@/src/components/ui/Select";
-import { Textarea } from "@/src/components/ui/Textarea";
+  FileText,
+  Tag,
+  AlignLeft,
+  Layers,
+  GitCommit,
+  BarChart3,
+  Zap,
+  AlertCircle,
+  UploadCloud,
+  X,
+  Send,
+  Loader2,
+  Paperclip,
+  Save,
+} from 'lucide-react';
+import { api } from '@/src/lib/api';
+import type { TicketCreateDto, TicketDetailDto, TicketUpdateDto } from '@/src/types/ticket';
 
-type FormState = TicketCreateDto;
+interface LookupItem {
+  id: string;
+  name: string;
+  categoryId?: string;
+}
 
 interface TicketFormProps {
-  initialTicket?: TicketDetailDto;
-  loading?: boolean;
   error?: string;
+  loading: boolean;
+  initialTicket?: TicketDetailDto | null;
   onSubmit: (dto: TicketCreateDto | TicketUpdateDto) => Promise<void>;
 }
 
-const emptyForm: FormState = {
-  ticketTitle: "",
-  ticketDescription: "",
-  subject: "",
-  categoryId: "",
-  subcategoryId: null,
-  priorityId: "",
-  impactLevelId: "",
-  urgencyLevelId: "",
-  attachments: [],
-};
+const PRIORITY_OPTIONS = [
+  { id: "3a1d571f-732c-4618-b1e2-96f72544533d", name: "Critical" },
+  { id: "2141d95a-7069-4167-92d6-780fa2f7232e", name: "High" },
+  { id: "fa02063a-a289-43d7-a4c9-bfabd4b9c030", name: "Medium" },
+  { id: "8faaaa7c-2f82-4f28-a2e0-05e73c3669f6", name: "Low" },
+];
 
-export function TicketForm({
-  initialTicket,
-  loading = false,
-  error,
-  onSubmit,
-}: TicketFormProps) {
-  const [form, setForm] = useState<FormState>(() =>
-    initialTicket
-      ? {
-          ticketTitle: initialTicket.ticketTitle,
-          ticketDescription: initialTicket.ticketDescription,
-          subject: initialTicket.subject,
-          categoryId: initialTicket.categoryId,
-          subcategoryId: initialTicket.subcategoryId,
-          priorityId: initialTicket.priorityId,
-          impactLevelId: initialTicket.impactLevelId,
-          urgencyLevelId: initialTicket.urgencyLevelId,
-          attachments: [],
-        }
-      : emptyForm,
-  );
-  const [validationErrors, setValidationErrors] = useState<FormErrors>({});
-  const [lookupError, setLookupError] = useState<string>();
+const URGENCY_OPTIONS = [
+  { id: "8aef38f8-600d-4ff6-ba16-020048b7723c", name: "Low" },
+  { id: "f3d500c9-a18c-4de2-b4c5-878e638271db", name: "Normal" },
+  { id: "8fd27669-4526-4f30-b39a-6e100d73226d", name: "High" },
+  { id: "5d814d17-667b-4dc2-8ebe-f0f40007bee5", name: "Urgent" },
+];
 
-  const [lookups, setLookups] = useState({
-    categories: [] as LookupItemDto[],
-    subcategories: [] as LookupItemDto[],
-    priorities: [] as LookupItemDto[],
-    impacts: [] as LookupItemDto[],
-    urgencies: [] as LookupItemDto[],
-  });
+export function TicketForm({ error, loading, initialTicket, onSubmit }: TicketFormProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const isEditing = Boolean(initialTicket);
 
+  const [ticketTitle, setTicketTitle] = useState('');
+  const [subject, setSubject] = useState('');
+  const [description, setDescription] = useState('');
+
+  const [categoryId, setCategoryId] = useState('');
+  const [subcategoryId, setSubcategoryId] = useState('');
+  const [priorityId, setPriorityId] = useState('');
+  const [impactLevelId, setImpactLevelId] = useState('');
+  const [urgencyLevelId, setUrgencyLevelId] = useState('');
+
+  const [categories, setCategories] = useState<LookupItem[]>([]);
+  const [subcategories, setSubcategories] = useState<LookupItem[]>([]);
+  const [impactLevels, setImpactLevels] = useState<LookupItem[]>([]);
+
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  // 🚀 INITIAL TICKET GELDİĞİNDE FORM ALANLARINI DOLDUR
   useEffect(() => {
-    let cancelled = false;
+    if (initialTicket) {
+      setTicketTitle(initialTicket.ticketTitle || '');
+      setSubject(initialTicket.subject || '');
+      setDescription(initialTicket.ticketDescription || '');
+      setCategoryId(initialTicket.categoryId || '');
+      setSubcategoryId(initialTicket.subcategoryId || '');
+      setPriorityId(initialTicket.priorityId || '');
+      setImpactLevelId(initialTicket.impactLevelId || '');
+      setUrgencyLevelId(initialTicket.urgencyLevelId || '');
+    }
+  }, [initialTicket]);
 
-    Promise.all([
-      lookupService.getCategories(),
-      lookupService.getPriorities(),
-      lookupService.getImpactLevels(),
-      lookupService.getUrgencyLevels(),
-    ])
-      .then(([categories, priorities, impacts, urgencies]) => {
-        if (cancelled) return;
+  // Lookup Verilerini Çekme
+  useEffect(() => {
+    async function loadLookups() {
+      try {
+        const [catRes, subRes, impactRes] = await Promise.allSettled([
+          api.get<LookupItem[]>('/categories').catch(() => api.get<LookupItem[]>('/ticket-categories')),
+          api.get<LookupItem[]>('/subcategories').catch(() => api.get<LookupItem[]>('/ticket-subcategories')),
+          api.get<LookupItem[]>('/impact-levels').catch(() => api.get<LookupItem[]>('/impactlevels')),
+        ]);
 
-        setLookupError(undefined);
-        setLookups((current) => ({
-          ...current,
-          categories,
-          priorities,
-          impacts,
-          urgencies,
-        }));
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setLookupError(
-            "Ticket options could not be loaded. Please refresh the page and try again.",
-          );
+        if (catRes.status === 'fulfilled' && catRes.value?.data) {
+          setCategories(catRes.value.data);
         }
-      });
-
-    return () => {
-      cancelled = true;
-    };
+        if (subRes.status === 'fulfilled' && subRes.value?.data) {
+          setSubcategories(subRes.value.data);
+        }
+        if (impactRes.status === 'fulfilled' && impactRes.value?.data) {
+          setImpactLevels(impactRes.value.data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch lookups", err);
+      }
+    }
+    void loadLookups();
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
+  const filteredSubcategories = categoryId
+    ? subcategories.filter((sub) => sub.categoryId === categoryId)
+    : subcategories;
 
-    if (!form.categoryId) {
-      setLookups((current) => ({
-        ...current,
-        subcategories: [],
-      }));
-      return;
-    }
-
-    lookupService
-      .getSubcategories(form.categoryId)
-      .then((subcategories) => {
-        if (cancelled) return;
-
-        setLookups((current) => ({ ...current, subcategories }));
-        setLookupError(undefined);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setLookupError(
-            "Subcategories could not be loaded. Please try selecting the category again.",
-          );
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [form.categoryId]);
-
-  const clearValidationError = (fieldName: keyof FormState) => {
-    setValidationErrors((current) => {
-      if (!current[fieldName]) return current;
-
-      const next = { ...current };
-      delete next[fieldName];
-      return next;
-    });
+  const handleFileDrop = (files: FileList | null) => {
+    if (!files) return;
+    const newFiles = Array.from(files);
+    setSelectedFiles((prev) => [...prev, ...newFiles].slice(0, 10));
   };
 
-  const submit = async (event: SubmitEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    const candidate = initialTicket
-      ? {
-          ticketTitle: form.ticketTitle,
-          ticketDescription: form.ticketDescription,
-          subject: form.subject,
-          categoryId: form.categoryId,
-          subcategoryId: form.subcategoryId,
-          priorityId: form.priorityId,
-          impactLevelId: form.impactLevelId,
-          urgencyLevelId: form.urgencyLevelId,
-        }
-      : form;
-
-    const result = initialTicket
-      ? ticketUpdateSchema.safeParse(candidate)
-      : ticketCreateSchema.safeParse(candidate);
-
-    if (!result.success) {
-      setValidationErrors(getFormErrors(result.error));
-      return;
-    }
-
-    setValidationErrors({});
-    await onSubmit(result.data);
+  const removeFile = (index: number) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const optionList = (items: LookupItemDto[]) =>
-    items.map((item) => ({ value: item.itemId, label: item.name }));
+  const handleSubmitForm = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (isEditing) {
+      const updateDto: TicketUpdateDto = {
+        ticketTitle,
+        subject,
+        ticketDescription: description,
+        categoryId,
+        subcategoryId: subcategoryId || undefined,
+        priorityId,
+        impactLevelId: impactLevelId || priorityId,
+        urgencyLevelId,
+      };
+      await onSubmit(updateDto);
+    } else {
+      const createDto: TicketCreateDto = {
+        ticketTitle,
+        subject,
+        ticketDescription: description,
+        categoryId,
+        subcategoryId: subcategoryId || undefined,
+        priorityId,
+        impactLevelId: impactLevelId || priorityId,
+        urgencyLevelId,
+        attachments: selectedFiles,
+      };
+      await onSubmit(createDto);
+    }
+  };
 
   return (
-    <form className="space-y-5" noValidate onSubmit={submit}>
-      {error && <Alert variant="error">{error}</Alert>}
-      {lookupError && <Alert variant="error">{lookupError}</Alert>}
-      {validationErrors._form && (
-        <Alert variant="error">{validationErrors._form}</Alert>
+    <form onSubmit={handleSubmitForm} className="space-y-6">
+      {/* HATA MESAJI */}
+      {error && (
+        <div className="flex items-center gap-3 p-4 rounded-xl border border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-medium animate-in fade-in">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>{error}</span>
+        </div>
       )}
-      <div className="grid gap-5 md:grid-cols-2">
-        <Input
-          error={validationErrors.ticketTitle}
-          label="Ticket title"
-          maxLength={50}
-          minLength={5}
-          onChange={(event) => {
-            setForm({ ...form, ticketTitle: event.target.value });
-            clearValidationError("ticketTitle");
-          }}
+
+      {/* TİTLE & SUBJECT */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+            <FileText className="h-3.5 w-3.5 text-indigo-500" />
+            Ticket Title <span className="text-rose-500">*</span>
+          </label>
+          <input
+            type="text"
+            required
+            placeholder="Brief title of the issue..."
+            value={ticketTitle}
+            onChange={(e) => setTicketTitle(e.target.value)}
+            className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 px-3.5 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+            <Tag className="h-3.5 w-3.5 text-sky-500" />
+            Subject <span className="text-rose-500">*</span>
+          </label>
+          <input
+            type="text"
+            required
+            placeholder="Short summary or module..."
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 px-3.5 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+          />
+        </div>
+      </div>
+
+      {/* DETAILED EXPLANATION */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+            <AlignLeft className="h-3.5 w-3.5 text-indigo-400" />
+            Detailed Explanation <span className="text-rose-500">*</span>
+          </label>
+          <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500">
+            {description.length} / 10000 characters
+          </span>
+        </div>
+        <textarea
           required
-          value={form.ticketTitle}
-        />
-        <Input
-          error={validationErrors.ticketDescription}
-          label="Subject"
-          maxLength={100}
-          minLength={5}
-          onChange={(event) => {
-            setForm({ ...form, ticketDescription: event.target.value });
-            clearValidationError("ticketDescription");
-          }}
-          required
-          value={form.ticketDescription}
+          rows={5}
+          maxLength={10000}
+          placeholder="Please describe your issue in detail..."
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 p-3.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all resize-y min-h-[120px]"
         />
       </div>
-      <Textarea
-        error={validationErrors.subject}
-        hint={`${form.subject.length}/10000 characters`}
-        label="Detailed explanation"
-        maxLength={10000}
-        minLength={5}
-        onChange={(event) => {
-          setForm({ ...form, subject: event.target.value });
-          clearValidationError("subject");
-        }}
-        required
-        rows={7}
-        value={form.subject}
-      />
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-        <Select
-          error={validationErrors.categoryId}
-          label="Category"
-          onChange={(event) => {
-            setForm({
-              ...form,
-              categoryId: event.target.value,
-              subcategoryId: null,
-            });
-            setLookups((current) => ({
-              ...current,
-              subcategories: [],
-            }));
-            clearValidationError("categoryId");
-            clearValidationError("subcategoryId");
-          }}
-          options={optionList(lookups.categories)}
-          required
-          value={form.categoryId}
-        />
-        <Select
-          disabled={!form.categoryId}
-          error={validationErrors.subcategoryId}
-          label="Subcategory"
-          onChange={(event) => {
-            setForm({ ...form, subcategoryId: event.target.value || null });
-            clearValidationError("subcategoryId");
-          }}
-          options={optionList(lookups.subcategories)}
-          value={form.subcategoryId ?? ""}
-        />
-        <Select
-          error={validationErrors.priorityId}
-          label="Priority"
-          onChange={(event) => {
-            setForm({ ...form, priorityId: event.target.value });
-            clearValidationError("priorityId");
-          }}
-          options={optionList(lookups.priorities)}
-          required
-          value={form.priorityId}
-        />
-        <Select
-          error={validationErrors.impactLevelId}
-          label="Impact level"
-          onChange={(event) => {
-            setForm({ ...form, impactLevelId: event.target.value });
-            clearValidationError("impactLevelId");
-          }}
-          options={optionList(lookups.impacts)}
-          required
-          value={form.impactLevelId}
-        />
-        <Select
-          error={validationErrors.urgencyLevelId}
-          label="Urgency level"
-          onChange={(event) => {
-            setForm({ ...form, urgencyLevelId: event.target.value });
-            clearValidationError("urgencyLevelId");
-          }}
-          options={optionList(lookups.urgencies)}
-          required
-          value={form.urgencyLevelId}
-        />
+
+      {/* CATEGORY - SUBCATEGORY - PRIORITY */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+            <Layers className="h-3.5 w-3.5 text-purple-400" />
+            Category <span className="text-rose-500">*</span>
+          </label>
+          <select
+            required
+            value={categoryId}
+            onChange={(e) => {
+              setCategoryId(e.target.value);
+              setSubcategoryId('');
+            }}
+            className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 px-3 py-2.5 text-xs font-medium text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
+          >
+            <option value="">Select Category</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+            <GitCommit className="h-3.5 w-3.5 text-violet-400" />
+            Subcategory
+          </label>
+          <select
+            value={subcategoryId}
+            onChange={(e) => setSubcategoryId(e.target.value)}
+            disabled={!categoryId || filteredSubcategories.length === 0}
+            className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 px-3 py-2.5 text-xs font-medium text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer disabled:opacity-40"
+          >
+            <option value="">Select Subcategory</option>
+            {filteredSubcategories.map((sub) => (
+              <option key={sub.id} value={sub.id}>
+                {sub.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+            <BarChart3 className="h-3.5 w-3.5 text-emerald-500" />
+            Priority <span className="text-rose-500">*</span>
+          </label>
+          <select
+            required
+            value={priorityId}
+            onChange={(e) => setPriorityId(e.target.value)}
+            className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 px-3 py-2.5 text-xs font-medium text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
+          >
+            <option value="">Select Priority</option>
+            {PRIORITY_OPTIONS.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
-      {!initialTicket && (
-        <FileInput
-          accept=".jpg,.jpeg,.png,.pdf,.txt,.docx,.xlsx,.zip,.rar,.7z"
-          error={validationErrors.attachments}
-          files={form.attachments}
-          onChange={(attachments) => {
-            setForm({ ...form, attachments });
-            clearValidationError("attachments");
-          }}
-        />
+
+      {/* IMPACT LEVEL & URGENCY LEVEL */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+            <Zap className="h-3.5 w-3.5 text-amber-500" />
+            Impact Level <span className="text-rose-500">*</span>
+          </label>
+          <select
+            required
+            value={impactLevelId}
+            onChange={(e) => setImpactLevelId(e.target.value)}
+            className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 px-3 py-2.5 text-xs font-medium text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
+          >
+            <option value="">Select Impact</option>
+            {impactLevels.length > 0
+              ? impactLevels.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))
+              : PRIORITY_OPTIONS.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
+          </select>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+            <AlertCircle className="h-3.5 w-3.5 text-rose-400" />
+            Urgency Level <span className="text-rose-500">*</span>
+          </label>
+          <select
+            required
+            value={urgencyLevelId}
+            onChange={(e) => setUrgencyLevelId(e.target.value)}
+            className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 px-3 py-2.5 text-xs font-medium text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
+          >
+            <option value="">Select Urgency</option>
+            {URGENCY_OPTIONS.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* DOSYA YÜKLEME ALANI (SADECE YENİ OLUŞTURURKEN GÖRÜNÜR) */}
+      {!isEditing && (
+        <div className="space-y-2">
+          <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+            <Paperclip className="h-3.5 w-3.5 text-indigo-400" />
+            Attachments
+          </label>
+
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              setIsDragOver(true);
+            }}
+            onDragLeave={() => setIsDragOver(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setIsDragOver(false);
+              handleFileDrop(e.dataTransfer.files);
+            }}
+            onClick={() => fileInputRef.current?.click()}
+            className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-2xl cursor-pointer transition-all ${
+              isDragOver
+                ? 'border-indigo-500 bg-indigo-500/10'
+                : 'border-slate-200 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-950/30 hover:border-indigo-500/50 hover:bg-slate-100/50 dark:hover:bg-slate-900/50'
+            }`}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              className="hidden"
+              onChange={(e) => handleFileDrop(e.target.files)}
+            />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-500 mb-2">
+              <UploadCloud className="h-5 w-5" />
+            </div>
+            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              Click to upload <span className="font-normal text-slate-400">or drag & drop</span>
+            </p>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              Max 10 files (up to 10 MB each)
+            </p>
+          </div>
+
+          {selectedFiles.length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-2">
+              {selectedFiles.map((file, idx) => (
+                <div
+                  key={idx}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-200 animate-in fade-in"
+                >
+                  <Paperclip className="h-3 w-3 text-indigo-400 shrink-0" />
+                  <span className="truncate max-w-[150px] font-medium">{file.name}</span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeFile(idx);
+                    }}
+                    className="text-slate-400 hover:text-rose-500 transition-colors ml-1"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
-      <div className="flex justify-end">
-        <Button loading={loading} type="submit">
-          {initialTicket ? "Save changes" : "Create ticket"}
-        </Button>
+
+      {/* SUBMIT BUTTON */}
+      <div className="flex items-center justify-end pt-4 border-t border-slate-100 dark:border-slate-800/60">
+        <button
+          type="submit"
+          disabled={loading}
+          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 shadow-md shadow-indigo-500/20 border border-indigo-400/30 transition-all active:scale-[0.98] disabled:opacity-50"
+        >
+          {loading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>{isEditing ? 'Saving Changes...' : 'Creating...'}</span>
+            </>
+          ) : isEditing ? (
+            <>
+              <Save className="h-3.5 w-3.5" />
+              <span>Save Changes</span>
+            </>
+          ) : (
+            <>
+              <Send className="h-3.5 w-3.5" />
+              <span>Create Ticket</span>
+            </>
+          )}
+        </button>
       </div>
     </form>
   );
