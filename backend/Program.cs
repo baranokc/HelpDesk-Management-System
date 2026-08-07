@@ -18,6 +18,7 @@ using backend.Services.TeamManagement;
 using backend.Services.Category;
 using backend.Services.Sla;
 using backend.Services.Profile;
+using backend.Services.TeamChat;
 using Microsoft.OpenApi;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -117,6 +118,7 @@ builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddSingleton<IBusinessTimeCalculator, BusinessTimeCalculator>();
 builder.Services.AddScoped<ISlaService, SlaService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
+builder.Services.AddScoped<ITeamChatService, TeamChatService>();
 builder.Services.AddScoped<ISatisfactionSurveyService, SatisfactionSurveyService>();
 builder.Services.AddHostedService<SlaNotificationWorker>();
 
@@ -149,7 +151,8 @@ builder.Services.AddAuthentication(options =>
             var path = context.HttpContext.Request.Path;
 
             if (!string.IsNullOrWhiteSpace(accessToken) &&
-                path.StartsWithSegments("/hubs/notifications"))
+                (path.StartsWithSegments("/hubs/notifications") ||
+                 path.StartsWithSegments("/hubs/team-chat")))
             {
                 context.Token = accessToken;
             }
@@ -295,5 +298,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<NotificationHub>("/hubs/notifications");
+app.MapHub<TeamChatHub>("/hubs/team-chat");
 
 app.Run();

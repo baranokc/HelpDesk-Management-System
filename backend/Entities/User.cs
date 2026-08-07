@@ -29,6 +29,7 @@ public class User
     public ICollection<Ticket> AssignedTickets { get; set; } = new List<Ticket>();
     public ICollection<Ticket> ResolvedTickets { get; set; } = new List<Ticket>();
     public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+    public ICollection<TeamChatMessage> TeamChatMessages { get; set; } = new List<TeamChatMessage>();
     public ICollection<User> DirectReports { get; set; } = new List<User>();
     public Guid? RoleId { get; set; } 
     public Role? Role { get; set; } 

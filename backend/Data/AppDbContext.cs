@@ -26,6 +26,7 @@ public class AppDbContext : DbContext
     public DbSet<TeamMember> TeamMembers { get; set; } = null!;
     public DbSet<TeamMemberShift> TeamMemberShifts { get; set; } = null!;
     public DbSet<TeamMemberLeave> TeamMemberLeaves { get; set; } = null!;
+    public DbSet<TeamChatMessage> TeamChatMessages { get; set; } = null!;
     public DbSet<UserRole> UserRoles { get; set; } = null!;
     public DbSet<Ticket> Tickets { get; set; } = null!;
     public DbSet<TicketAssignment> TicketAssignments { get; set; } = null!;
@@ -86,6 +87,7 @@ public class AppDbContext : DbContext
         {
             if (entry.Entity is AuditLog ||
                 entry.Entity is PasswordResetToken ||
+                entry.Entity is TeamChatMessage ||
                 entry.State == EntityState.Detached ||
                 entry.State == EntityState.Unchanged)
                 continue;
@@ -285,6 +287,29 @@ public class AppDbContext : DbContext
                     leave.TeamMemberId,
                     leave.StartDate,
                     leave.EndDate
+                });
+        });
+
+        modelBuilder.Entity<TeamChatMessage>(entity =>
+        {
+            entity.Property(message => message.Content)
+                .HasMaxLength(2000)
+                .IsRequired();
+
+            entity.HasOne(message => message.Team)
+                .WithMany(team => team.ChatMessages)
+                .HasForeignKey(message => message.TeamId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(message => message.Sender)
+                .WithMany(user => user.TeamChatMessages)
+                .HasForeignKey(message => message.SenderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(message => new
+                {
+                    message.TeamId,
+                    message.CreatedAt
                 });
         });
 
