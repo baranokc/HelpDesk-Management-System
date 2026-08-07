@@ -6,7 +6,8 @@ public class TicketHistoryDto
     public Guid Id {get; set; }
     public Guid TicketId {get; set; }
     public TicketHistoryActionType ActionType {get; set; }
-    public string? FieldName {get; set; }
+    public string? AvatarFileName {get; set;}
+    public string? FieldName { get; set; }
     public string? OldValue {get; set; }
     public string? NewValue {get; set; }
     public string? Description {get; set; }

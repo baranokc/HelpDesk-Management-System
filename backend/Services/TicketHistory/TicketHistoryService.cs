@@ -30,6 +30,7 @@ public class TicketHistoryService : ITicketHistoryService
                 FieldName = h.FieldName,
                 OldValue = h.OldValue,
                 NewValue = h.NewValue,
+                AvatarFileName = h.ChangedBy != null ? h.ChangedBy.AvatarFileName : null,
                 Description = includeStaffDetails ||
                     (h.ActionType != Entities.TicketHistoryActionType.Assigned &&
                      h.ActionType != Entities.TicketHistoryActionType.Unassigned)
