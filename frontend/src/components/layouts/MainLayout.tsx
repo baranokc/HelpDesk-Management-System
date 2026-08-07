@@ -3,29 +3,38 @@
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { LinkButton } from "@/src/components/ui/Button";
+import {
+  Ticket,
+  PlusCircle,
+  HelpCircle,
+  User,
+  ShieldCheck,
+  Settings,
+  Briefcase,
+  LogOut,
+  ChevronDown,
+} from "lucide-react";
 import { NotificationBell } from "@/src/components/ui/NotificationBell";
 import { ThemeToggle } from "@/src/components/ui/ThemeToggle";
 import { Avatar } from "@/src/components/ui/Avatar";
 import { useAuth } from "@/src/context/AuthContext";
 import { getTicketViewLabel } from "@/src/lib/ticketPermissions";
 
-// Rol bazlı renk sınıfı belirleyici
-const getRoleTextColor = (role?: string): string => {
+// Rol bazlı rozet (Badge) stilleri - Light Mode: Toprak/Yeşil, Dark Mode: Mor
+const getRoleBadgeStyle = (role?: string): string => {
   const normalized = role?.toLowerCase().trim();
   switch (normalized) {
     case "admin":
     case "0":
-      return "text-purple-600 dark:text-purple-400 font-bold";
+      return "bg-amber-500/15 text-amber-700 dark:bg-purple-500/20 dark:text-purple-300 border-amber-600/30 dark:border-purple-500/40";
     case "teamleader":
     case "1":
-      return "text-rose-600 dark:text-rose-400 font-bold";
+      return "bg-emerald-500/15 text-emerald-800 dark:bg-rose-500/20 dark:text-rose-300 border-emerald-600/30 dark:border-rose-500/40";
     case "supportagent":
     case "2":
-      return "text-blue-600 dark:text-blue-400 font-bold";
+      return "bg-teal-500/15 text-teal-800 dark:bg-indigo-500/20 dark:text-indigo-300 border-teal-600/30 dark:border-indigo-500/40";
     default:
-      // Dark mode'da kaybolmayan koyu gri/açık gri siyah dengesi
-      return "text-slate-900 dark:text-slate-200 font-semibold";
+      return "bg-stone-500/15 text-stone-700 dark:bg-slate-500/20 dark:text-slate-300 border-stone-500/30 dark:border-slate-500/40";
   }
 };
 
@@ -38,6 +47,7 @@ export default function MainLayout({
   const pathname = usePathname();
   const { user, isAuthenticated, loading, logout } = useAuth();
   const viewLabel = getTicketViewLabel(user?.role);
+
   const isCreateTicketPage = pathname === "/tickets/new";
   const isTicketsSection = pathname === "/tickets";
   const isFaqPage = pathname === "/faq";
@@ -64,10 +74,10 @@ export default function MainLayout({
 
   if (loading || !isAuthenticated) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 transition-colors">
-        <div className="flex flex-col items-center gap-2">
-          <span className="loading loading-spinner loading-lg text-primary"></span>
-          <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
+      <div className="flex min-h-screen items-center justify-center bg-stone-100 dark:bg-slate-950 text-stone-800 dark:text-slate-100 transition-colors">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-600 dark:border-purple-500 border-t-transparent"></div>
+          <span className="text-xs font-semibold text-stone-500 dark:text-slate-400">
             Checking authentication...
           </span>
         </div>
@@ -76,114 +86,135 @@ export default function MainLayout({
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col transition-colors">
-      {/* Top Navbar */}
-      <header className="sticky top-0 z-40 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-colors">
-        <div className="navbar max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Brand / Logo */}
-          <div className="flex-1">
+    <div className="min-h-screen bg-amber-50/30 dark:bg-slate-950 text-stone-800 dark:text-slate-100 flex flex-col transition-colors">
+      {/* Top Navbar - Glassmorphism & Hybrid Dual Theme */}
+      <header className="sticky top-0 z-50 border-b border-amber-900/10 dark:border-purple-900/30 bg-stone-100/80 dark:bg-slate-900/70 backdrop-blur-2xl transition-all">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+          
+          {/* Brand / Logo (Light: Toprak & Yeşil Ada, Dark: Neon Mor Ada) */}
+          <div className="flex items-center gap-3">
             <Link
               href="/tickets"
-              className="inline-flex items-center gap-2 text-xl font-bold text-slate-900 dark:text-white"
+              className="group inline-flex items-center gap-3 text-lg font-bold tracking-tight transition-all"
             >
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 text-white font-black text-sm shadow-sm">
-                HD
+              {/* Issız Ada Logosu - Light: Amber/Teal/Emerald, Dark: Purple/Violet/Indigo */}
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-600 via-teal-600 to-emerald-600 dark:from-purple-600 dark:via-violet-600 dark:to-indigo-500 text-white shadow-lg shadow-teal-600/20 dark:shadow-purple-500/25 group-hover:scale-105 group-hover:rotate-3 transition-all duration-300 overflow-hidden">
+                <svg
+                  className="h-6 w-6 text-white drop-shadow-md"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="18" cy="6" r="2.5" fill="currentColor" stroke="none" opacity="0.9" />
+                  <path d="M2 20c4-2 9-2 13 0" strokeWidth="2" />
+                  <path d="M11 20c0-4 1.5-7 4-10" strokeWidth="2" />
+                  <path d="M15 10c-3-2-6-1-7 1" />
+                  <path d="M15 10c2-3 4-3 6-1" />
+                  <path d="M15 10c0-3 2-5 4-5" />
+                  <path d="M15 10c-2-3-4-3-5-5" />
+                </svg>
               </div>
-              <span>HelpDesk</span>
+
+              <div className="flex flex-col leading-none">
+                <span className="font-black text-base tracking-wider bg-gradient-to-r from-amber-700 via-emerald-700 to-teal-800 dark:from-purple-400 dark:via-violet-300 dark:to-indigo-300 bg-clip-text text-transparent">
+                  ISLAND
+                </span>
+                <span className="text-[10px] font-bold tracking-widest text-stone-500 dark:text-purple-300/60 uppercase">
+                  HelpDesk
+                </span>
+              </div>
             </Link>
           </div>
 
-          {/* Navigation Links */}
-          <div className="hidden md:flex items-center gap-2 mr-4">
-            <LinkButton
+          {/* Navigasyon Linkleri - Light: Yeşil/Kahve, Dark: Mor/İndigo */}
+          <nav className="hidden md:flex items-center gap-1.5 p-1.5 rounded-2xl border border-stone-300/60 dark:border-purple-900/40 bg-stone-200/60 dark:bg-slate-900/80 backdrop-blur-xl shadow-inner">
+            <Link
               href="/tickets"
-              size="sm"
-              variant={isTicketsSection ? "primary" : "secondary"}
-              className={`text-sm font-medium normal-case transition-all ${
-                !isTicketsSection
-                  ? "dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 hover:!bg-slate-900 hover:!text-white dark:hover:!bg-white dark:hover:!text-slate-900"
-                  : ""
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
+                isTicketsSection
+                  ? "bg-gradient-to-r from-emerald-600 to-teal-700 dark:from-purple-600 dark:to-indigo-600 text-white shadow-md shadow-emerald-700/20 dark:shadow-purple-600/30 active:scale-95"
+                  : "text-stone-700 dark:text-slate-300 hover:text-stone-900 dark:hover:text-white hover:bg-stone-300/50 dark:hover:bg-purple-950/40"
               }`}
             >
-              {viewLabel.navigationLabel}
-            </LinkButton>
+              <Ticket className="h-3.5 w-3.5" />
+              <span>{viewLabel.navigationLabel}</span>
+            </Link>
 
-            <LinkButton
+            <Link
               href="/tickets/new"
-              size="sm"
-              variant={isCreateTicketPage ? "primary" : "secondary"}
-              className={`text-sm font-medium normal-case transition-all ${
-                !isCreateTicketPage
-                  ? "dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 hover:!bg-slate-900 hover:!text-white dark:hover:!bg-white dark:hover:!text-slate-900"
-                  : ""
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
+                isCreateTicketPage
+                  ? "bg-gradient-to-r from-emerald-600 to-teal-700 dark:from-purple-600 dark:to-indigo-600 text-white shadow-md shadow-emerald-700/20 dark:shadow-purple-600/30 active:scale-95"
+                  : "text-stone-700 dark:text-slate-300 hover:text-stone-900 dark:hover:text-white hover:bg-stone-300/50 dark:hover:bg-purple-950/40"
               }`}
             >
-              Create Ticket
-            </LinkButton>
+              <PlusCircle className="h-3.5 w-3.5" />
+              <span>Create Ticket</span>
+            </Link>
 
-            <LinkButton
+            <Link
               href="/faq"
-              size="sm"
-              variant={isFaqPage ? "primary" : "secondary"}
-              className={`text-sm font-medium normal-case transition-all ${
-                !isFaqPage
-                  ? "dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 hover:!bg-slate-900 hover:!text-white dark:hover:!bg-white dark:hover:!text-slate-900"
-                  : ""
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
+                isFaqPage
+                  ? "bg-gradient-to-r from-emerald-600 to-teal-700 dark:from-purple-600 dark:to-indigo-600 text-white shadow-md shadow-emerald-700/20 dark:shadow-purple-600/30 active:scale-95"
+                  : "text-stone-700 dark:text-slate-300 hover:text-stone-900 dark:hover:text-white hover:bg-stone-300/50 dark:hover:bg-purple-950/40"
               }`}
             >
-              FAQ
-            </LinkButton>
-          </div>
+              <HelpCircle className="h-3.5 w-3.5" />
+              <span>FAQ</span>
+            </Link>
+          </nav>
 
-          {/* User Actions */}
-          <div className="flex-none gap-3 flex items-center">
+          {/* Sağ Aksiyonlar & Profil Kapsayıcısı */}
+          <div className="flex items-center gap-3">
             <NotificationBell />
 
+            {/* Profil Dropdown */}
             <div className="dropdown dropdown-end">
               <div
                 tabIndex={0}
                 role="button"
-                className="flex items-center gap-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-1.5 pr-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
+                className="flex items-center gap-2.5 rounded-2xl border border-stone-300/70 dark:border-purple-800/40 bg-stone-100/90 dark:bg-slate-900/90 p-1.5 pr-3.5 hover:border-emerald-600/40 dark:hover:border-purple-500/50 hover:bg-stone-200/50 dark:hover:bg-slate-800/80 transition-all cursor-pointer shadow-sm group"
               >
                 <Avatar
                   avatarUrl={user?.avatarUrl}
-                  className="shadow-sm border border-slate-200 dark:border-slate-700"
+                  className="shadow-sm border border-stone-300 dark:border-purple-700 group-hover:scale-105 transition-transform"
                   name={displayName}
                   size="sm"
                 />
 
                 <div className="hidden sm:flex flex-col text-left max-w-[130px]">
-                  <span className="text-xs font-bold text-slate-900 dark:text-white leading-tight truncate">
+                  <span className="text-xs font-bold text-stone-800 dark:text-slate-100 leading-tight truncate">
                     {displayName}
                   </span>
-                  {/* Dinamik Rol Rengi */}
-                  <span className={`text-[10px] leading-tight capitalize truncate ${getRoleTextColor(user?.role)}`}>
-                    {userRole}
-                  </span>
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <span
+                      className={`inline-block text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded-md border ${getRoleBadgeStyle(
+                        user?.role
+                      )}`}
+                    >
+                      {userRole}
+                    </span>
+                  </div>
                 </div>
 
-                <svg
-                  className="h-4 w-4 text-slate-400 dark:text-slate-500 ml-0.5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
+                <ChevronDown className="h-3.5 w-3.5 text-stone-400 dark:text-purple-300/60 group-hover:text-stone-700 dark:group-hover:text-purple-300 transition-colors ml-0.5" />
               </div>
 
+              {/* Pop-up Menü */}
               <ul
                 tabIndex={0}
-                className="dropdown-content menu z-[1] mt-2 w-64 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-2 shadow-xl"
+                className="dropdown-content menu z-[50] mt-2.5 w-64 rounded-2xl border border-stone-300/80 dark:border-purple-800/40 bg-stone-100/95 dark:bg-slate-900/95 backdrop-blur-2xl p-2 shadow-2xl space-y-1"
               >
-                <li className="menu-title border-b border-slate-100 dark:border-slate-800 pb-2 mb-1 px-3">
+                <li className="menu-title border-b border-stone-200 dark:border-slate-800 pb-2.5 mb-1 px-3">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-stone-400 dark:text-purple-300/50 block mb-0.5">
+                    Signed in as
+                  </span>
                   <span
-                    className="text-xs font-bold text-slate-900 dark:text-white normal-case p-0 truncate block max-w-full"
+                    className="text-xs font-bold text-stone-800 dark:text-slate-100 normal-case p-0 truncate block max-w-full font-mono"
                     title={user?.email}
                   >
                     {user?.email}
@@ -194,26 +225,14 @@ export default function MainLayout({
                   <Link
                     aria-current={isProfilePage ? "page" : undefined}
                     href="/tickets/profile"
-                    className={`flex items-center gap-2 rounded-lg py-2 text-xs font-semibold ${
+                    className={`flex items-center gap-2.5 rounded-xl py-2 px-3 text-xs font-semibold transition-all ${
                       isProfilePage
-                        ? "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300"
-                        : "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                        ? "bg-emerald-500/15 text-emerald-800 dark:bg-purple-500/20 dark:text-purple-300 font-bold"
+                        : "text-stone-700 dark:text-slate-300 hover:bg-stone-200/60 dark:hover:bg-slate-800/80"
                     }`}
                   >
-                    <svg
-                      className="h-4 w-4 text-slate-500 dark:text-slate-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                      />
-                    </svg>
-                    Profile
+                    <User className="h-4 w-4 text-stone-500 dark:text-purple-400" />
+                    <span>Profile</span>
                   </Link>
                 </li>
 
@@ -221,22 +240,10 @@ export default function MainLayout({
                   <li>
                     <Link
                       href="/admin"
-                      className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg py-2"
+                      className="flex items-center gap-2.5 rounded-xl py-2 px-3 text-xs font-semibold text-stone-700 dark:text-slate-300 hover:bg-amber-500/15 hover:text-amber-800 dark:hover:bg-purple-500/20 dark:hover:text-purple-300 transition-all"
                     >
-                      <svg
-                        className="h-4 w-4 text-purple-600 dark:text-purple-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                        />
-                      </svg>
-                      Admin Panel
+                      <ShieldCheck className="h-4 w-4 text-amber-600 dark:text-purple-400" />
+                      <span>Admin Panel</span>
                     </Link>
                   </li>
                 )}
@@ -246,19 +253,14 @@ export default function MainLayout({
                     <Link
                       aria-current={isTeamManagementPage ? "page" : undefined}
                       href="/tickets/team-management"
-                      className={`flex items-center gap-2 rounded-lg py-2 text-xs font-semibold ${
+                      className={`flex items-center gap-2.5 rounded-xl py-2 px-3 text-xs font-semibold transition-all ${
                         isTeamManagementPage
-                          ? "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"
-                          : "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                          ? "bg-emerald-500/15 text-emerald-800 dark:bg-rose-500/20 dark:text-rose-300 font-bold"
+                          : "text-stone-700 dark:text-slate-300 hover:bg-stone-200/60 dark:hover:bg-slate-800/80"
                       }`}
                     >
-                      <span
-                        aria-hidden="true"
-                        className="w-4 text-center text-base leading-none text-rose-500 dark:text-rose-400"
-                      >
-                        ⚙
-                      </span>
-                      Management Page
+                      <Settings className="h-4 w-4 text-emerald-600 dark:text-rose-400" />
+                      <span>Management Page</span>
                     </Link>
                   </li>
                 )}
@@ -268,42 +270,27 @@ export default function MainLayout({
                     <Link
                       aria-current={isMyWorkPage ? "page" : undefined}
                       href="/tickets/my-work"
-                      className={`flex items-center gap-2 rounded-lg py-2 text-xs font-semibold ${
+                      className={`flex items-center gap-2.5 rounded-xl py-2 px-3 text-xs font-semibold transition-all ${
                         isMyWorkPage
-                          ? "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300"
-                          : "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                          ? "bg-teal-500/15 text-teal-800 dark:bg-blue-500/20 dark:text-blue-300 font-bold"
+                          : "text-stone-700 dark:text-slate-300 hover:bg-stone-200/60 dark:hover:bg-slate-800/80"
                       }`}
                     >
-                      <span
-                        aria-hidden="true"
-                        className="w-4 text-center text-base leading-none text-blue-500 dark:text-blue-400"
-                      >
-                        ▤
-                      </span>
-                      My Work
+                      <Briefcase className="h-4 w-4 text-teal-600 dark:text-blue-400" />
+                      <span>My Work</span>
                     </Link>
                   </li>
                 )}
 
+                <div className="my-1 border-t border-stone-200 dark:border-slate-800" />
+
                 <li>
                   <button
                     onClick={handleLogout}
-                    className="flex items-center gap-2 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-700 dark:hover:text-red-300 rounded-lg py-2"
+                    className="flex items-center gap-2.5 rounded-xl py-2 px-3 text-xs font-semibold text-rose-700 dark:text-rose-400 hover:bg-rose-500/15 transition-all w-full text-left"
                   >
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                      />
-                    </svg>
-                    Sign Out
+                    <LogOut className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+                    <span>Sign Out</span>
                   </button>
                 </li>
               </ul>
@@ -314,6 +301,7 @@ export default function MainLayout({
         </div>
       </header>
 
+      {/* Main Content */}
       <main className="flex-1 mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {children}
       </main>
