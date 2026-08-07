@@ -18,6 +18,7 @@ public class Team
     public SlaCalendar? SlaCalendar { get; set; }
 
     public ICollection<TeamMember> TeamMembers { get; set; } = new List<TeamMember>();
+    public ICollection<TeamChatMessage> ChatMessages { get; set; } = new List<TeamChatMessage>();
     public ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
     public ICollection<TicketCategory> TicketCategories { get; set; } = new List<TicketCategory>();
 }

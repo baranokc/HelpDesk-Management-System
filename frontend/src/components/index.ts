@@ -18,7 +18,6 @@ export * from "./ui/Textarea";
 export * from "./ui/Toast";
 export * from "./ui/NotificationBell";
 
-
 export * from "./tickets/AttachmentUploader";
 export * from "./tickets/CommentForm";
 export * from "./tickets/TicketActions";
@@ -46,3 +45,4 @@ export * from "./auth/RegisterForm";
 
 export * from "./team-management/TeamManagementContainer";
 export * from "./team-management/TeamMemberDetailContainer";
+export * from "./team-chat/TeamChatContainer";
