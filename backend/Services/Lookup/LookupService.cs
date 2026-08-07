@@ -13,11 +13,7 @@ public class LookupService : ILookupService
 
     public async Task<IReadOnlyCollection<LookupItemDto<Guid>>> GetCategoriesAsync(CancellationToken cancellationToken = default) =>
         await _db.TicketCategories.AsNoTracking()
-            .Where(x =>
-                x.IsActive &&
-                x.DefaultTeamId.HasValue &&
-                x.DefaultTeam != null &&
-                x.DefaultTeam.IsActive)
+            .Where(x =>  x.IsActive )
             .OrderBy(x => x.Name)
             .Select(x => new LookupItemDto<Guid> { ItemId = x.Id, Name = x.Name }).ToListAsync(cancellationToken);
 
