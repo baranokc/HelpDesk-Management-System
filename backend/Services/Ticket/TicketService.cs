@@ -67,8 +67,12 @@ public class TicketService : ITicketService
         if (filter.UrgencyLevelId.HasValue)
             query = query.Where(t => t.UrgencyLevelId == filter.UrgencyLevelId.Value);
 
+        // 🚀 BİLEŞİK FİLTRELEME: Frontend'den gelen değer PriorityId veya ImpactLevelId ile eşleşirse getir
         if (filter.ImpactLevelId.HasValue)
-            query = query.Where(t => t.ImpactLevelId == filter.ImpactLevelId.Value);
+        {
+            var targetLevelId = filter.ImpactLevelId.Value;
+            query = query.Where(t => t.ImpactLevelId == targetLevelId || t.PriorityId == targetLevelId);
+        }
 
         if (filter.CreatedFrom.HasValue)
         {
@@ -242,7 +246,6 @@ public class TicketService : ITicketService
                 CreatedByAvatarUrl = c.User.AvatarFileName == null
                     ? null
                     : "/uploads/avatars/" + c.User.AvatarFileName,
-                // F5 yapıldığında rolün boş kalmasını engelleyen SQL subquery haritalaması:
                 CreatedByRole = (
                     from ur in _db.UserRoles
                     where ur.UserId == c.UserId
@@ -457,7 +460,6 @@ public class TicketService : ITicketService
                     "Selected subcategory was not found or does not belong to the selected category.");
         }
 
-        
         var initialStatus = await _db.TicketStatuses.SingleOrDefaultAsync(
             s => s.IsActive && s.IsInitial,
             cancellationToken)
