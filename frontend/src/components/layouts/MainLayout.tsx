@@ -14,6 +14,7 @@ import {
   Briefcase,
   LogOut,
   ChevronDown,
+  MessageCircle,
 } from "lucide-react";
 import { NotificationBell } from "@/src/components/ui/NotificationBell";
 import { ThemeToggle } from "@/src/components/ui/ThemeToggle";
@@ -51,10 +52,19 @@ export default function MainLayout({
 
   const isCreateTicketPage = pathname === "/tickets/new";
   const isTicketsSection = pathname === "/tickets";
+  const isTeamChatPage = pathname.startsWith("/tickets/team-chat");
   const isFaqPage = pathname === "/faq";
   const isTeamManagementPage = pathname.startsWith("/tickets/team-management");
   const isMyWorkPage = pathname.startsWith("/tickets/my-work");
   const isProfilePage = pathname === "/tickets/profile";
+
+  // Rol değerini normalize ederek kontrol etme
+  const normalizedRole = user?.role?.toLowerCase().trim();
+  const canAccessChat =
+    normalizedRole === "teamleader" ||
+    normalizedRole === "supportagent" ||
+    normalizedRole === "1" ||
+    normalizedRole === "2";
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -86,6 +96,16 @@ export default function MainLayout({
       icon: PlusCircle,
       isActive: isCreateTicketPage,
     },
+    ...(canAccessChat
+      ? [
+          {
+            href: "/tickets/team-chat",
+            label: "Team Chat",
+            icon: MessageCircle,
+            isActive: isTeamChatPage,
+          },
+        ]
+      : []),
     {
       href: "/faq",
       label: "FAQ",
@@ -150,7 +170,7 @@ export default function MainLayout({
             </Link>
           </div>
 
-          {/* Navigasyon Linkleri - Kayarak Geçen Animasyonlu Tab */}
+          {/* Navigasyon Linkleri */}
           <nav className="hidden md:flex items-center gap-1 p-1.5 rounded-2xl border border-stone-300/60 dark:border-purple-900/40 bg-stone-200/60 dark:bg-slate-900/80 backdrop-blur-xl shadow-inner relative">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -164,7 +184,6 @@ export default function MainLayout({
                       : "text-stone-700 dark:text-slate-300 hover:text-stone-900 dark:hover:text-white"
                   }`}
                 >
-                  {/* Aktif Pill Arka Planı (Sayfalar/Sekmeler Arasında Kayan Animasyon) */}
                   {item.isActive && (
                     <motion.div
                       layoutId="activePill"
@@ -314,7 +333,7 @@ export default function MainLayout({
         </div>
       </header>
 
-      {/* Main Content - Yumuşak Fade ve Slide Sayfa Geçiş Animasyonu */}
+      {/* Main Content */}
       <AnimatePresence mode="wait">
         <motion.main
           key={pathname}
