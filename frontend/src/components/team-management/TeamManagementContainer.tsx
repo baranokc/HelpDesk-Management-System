@@ -8,7 +8,6 @@ import { Alert } from "@/src/components/ui/Alert";
 import { TicketPriorityBadge } from "@/src/components/tickets/TicketPriorityBadge";
 import { TicketStatsCards } from "@/src/components/tickets/TicketStatsCards";
 import { TicketStatusBadge } from "@/src/components/tickets/TicketStatusBadge";
-import { TicketUrgencyBadge } from "@/src/components/tickets/TicketUrgencyBadge";
 import { useAuth } from "@/src/context/AuthContext";
 import { getApiErrorMessage } from "@/src/lib/api";
 import { teamManagementService } from "@/src/services/teamManagementService";
@@ -232,17 +231,16 @@ export function TeamManagementContainer() {
                       </p>
                     ) : (
                       <div>
-                        <div className="hidden grid-cols-[minmax(0,1fr)_7rem_7rem_7rem] items-center gap-3 border-b border-slate-200 bg-slate-50/80 px-5 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-400 md:grid">
+                        <div className="hidden grid-cols-[minmax(0,1fr)_7rem_7rem] items-center gap-3 border-b border-slate-200 bg-slate-50/80 px-5 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-400 md:grid">
                           <span>Ticket</span>
                           <span className="text-center">Priority</span>
-                          <span className="text-center">Urgency</span>
                           <span className="text-center">Status</span>
                         </div>
 
                         <div className="divide-y divide-slate-100 dark:divide-slate-800">
                           {member.recentTickets.map((ticket) => (
                             <div
-                              className="grid gap-3 px-5 py-3 text-sm transition-colors group-hover:bg-slate-50/70 dark:group-hover:bg-slate-800/30 md:grid-cols-[minmax(0,1fr)_7rem_7rem_7rem] md:items-center"
+                              className="grid gap-3 px-5 py-3 text-sm transition-colors group-hover:bg-slate-50/70 dark:group-hover:bg-slate-800/30 md:grid-cols-[minmax(0,1fr)_7rem_7rem] md:items-center"
                               key={ticket.id}
                             >
                               <div className="min-w-0">
@@ -256,23 +254,16 @@ export function TeamManagementContainer() {
                                     : ""}
                                 </p>
                               </div>
-                              <div>
+                              <div className="flex items-center justify-start md:justify-center">
                                 <span className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-400 md:hidden">
                                   Priority
                                 </span>
                                 <TicketPriorityBadge
                                   priority={ticket.priorityName}
-                                />
-                              </div>
-                              <div>
-                                <span className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-400 md:hidden">
-                                  Urgency
-                                </span>
-                                <TicketUrgencyBadge
                                   urgency={ticket.urgencyLevelName}
                                 />
                               </div>
-                              <div>
+                              <div className="flex items-center justify-start md:justify-center">
                                 <span className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-400 md:hidden">
                                   Status
                                 </span>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { Alert } from "@/src/components/ui/Alert";
 import { Avatar } from "@/src/components/ui/Avatar";
@@ -9,12 +9,11 @@ import { useAuth } from "@/src/context/AuthContext";
 import { getApiErrorMessage } from "@/src/lib/api";
 import { getTicketViewLabel } from "@/src/lib/ticketPermissions";
 import { ticketService } from "@/src/services/ticketService";
-import type { TicketFilterDto, TicketPagedResultDto } from "@/src/types/ticket";
+import type { TicketListDto, TicketFilterDto, TicketPagedResultDto } from "@/src/types/ticket";
 import { TicketFilters } from "./TicketFilterTabs";
 import { TicketPriorityBadge } from "./TicketPriorityBadge";
 import { TicketStatusBadge } from "./TicketStatusBadge";
 import { TicketStatsCards } from "./TicketStatsCards";
-import { TicketUrgencyBadge } from "./TicketUrgencyBadge";
 
 const initialFilter: TicketFilterDto = {
   pageNumber: 1,
@@ -36,11 +35,92 @@ function createEmptyResult(filter: TicketFilterDto): TicketPagedResultDto {
   };
 }
 
+// 🚀 SCROLL ANIMASYONLU SATIR BİLEŞENİ
+function TicketRow({ ticket, index }: { ticket: TicketListDto; index: number }) {
+  const [isVisible, setIsVisible] = useState(false);
+  const rowRef = useRef<HTMLTableRowElement>(null);
+
+  useEffect(() => {
+    const element = rowRef.current;
+    if (!element) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <tr
+      ref={rowRef}
+      className={`group transition-all duration-500 ease-out hover:bg-slate-50/80 dark:hover:bg-slate-800/40 ${
+        isVisible
+          ? "opacity-100 translate-y-0 scale-100"
+          : "opacity-0 translate-y-6 scale-[0.98]"
+      }`}
+      style={{ transitionDelay: `${(index % 8) * 35}ms` }}
+    >
+      <td className="px-5 py-4 font-mono font-bold text-indigo-600 dark:text-indigo-400">
+        {ticket.ticketNumber}
+      </td>
+      <td className="px-5 py-4 font-semibold text-slate-900 dark:text-slate-100 max-w-[240px] truncate">
+        {ticket.ticketTitle}
+      </td>
+      <td className="px-5 py-4 text-slate-600 dark:text-slate-300">
+        <span className="font-medium">{ticket.categoryName}</span>
+        {ticket.subcategoryName && (
+          <span className="block text-[11px] text-slate-400 dark:text-slate-500">
+            {ticket.subcategoryName}
+          </span>
+        )}
+      </td>
+      <td className="px-5 py-4">
+        <TicketStatusBadge status={ticket.statusName} />
+      </td>
+      <td className="px-5 py-4">
+        <TicketPriorityBadge
+          priority={ticket.priorityName}
+          urgency={ticket.urgencyLevelName}
+        />
+      </td>
+      <td className="px-5 py-4 text-slate-600 dark:text-slate-300">
+        <div className="flex items-center gap-2">
+          <Avatar
+            avatarUrl={ticket.createdByAvatarUrl}
+            name={ticket.createdByName}
+            size="xs"
+          />
+          <span className="font-medium truncate max-w-[130px]">
+            {ticket.createdByName}
+          </span>
+        </div>
+      </td>
+      <td className="px-5 py-4 text-right">
+        <Link
+          className="inline-flex items-center gap-1 font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition-all group-hover:translate-x-0.5"
+          href={`/tickets/${ticket.id}`}
+        >
+          <span>View Details</span>
+          <span>→</span>
+        </Link>
+      </td>
+    </tr>
+  );
+}
+
 export function TicketListContainer() {
   const { user } = useAuth();
   const [filter, setFilter] = useState<TicketFilterDto>(initialFilter);
   const [result, setResult] = useState<TicketPagedResultDto>(() =>
-    createEmptyResult(initialFilter),
+    createEmptyResult(initialFilter)
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -65,8 +145,8 @@ export function TicketListContainer() {
           setError(
             getApiErrorMessage(
               requestError,
-              "Failed to load tickets. Please try again.",
-            ),
+              "Failed to load tickets. Please try again."
+            )
           );
         }
       } finally {
@@ -97,6 +177,7 @@ export function TicketListContainer() {
       pageNumber,
     }));
   };
+
   const hasActiveFilters = Boolean(
     filter.search ||
       filter.statusId ||
@@ -106,81 +187,84 @@ export function TicketListContainer() {
       filter.urgencyLevelId ||
       filter.impactLevelId ||
       filter.createdFrom ||
-      filter.createdTo,
+      filter.createdTo
   );
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
             {viewLabel.title}
           </h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             {viewLabel.description}
           </p>
         </div>
       </div>
 
-      {/* KPI / İÇERİK KARTLARI */}
-      <TicketStatsCards
-        loading={loading}
-        openCount={result.openCount}
-        inProgressCount={result.inProgressCount}
-        completedCount={result.completedCount}
-        totalCount={result.totalCount}
-      />
-
-      {/* Filtre Kartı */}
-      <div className="card border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-colors">
-        <div className="card-body p-4">
-          <TicketFilters onApply={applyFilters} value={filter} />
-        </div>
+      {/* KPI Kartları */}
+      <div
+        className="animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both"
+        style={{ animationDelay: "100ms" }}
+      >
+        <TicketStatsCards
+          loading={loading}
+          openCount={result.openCount}
+          inProgressCount={result.inProgressCount}
+          completedCount={result.completedCount}
+          totalCount={result.totalCount}
+        />
       </div>
 
+      {/* Filtre Barı */}
+      <div
+        className="animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both"
+        style={{ animationDelay: "150ms" }}
+      >
+        <TicketFilters onApply={applyFilters} value={filter} />
+      </div>
+
+      {/* YÜKLENİYOR SKELETON */}
       {loading && (
-        <div className="card overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-colors">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="table w-full min-w-[1100px]">
-              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs font-semibold uppercase text-slate-700 dark:text-slate-300">
+            <table className="w-full min-w-[1000px] text-left border-collapse">
+              <thead className="bg-slate-50/80 dark:bg-slate-800/40 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 <tr>
-                  <th>Ticket #</th>
-                  <th>Title</th>
-                  <th>Category</th>
-                  <th>Status</th>
-                  <th>Priority</th>
-                  <th>Urgency</th>
-                  <th>Created By</th>
-                  <th className="text-right">Action</th>
+                  <th className="px-5 py-3.5">Ticket #</th>
+                  <th className="px-5 py-3.5">Title</th>
+                  <th className="px-5 py-3.5">Category</th>
+                  <th className="px-5 py-3.5">Status</th>
+                  <th className="px-5 py-3.5">Priority</th>
+                  <th className="px-5 py-3.5">Created By</th>
+                  <th className="px-5 py-3.5 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                 {[1, 2, 3, 4, 5].map((item) => (
                   <tr key={item}>
-                    <td>
-                      <div className="skeleton h-4 w-16 bg-slate-200 dark:bg-slate-800" />
+                    <td className="px-5 py-4">
+                      <div className="h-4 w-16 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
                     </td>
-                    <td>
-                      <div className="skeleton h-4 w-40 bg-slate-200 dark:bg-slate-800" />
+                    <td className="px-5 py-4">
+                      <div className="h-4 w-40 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
                     </td>
-                    <td>
-                      <div className="skeleton h-4 w-28 bg-slate-200 dark:bg-slate-800" />
+                    <td className="px-5 py-4">
+                      <div className="h-4 w-28 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
                     </td>
-                    <td>
-                      <div className="skeleton h-6 w-20 rounded-full bg-slate-200 dark:bg-slate-800" />
+                    <td className="px-5 py-4">
+                      <div className="h-6 w-24 rounded-full bg-slate-200 dark:bg-slate-800 animate-pulse" />
                     </td>
-                    <td>
-                      <div className="skeleton h-6 w-16 rounded-full bg-slate-200 dark:bg-slate-800" />
+                    <td className="px-5 py-4">
+                      <div className="h-6 w-24 rounded-full bg-slate-200 dark:bg-slate-800 animate-pulse" />
                     </td>
-                    <td>
-                      <div className="skeleton h-6 w-20 rounded-full bg-slate-200 dark:bg-slate-800" />
+                    <td className="px-5 py-4">
+                      <div className="h-4 w-28 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
                     </td>
-                    <td>
-                      <div className="skeleton h-4 w-24 bg-slate-200 dark:bg-slate-800" />
-                    </td>
-                    <td className="text-right">
-                      <div className="skeleton ml-auto h-4 w-20 bg-slate-200 dark:bg-slate-800" />
+                    <td className="px-5 py-4 text-right">
+                      <div className="ml-auto h-4 w-20 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
                     </td>
                   </tr>
                 ))}
@@ -192,18 +276,18 @@ export function TicketListContainer() {
 
       {error && <Alert variant="error">{error}</Alert>}
 
+      {/* TABLO & İÇERİK */}
       {!loading && !error && (
-        <>
-          <div className="card overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-colors">
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 shadow-sm overflow-hidden backdrop-blur-md">
             {result.items.length === 0 ? (
-              <div className="flex flex-col items-center justify-center px-4 py-12 text-center">
-                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
+                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
                   <svg
-                    className="h-8 w-8"
+                    className="h-7 w-7"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
                   >
                     <path
                       d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"
@@ -213,10 +297,10 @@ export function TicketListContainer() {
                     />
                   </svg>
                 </div>
-                <h3 className="mb-1 text-lg font-semibold text-slate-900 dark:text-white">
+                <h3 className="mb-1 text-base font-bold text-slate-900 dark:text-white">
                   No tickets found
                 </h3>
-                <p className="max-w-sm text-sm text-slate-500 dark:text-slate-400">
+                <p className="max-w-sm text-xs text-slate-500 dark:text-slate-400">
                   {hasActiveFilters
                     ? "No tickets match the selected filters. Try clearing or changing them."
                     : "There are no tickets available in your current view."}
@@ -224,69 +308,25 @@ export function TicketListContainer() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="table w-full min-w-[1100px]">
-                  <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs font-semibold uppercase text-slate-700 dark:text-slate-300">
+                <table className="w-full min-w-[1000px] text-left border-collapse">
+                  <thead className="bg-slate-50/80 dark:bg-slate-800/40 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     <tr>
-                      <th>Ticket #</th>
-                      <th>Title</th>
-                      <th>Category</th>
-                      <th>Status</th>
-                      <th>Priority</th>
-                      <th>Urgency</th>
-                      <th>Created By</th>
-                      <th className="text-right">Action</th>
+                      <th className="px-5 py-3.5">Ticket #</th>
+                      <th className="px-5 py-3.5">Title</th>
+                      <th className="px-5 py-3.5">Category</th>
+                      <th className="px-5 py-3.5">Status</th>
+                      <th className="px-5 py-3.5">Priority</th>
+                      <th className="px-5 py-3.5">Created By</th>
+                      <th className="px-5 py-3.5 text-right">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
-                    {result.items.map((ticket) => (
-                      <tr
-                        className="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/50"
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
+                    {result.items.map((ticket, index) => (
+                      <TicketRow
                         key={ticket.id}
-                      >
-                        <td className="font-mono text-xs font-semibold text-slate-500 dark:text-slate-400">
-                          {ticket.ticketNumber}
-                        </td>
-                        <td className="font-medium text-slate-900 dark:text-white">
-                          {ticket.ticketTitle}
-                        </td>
-                        <td className="text-slate-600 dark:text-slate-300">
-                          {ticket.categoryName}
-                          {ticket.subcategoryName && (
-                            <span className="block text-xs text-slate-400 dark:text-slate-500">
-                              {ticket.subcategoryName}
-                            </span>
-                          )}
-                        </td>
-                        <td>
-                          <TicketStatusBadge status={ticket.statusName} />
-                        </td>
-                        <td>
-                          <TicketPriorityBadge priority={ticket.priorityName} />
-                        </td>
-                        <td>
-                          <TicketUrgencyBadge
-                            urgency={ticket.urgencyLevelName}
-                          />
-                        </td>
-                        <td className="text-slate-600 dark:text-slate-300">
-                          <div className="flex items-center gap-2">
-                            <Avatar
-                              avatarUrl={ticket.createdByAvatarUrl}
-                              name={ticket.createdByName}
-                              size="xs"
-                            />
-                            <span>{ticket.createdByName}</span>
-                          </div>
-                        </td>
-                        <td className="text-right">
-                          <Link
-                            className="link link-primary font-medium no-underline hover:underline"
-                            href={`/tickets/${ticket.id}`}
-                          >
-                            View Details →
-                          </Link>
-                        </td>
-                      </tr>
+                        ticket={ticket}
+                        index={index}
+                      />
                     ))}
                   </tbody>
                 </table>
@@ -295,9 +335,17 @@ export function TicketListContainer() {
           </div>
 
           {result.items.length > 0 && (
-            <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                {result.totalCount} ticket(s) in this view
+            <div className="flex flex-col items-center justify-between gap-4 sm:flex-row pt-2">
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                Showing{" "}
+                <span className="font-bold text-slate-700 dark:text-slate-200">
+                  {result.items.length}
+                </span>{" "}
+                of{" "}
+                <span className="font-bold text-slate-700 dark:text-slate-200">
+                  {result.totalCount}
+                </span>{" "}
+                ticket(s)
               </p>
               <Pagination
                 onChange={changePage}
@@ -306,7 +354,7 @@ export function TicketListContainer() {
               />
             </div>
           )}
-        </>
+        </div>
       )}
     </div>
   );

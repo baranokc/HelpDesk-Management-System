@@ -8,7 +8,6 @@ import { Pagination } from "@/src/components/ui/Pagination";
 import { TicketPriorityBadge } from "@/src/components/tickets/TicketPriorityBadge";
 import { TicketStatsCards } from "@/src/components/tickets/TicketStatsCards";
 import { TicketStatusBadge } from "@/src/components/tickets/TicketStatusBadge";
-import { TicketUrgencyBadge } from "@/src/components/tickets/TicketUrgencyBadge";
 import { useAuth } from "@/src/context/AuthContext";
 import { getApiErrorMessage } from "@/src/lib/api";
 import { teamManagementService } from "@/src/services/teamManagementService";
@@ -113,14 +112,13 @@ function MemberTicketList({
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="table min-w-[1050px]">
+            <table className="table min-w-[950px]">
               <thead className="bg-slate-50 text-xs font-semibold uppercase text-slate-700 dark:bg-slate-800/50 dark:text-slate-300">
                 <tr>
                   <th>Ticket</th>
                   <th>Title</th>
                   <th>Relation</th>
                   <th>Priority</th>
-                  <th>Urgency</th>
                   <th>Status</th>
                   <th>Latest Assignment</th>
                   <th className="text-right">Action</th>
@@ -147,10 +145,10 @@ function MemberTicketList({
                       </span>
                     </td>
                     <td>
-                      <TicketPriorityBadge priority={ticket.priorityName} />
-                    </td>
-                    <td>
-                      <TicketUrgencyBadge urgency={ticket.urgencyLevelName} />
+                      <TicketPriorityBadge
+                        priority={ticket.priorityName}
+                        urgency={ticket.urgencyLevelName}
+                      />
                     </td>
                     <td>
                       <TicketStatusBadge status={ticket.statusName} />
@@ -261,7 +259,7 @@ export function TeamMemberDetailContainer({
       } finally {
         if (!cancelled) setLoading(false);
       }
-    };
+    }
 
     void fetchMember();
 
