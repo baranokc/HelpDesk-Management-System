@@ -64,7 +64,8 @@ else
     builder.Services.AddScoped<IEmailService, DisabledEmailService>();
 }
 
-builder.Services.AddDbContext<AppDbContext>(options =>options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
@@ -91,7 +92,7 @@ builder.Services.AddSwaggerGen(options =>
         Type = SecuritySchemeType.Http,
         Scheme = "bearer",
         BearerFormat = "JWT",
-        Description = "JWT token deÄŸerini giriniz."
+        Description = "JWT token değerini giriniz."
     });
 
     options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
@@ -101,7 +102,6 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 builder.Services.AddScoped<ILookupService, LookupService>();
-//builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITicketService, TicketService>();
 builder.Services.AddScoped<ITicketAssignmentService, TicketAssignmentService>();
@@ -119,8 +119,6 @@ builder.Services.AddScoped<ISlaService, SlaService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<ISatisfactionSurveyService, SatisfactionSurveyService>();
 builder.Services.AddHostedService<SlaNotificationWorker>();
-
-
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = Encoding.UTF8.GetBytes(jwtSettings["Secret"]!);
@@ -278,10 +276,20 @@ using (var scope = app.Services.CreateScope())
 
 app.UseRouting();
 
+// 1. CORS Middleware'i en başta çalıştırılır
 app.UseCors("AllowNextJS");
 
-app.UseStaticFiles();
+// 2. Statik dosyalar için anonim erişim ve CORS izinleri ayarlanır
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        ctx.Context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
+        ctx.Context.Response.Headers.Append("Cache-Control", "public,max-age=2592000");
+    }
+});
 
+// 3. Kimlik doğrulaması statik dosyalardan SONRA çalışır
 app.UseAuthentication();
 app.UseAuthorization();
 
