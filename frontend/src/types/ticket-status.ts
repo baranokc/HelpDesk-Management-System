@@ -6,6 +6,8 @@ export interface TicketHistoryDto {
     oldValue? : string | null;
     newValue? : string | null;
     description? : string | null;
+    avatarFileName? : string | null;
+    changedByAvatarFileName?: string | null;
     changedById : string;
     changedByName : string | null;
     changedAt : string;

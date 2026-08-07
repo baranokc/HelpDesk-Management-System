@@ -68,7 +68,7 @@ export function TicketForm({ error, loading, initialTicket, onSubmit }: TicketFo
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
 
-  // 🚀 INITIAL TICKET GELDİĞİNDE FORM ALANLARINI DOLDUR
+  // Initial Ticket Yükleme
   useEffect(() => {
     if (initialTicket) {
       setTicketTitle(initialTicket.ticketTitle || '');
@@ -157,8 +157,8 @@ export function TicketForm({ error, loading, initialTicket, onSubmit }: TicketFo
     <form onSubmit={handleSubmitForm} className="space-y-6">
       {/* HATA MESAJI */}
       {error && (
-        <div className="flex items-center gap-3 p-4 rounded-xl border border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-medium animate-in fade-in">
-          <AlertCircle className="h-4 w-4 shrink-0" />
+        <div className="flex items-center gap-3 p-4 rounded-2xl border border-rose-500/30 bg-rose-500/10 text-rose-800 dark:text-rose-300 text-xs font-semibold animate-in fade-in">
+          <AlertCircle className="h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" />
           <span>{error}</span>
         </div>
       )}
@@ -166,9 +166,9 @@ export function TicketForm({ error, loading, initialTicket, onSubmit }: TicketFo
       {/* TİTLE & SUBJECT */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
-            <FileText className="h-3.5 w-3.5 text-indigo-500" />
-            Ticket Title <span className="text-rose-500">*</span>
+          <label className="text-[11px] font-bold uppercase tracking-wider text-stone-700 dark:text-slate-300 flex items-center gap-1.5">
+            <FileText className="h-3.5 w-3.5 text-emerald-700 dark:text-purple-400" />
+            <span>Ticket Title</span> <span className="text-rose-500">*</span>
           </label>
           <input
             type="text"
@@ -176,14 +176,14 @@ export function TicketForm({ error, loading, initialTicket, onSubmit }: TicketFo
             placeholder="Brief title of the issue..."
             value={ticketTitle}
             onChange={(e) => setTicketTitle(e.target.value)}
-            className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 px-3.5 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+            className="w-full rounded-xl border border-stone-300/80 dark:border-purple-800/40 bg-stone-50/60 dark:bg-slate-950/60 px-3.5 py-2.5 text-xs font-medium text-stone-800 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500 focus:border-emerald-600 dark:focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-purple-500/20 transition-all"
           />
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
-            <Tag className="h-3.5 w-3.5 text-sky-500" />
-            Subject <span className="text-rose-500">*</span>
+          <label className="text-[11px] font-bold uppercase tracking-wider text-stone-700 dark:text-slate-300 flex items-center gap-1.5">
+            <Tag className="h-3.5 w-3.5 text-teal-700 dark:text-indigo-400" />
+            <span>Subject</span> <span className="text-rose-500">*</span>
           </label>
           <input
             type="text"
@@ -191,7 +191,7 @@ export function TicketForm({ error, loading, initialTicket, onSubmit }: TicketFo
             placeholder="Short summary or module..."
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 px-3.5 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+            className="w-full rounded-xl border border-stone-300/80 dark:border-purple-800/40 bg-stone-50/60 dark:bg-slate-950/60 px-3.5 py-2.5 text-xs font-medium text-stone-800 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500 focus:border-emerald-600 dark:focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-purple-500/20 transition-all"
           />
         </div>
       </div>
@@ -199,11 +199,11 @@ export function TicketForm({ error, loading, initialTicket, onSubmit }: TicketFo
       {/* DETAILED EXPLANATION */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
-            <AlignLeft className="h-3.5 w-3.5 text-indigo-400" />
-            Detailed Explanation <span className="text-rose-500">*</span>
+          <label className="text-[11px] font-bold uppercase tracking-wider text-stone-700 dark:text-slate-300 flex items-center gap-1.5">
+            <AlignLeft className="h-3.5 w-3.5 text-emerald-700 dark:text-purple-400" />
+            <span>Detailed Explanation</span> <span className="text-rose-500">*</span>
           </label>
-          <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500">
+          <span className="text-[10px] font-mono text-stone-400 dark:text-purple-300/50">
             {description.length} / 10000 characters
           </span>
         </div>
@@ -214,16 +214,16 @@ export function TicketForm({ error, loading, initialTicket, onSubmit }: TicketFo
           placeholder="Please describe your issue in detail..."
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 p-3.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all resize-y min-h-[120px]"
+          className="w-full rounded-xl border border-stone-300/80 dark:border-purple-800/40 bg-stone-50/60 dark:bg-slate-950/60 p-3.5 text-xs font-medium text-stone-800 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500 focus:border-emerald-600 dark:focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-purple-500/20 transition-all resize-y min-h-[120px]"
         />
       </div>
 
       {/* CATEGORY - SUBCATEGORY - PRIORITY */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="space-y-1.5">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
-            <Layers className="h-3.5 w-3.5 text-purple-400" />
-            Category <span className="text-rose-500">*</span>
+          <label className="text-[11px] font-bold uppercase tracking-wider text-stone-700 dark:text-slate-300 flex items-center gap-1.5">
+            <Layers className="h-3.5 w-3.5 text-teal-700 dark:text-violet-400" />
+            <span>Category</span> <span className="text-rose-500">*</span>
           </label>
           <select
             required
@@ -232,11 +232,11 @@ export function TicketForm({ error, loading, initialTicket, onSubmit }: TicketFo
               setCategoryId(e.target.value);
               setSubcategoryId('');
             }}
-            className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 px-3 py-2.5 text-xs font-medium text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
+            className="w-full rounded-xl border border-stone-300/80 dark:border-purple-800/40 bg-stone-50/60 dark:bg-slate-950/60 px-3 py-2.5 text-xs font-medium text-stone-800 dark:text-slate-100 focus:border-emerald-600 dark:focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-purple-500/20 transition-all cursor-pointer"
           >
-            <option value="">Select Category</option>
+            <option value="" className="bg-white dark:bg-slate-900">Select Category</option>
             {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
+              <option key={cat.id} value={cat.id} className="bg-white dark:bg-slate-900">
                 {cat.name}
               </option>
             ))}
@@ -244,19 +244,19 @@ export function TicketForm({ error, loading, initialTicket, onSubmit }: TicketFo
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
-            <GitCommit className="h-3.5 w-3.5 text-violet-400" />
-            Subcategory
+          <label className="text-[11px] font-bold uppercase tracking-wider text-stone-700 dark:text-slate-300 flex items-center gap-1.5">
+            <GitCommit className="h-3.5 w-3.5 text-teal-700 dark:text-indigo-400" />
+            <span>Subcategory</span>
           </label>
           <select
             value={subcategoryId}
             onChange={(e) => setSubcategoryId(e.target.value)}
             disabled={!categoryId || filteredSubcategories.length === 0}
-            className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 px-3 py-2.5 text-xs font-medium text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer disabled:opacity-40"
+            className="w-full rounded-xl border border-stone-300/80 dark:border-purple-800/40 bg-stone-50/60 dark:bg-slate-950/60 px-3 py-2.5 text-xs font-medium text-stone-800 dark:text-slate-100 focus:border-emerald-600 dark:focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-purple-500/20 transition-all cursor-pointer disabled:opacity-40"
           >
-            <option value="">Select Subcategory</option>
+            <option value="" className="bg-white dark:bg-slate-900">Select Subcategory</option>
             {filteredSubcategories.map((sub) => (
-              <option key={sub.id} value={sub.id}>
+              <option key={sub.id} value={sub.id} className="bg-white dark:bg-slate-900">
                 {sub.name}
               </option>
             ))}
@@ -264,19 +264,19 @@ export function TicketForm({ error, loading, initialTicket, onSubmit }: TicketFo
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
-            <BarChart3 className="h-3.5 w-3.5 text-emerald-500" />
-            Priority <span className="text-rose-500">*</span>
+          <label className="text-[11px] font-bold uppercase tracking-wider text-stone-700 dark:text-slate-300 flex items-center gap-1.5">
+            <BarChart3 className="h-3.5 w-3.5 text-emerald-700 dark:text-purple-400" />
+            <span>Priority</span> <span className="text-rose-500">*</span>
           </label>
           <select
             required
             value={priorityId}
             onChange={(e) => setPriorityId(e.target.value)}
-            className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 px-3 py-2.5 text-xs font-medium text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
+            className="w-full rounded-xl border border-stone-300/80 dark:border-purple-800/40 bg-stone-50/60 dark:bg-slate-950/60 px-3 py-2.5 text-xs font-medium text-stone-800 dark:text-slate-100 focus:border-emerald-600 dark:focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-purple-500/20 transition-all cursor-pointer"
           >
-            <option value="">Select Priority</option>
+            <option value="" className="bg-white dark:bg-slate-900">Select Priority</option>
             {PRIORITY_OPTIONS.map((item) => (
-              <option key={item.id} value={item.id}>
+              <option key={item.id} value={item.id} className="bg-white dark:bg-slate-900">
                 {item.name}
               </option>
             ))}
@@ -287,25 +287,25 @@ export function TicketForm({ error, loading, initialTicket, onSubmit }: TicketFo
       {/* IMPACT LEVEL & URGENCY LEVEL */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
-            <Zap className="h-3.5 w-3.5 text-amber-500" />
-            Impact Level <span className="text-rose-500">*</span>
+          <label className="text-[11px] font-bold uppercase tracking-wider text-stone-700 dark:text-slate-300 flex items-center gap-1.5">
+            <Zap className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+            <span>Impact Level</span> <span className="text-rose-500">*</span>
           </label>
           <select
             required
             value={impactLevelId}
             onChange={(e) => setImpactLevelId(e.target.value)}
-            className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 px-3 py-2.5 text-xs font-medium text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
+            className="w-full rounded-xl border border-stone-300/80 dark:border-purple-800/40 bg-stone-50/60 dark:bg-slate-950/60 px-3 py-2.5 text-xs font-medium text-stone-800 dark:text-slate-100 focus:border-emerald-600 dark:focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-purple-500/20 transition-all cursor-pointer"
           >
-            <option value="">Select Impact</option>
+            <option value="" className="bg-white dark:bg-slate-900">Select Impact</option>
             {impactLevels.length > 0
               ? impactLevels.map((item) => (
-                  <option key={item.id} value={item.id}>
+                  <option key={item.id} value={item.id} className="bg-white dark:bg-slate-900">
                     {item.name}
                   </option>
                 ))
               : PRIORITY_OPTIONS.map((item) => (
-                  <option key={item.id} value={item.id}>
+                  <option key={item.id} value={item.id} className="bg-white dark:bg-slate-900">
                     {item.name}
                   </option>
                 ))}
@@ -313,19 +313,19 @@ export function TicketForm({ error, loading, initialTicket, onSubmit }: TicketFo
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
-            <AlertCircle className="h-3.5 w-3.5 text-rose-400" />
-            Urgency Level <span className="text-rose-500">*</span>
+          <label className="text-[11px] font-bold uppercase tracking-wider text-stone-700 dark:text-slate-300 flex items-center gap-1.5">
+            <AlertCircle className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
+            <span>Urgency Level</span> <span className="text-rose-500">*</span>
           </label>
           <select
             required
             value={urgencyLevelId}
             onChange={(e) => setUrgencyLevelId(e.target.value)}
-            className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 px-3 py-2.5 text-xs font-medium text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
+            className="w-full rounded-xl border border-stone-300/80 dark:border-purple-800/40 bg-stone-50/60 dark:bg-slate-950/60 px-3 py-2.5 text-xs font-medium text-stone-800 dark:text-slate-100 focus:border-emerald-600 dark:focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-purple-500/20 transition-all cursor-pointer"
           >
-            <option value="">Select Urgency</option>
+            <option value="" className="bg-white dark:bg-slate-900">Select Urgency</option>
             {URGENCY_OPTIONS.map((item) => (
-              <option key={item.id} value={item.id}>
+              <option key={item.id} value={item.id} className="bg-white dark:bg-slate-900">
                 {item.name}
               </option>
             ))}
@@ -333,12 +333,12 @@ export function TicketForm({ error, loading, initialTicket, onSubmit }: TicketFo
         </div>
       </div>
 
-      {/* DOSYA YÜKLEME ALANI (SADECE YENİ OLUŞTURURKEN GÖRÜNÜR) */}
+      {/* DOSYA YÜKLEME ALANI */}
       {!isEditing && (
         <div className="space-y-2">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
-            <Paperclip className="h-3.5 w-3.5 text-indigo-400" />
-            Attachments
+          <label className="text-[11px] font-bold uppercase tracking-wider text-stone-700 dark:text-slate-300 flex items-center gap-1.5">
+            <Paperclip className="h-3.5 w-3.5 text-emerald-700 dark:text-purple-400" />
+            <span>Attachments</span>
           </label>
 
           <div
@@ -355,8 +355,8 @@ export function TicketForm({ error, loading, initialTicket, onSubmit }: TicketFo
             onClick={() => fileInputRef.current?.click()}
             className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-2xl cursor-pointer transition-all ${
               isDragOver
-                ? 'border-indigo-500 bg-indigo-500/10'
-                : 'border-slate-200 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-950/30 hover:border-indigo-500/50 hover:bg-slate-100/50 dark:hover:bg-slate-900/50'
+                ? 'border-emerald-600 bg-emerald-500/10 dark:border-purple-500 dark:bg-purple-500/10'
+                : 'border-stone-300/80 dark:border-purple-900/40 bg-stone-50/40 dark:bg-slate-950/40 hover:border-emerald-600/50 dark:hover:border-purple-500/50 hover:bg-stone-100/60 dark:hover:bg-slate-900/60'
             }`}
           >
             <input
@@ -366,13 +366,13 @@ export function TicketForm({ error, loading, initialTicket, onSubmit }: TicketFo
               className="hidden"
               onChange={(e) => handleFileDrop(e.target.files)}
             />
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-500 mb-2">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-700 dark:bg-purple-500/15 dark:text-purple-300 mb-2">
               <UploadCloud className="h-5 w-5" />
             </div>
-            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Click to upload <span className="font-normal text-slate-400">or drag & drop</span>
+            <p className="text-xs font-bold text-stone-800 dark:text-slate-200">
+              Click to upload <span className="font-normal text-stone-400 dark:text-slate-400">or drag & drop</span>
             </p>
-            <p className="text-[11px] text-slate-400 mt-0.5">
+            <p className="text-[10px] font-medium text-stone-400 dark:text-slate-500 mt-0.5">
               Max 10 files (up to 10 MB each)
             </p>
           </div>
@@ -382,9 +382,9 @@ export function TicketForm({ error, loading, initialTicket, onSubmit }: TicketFo
               {selectedFiles.map((file, idx) => (
                 <div
                   key={idx}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-200 animate-in fade-in"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-stone-100 dark:bg-slate-800/80 border border-stone-200 dark:border-slate-700/80 text-xs font-medium text-stone-800 dark:text-slate-200 animate-in fade-in"
                 >
-                  <Paperclip className="h-3 w-3 text-indigo-400 shrink-0" />
+                  <Paperclip className="h-3 w-3 text-emerald-700 dark:text-purple-400 shrink-0" />
                   <span className="truncate max-w-[150px] font-medium">{file.name}</span>
                   <button
                     type="button"
@@ -392,7 +392,7 @@ export function TicketForm({ error, loading, initialTicket, onSubmit }: TicketFo
                       e.stopPropagation();
                       removeFile(idx);
                     }}
-                    className="text-slate-400 hover:text-rose-500 transition-colors ml-1"
+                    className="text-stone-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors ml-1"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -404,11 +404,11 @@ export function TicketForm({ error, loading, initialTicket, onSubmit }: TicketFo
       )}
 
       {/* SUBMIT BUTTON */}
-      <div className="flex items-center justify-end pt-4 border-t border-slate-100 dark:border-slate-800/60">
+      <div className="flex items-center justify-end pt-4 border-t border-stone-200/80 dark:border-purple-900/30">
         <button
           type="submit"
           disabled={loading}
-          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 shadow-md shadow-indigo-500/20 border border-indigo-400/30 transition-all active:scale-[0.98] disabled:opacity-50"
+          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-700 dark:from-purple-600 dark:to-indigo-600 hover:from-emerald-500 hover:to-teal-600 dark:hover:from-purple-500 dark:hover:to-indigo-500 shadow-lg shadow-emerald-700/20 dark:shadow-purple-600/25 active:scale-[0.98] transition-all disabled:opacity-50"
         >
           {loading ? (
             <>

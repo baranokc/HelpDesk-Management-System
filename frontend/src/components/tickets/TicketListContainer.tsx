@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
+import { ArrowRight, Ticket, SearchX } from "lucide-react";
 import { Alert } from "@/src/components/ui/Alert";
 import { Avatar } from "@/src/components/ui/Avatar";
 import { Pagination } from "@/src/components/ui/Pagination";
@@ -61,23 +62,23 @@ function TicketRow({ ticket, index }: { ticket: TicketListDto; index: number }) 
   return (
     <tr
       ref={rowRef}
-      className={`group transition-all duration-500 ease-out hover:bg-slate-50/80 dark:hover:bg-slate-800/40 ${
+      className={`group transition-all duration-300 ease-out hover:bg-stone-100/70 dark:hover:bg-purple-950/20 ${
         isVisible
           ? "opacity-100 translate-y-0 scale-100"
-          : "opacity-0 translate-y-6 scale-[0.98]"
+          : "opacity-0 translate-y-4 scale-[0.99]"
       }`}
       style={{ transitionDelay: `${(index % 8) * 35}ms` }}
     >
-      <td className="px-5 py-4 font-mono font-bold text-indigo-600 dark:text-indigo-400">
+      <td className="px-5 py-4 font-mono font-bold text-emerald-700 dark:text-purple-400">
         {ticket.ticketNumber}
       </td>
-      <td className="px-5 py-4 font-semibold text-slate-900 dark:text-slate-100 max-w-[240px] truncate">
+      <td className="px-5 py-4 font-semibold text-stone-900 dark:text-slate-100 max-w-[240px] truncate">
         {ticket.ticketTitle}
       </td>
-      <td className="px-5 py-4 text-slate-600 dark:text-slate-300">
+      <td className="px-5 py-4 text-stone-600 dark:text-slate-300">
         <span className="font-medium">{ticket.categoryName}</span>
         {ticket.subcategoryName && (
-          <span className="block text-[11px] text-slate-400 dark:text-slate-500">
+          <span className="block text-[11px] text-stone-400 dark:text-slate-500">
             {ticket.subcategoryName}
           </span>
         )}
@@ -91,12 +92,13 @@ function TicketRow({ ticket, index }: { ticket: TicketListDto; index: number }) 
           urgency={ticket.urgencyLevelName}
         />
       </td>
-      <td className="px-5 py-4 text-slate-600 dark:text-slate-300">
+      <td className="px-5 py-4 text-stone-600 dark:text-slate-300">
         <div className="flex items-center gap-2">
           <Avatar
             avatarUrl={ticket.createdByAvatarUrl}
             name={ticket.createdByName}
             size="xs"
+            className="border border-stone-300/80 dark:border-purple-800/40"
           />
           <span className="font-medium truncate max-w-[130px]">
             {ticket.createdByName}
@@ -105,11 +107,11 @@ function TicketRow({ ticket, index }: { ticket: TicketListDto; index: number }) 
       </td>
       <td className="px-5 py-4 text-right">
         <Link
-          className="inline-flex items-center gap-1 font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition-all group-hover:translate-x-0.5"
+          className="inline-flex items-center gap-1.5 font-bold text-emerald-700 dark:text-purple-400 hover:text-emerald-800 dark:hover:text-purple-300 transition-all group-hover:translate-x-1"
           href={`/tickets/${ticket.id}`}
         >
           <span>View Details</span>
-          <span>→</span>
+          <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       </td>
     </tr>
@@ -195,10 +197,10 @@ export function TicketListContainer() {
       {/* Header */}
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+          <h1 className="text-2xl font-black tracking-tight bg-gradient-to-r from-amber-800 via-emerald-800 to-teal-900 dark:from-purple-300 dark:via-violet-200 dark:to-indigo-200 bg-clip-text text-transparent">
             {viewLabel.title}
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-xs font-medium text-stone-500 dark:text-slate-400 mt-1">
             {viewLabel.description}
           </p>
         </div>
@@ -228,10 +230,10 @@ export function TicketListContainer() {
 
       {/* YÜKLENİYOR SKELETON */}
       {loading && (
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
+        <div className="rounded-3xl border border-stone-200/80 dark:border-purple-900/40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl shadow-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[1000px] text-left border-collapse">
-              <thead className="bg-slate-50/80 dark:bg-slate-800/40 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              <thead className="bg-stone-100/80 dark:bg-slate-800/50 border-b border-stone-200/80 dark:border-slate-800 text-[11px] font-extrabold uppercase tracking-wider text-stone-500 dark:text-purple-300/60">
                 <tr>
                   <th className="px-5 py-3.5">Ticket #</th>
                   <th className="px-5 py-3.5">Title</th>
@@ -242,29 +244,29 @@ export function TicketListContainer() {
                   <th className="px-5 py-3.5 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+              <tbody className="divide-y divide-stone-100 dark:divide-slate-800/60">
                 {[1, 2, 3, 4, 5].map((item) => (
                   <tr key={item}>
                     <td className="px-5 py-4">
-                      <div className="h-4 w-16 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+                      <div className="h-4 w-16 bg-stone-200 dark:bg-slate-800 rounded-lg animate-pulse" />
                     </td>
                     <td className="px-5 py-4">
-                      <div className="h-4 w-40 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+                      <div className="h-4 w-40 bg-stone-200 dark:bg-slate-800 rounded-lg animate-pulse" />
                     </td>
                     <td className="px-5 py-4">
-                      <div className="h-4 w-28 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+                      <div className="h-4 w-28 bg-stone-200 dark:bg-slate-800 rounded-lg animate-pulse" />
                     </td>
                     <td className="px-5 py-4">
-                      <div className="h-6 w-24 rounded-full bg-slate-200 dark:bg-slate-800 animate-pulse" />
+                      <div className="h-6 w-24 rounded-full bg-stone-200 dark:bg-slate-800 animate-pulse" />
                     </td>
                     <td className="px-5 py-4">
-                      <div className="h-6 w-24 rounded-full bg-slate-200 dark:bg-slate-800 animate-pulse" />
+                      <div className="h-6 w-24 rounded-full bg-stone-200 dark:bg-slate-800 animate-pulse" />
                     </td>
                     <td className="px-5 py-4">
-                      <div className="h-4 w-28 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+                      <div className="h-4 w-28 bg-stone-200 dark:bg-slate-800 rounded-lg animate-pulse" />
                     </td>
                     <td className="px-5 py-4 text-right">
-                      <div className="ml-auto h-4 w-20 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+                      <div className="ml-auto h-4 w-20 bg-stone-200 dark:bg-slate-800 rounded-lg animate-pulse" />
                     </td>
                   </tr>
                 ))}
@@ -279,28 +281,16 @@ export function TicketListContainer() {
       {/* TABLO & İÇERİK */}
       {!loading && !error && (
         <div className="space-y-4">
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 shadow-sm overflow-hidden backdrop-blur-md">
+          <div className="rounded-3xl border border-stone-200/80 dark:border-purple-900/40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl shadow-xl overflow-hidden">
             {result.items.length === 0 ? (
               <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
-                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
-                  <svg
-                    className="h-7 w-7"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="1.5"
-                    />
-                  </svg>
+                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/10 dark:bg-purple-500/15 border border-amber-600/20 dark:border-purple-500/30 text-amber-700 dark:text-purple-300 shadow-inner">
+                  <SearchX className="h-7 w-7" />
                 </div>
-                <h3 className="mb-1 text-base font-bold text-slate-900 dark:text-white">
+                <h3 className="mb-1 text-base font-bold text-stone-900 dark:text-white">
                   No tickets found
                 </h3>
-                <p className="max-w-sm text-xs text-slate-500 dark:text-slate-400">
+                <p className="max-w-sm text-xs text-stone-500 dark:text-slate-400 font-medium">
                   {hasActiveFilters
                     ? "No tickets match the selected filters. Try clearing or changing them."
                     : "There are no tickets available in your current view."}
@@ -309,7 +299,7 @@ export function TicketListContainer() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[1000px] text-left border-collapse">
-                  <thead className="bg-slate-50/80 dark:bg-slate-800/40 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  <thead className="bg-stone-100/80 dark:bg-slate-800/50 border-b border-stone-200/80 dark:border-slate-800 text-[11px] font-extrabold uppercase tracking-wider text-stone-500 dark:text-purple-300/60">
                     <tr>
                       <th className="px-5 py-3.5">Ticket #</th>
                       <th className="px-5 py-3.5">Title</th>
@@ -320,7 +310,7 @@ export function TicketListContainer() {
                       <th className="px-5 py-3.5 text-right">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
+                  <tbody className="divide-y divide-stone-100 dark:divide-slate-800/60 text-xs font-medium">
                     {result.items.map((ticket, index) => (
                       <TicketRow
                         key={ticket.id}
@@ -335,14 +325,14 @@ export function TicketListContainer() {
           </div>
 
           {result.items.length > 0 && (
-            <div className="flex flex-col items-center justify-between gap-4 sm:flex-row pt-2">
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+            <div className="flex flex-col items-center justify-between gap-4 sm:flex-row pt-2 px-1">
+              <p className="text-xs text-stone-500 dark:text-slate-400 font-medium">
                 Showing{" "}
-                <span className="font-bold text-slate-700 dark:text-slate-200">
+                <span className="font-bold text-emerald-800 dark:text-purple-300">
                   {result.items.length}
                 </span>{" "}
                 of{" "}
-                <span className="font-bold text-slate-700 dark:text-slate-200">
+                <span className="font-bold text-emerald-800 dark:text-purple-300">
                   {result.totalCount}
                 </span>{" "}
                 ticket(s)

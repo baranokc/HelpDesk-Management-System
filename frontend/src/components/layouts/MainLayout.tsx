@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Ticket,
   PlusCircle,
@@ -20,7 +21,7 @@ import { Avatar } from "@/src/components/ui/Avatar";
 import { useAuth } from "@/src/context/AuthContext";
 import { getTicketViewLabel } from "@/src/lib/ticketPermissions";
 
-// Rol bazlı rozet (Badge) stilleri - Light Mode: Toprak/Yeşil, Dark Mode: Mor
+// Rol bazlı rozet (Badge) stilleri
 const getRoleBadgeStyle = (role?: string): string => {
   const normalized = role?.toLowerCase().trim();
   switch (normalized) {
@@ -72,6 +73,27 @@ export default function MainLayout({
 
   const userRole = user?.role || "User";
 
+  const navItems = [
+    {
+      href: "/tickets",
+      label: viewLabel.navigationLabel,
+      icon: Ticket,
+      isActive: isTicketsSection,
+    },
+    {
+      href: "/tickets/new",
+      label: "Create Ticket",
+      icon: PlusCircle,
+      isActive: isCreateTicketPage,
+    },
+    {
+      href: "/faq",
+      label: "FAQ",
+      icon: HelpCircle,
+      isActive: isFaqPage,
+    },
+  ];
+
   if (loading || !isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-stone-100 dark:bg-slate-950 text-stone-800 dark:text-slate-100 transition-colors">
@@ -87,17 +109,16 @@ export default function MainLayout({
 
   return (
     <div className="min-h-screen bg-amber-50/30 dark:bg-slate-950 text-stone-800 dark:text-slate-100 flex flex-col transition-colors">
-      {/* Top Navbar - Glassmorphism & Hybrid Dual Theme */}
+      {/* Top Navbar */}
       <header className="sticky top-0 z-50 border-b border-amber-900/10 dark:border-purple-900/30 bg-stone-100/80 dark:bg-slate-900/70 backdrop-blur-2xl transition-all">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
           
-          {/* Brand / Logo (Light: Toprak & Yeşil Ada, Dark: Neon Mor Ada) */}
+          {/* Logo */}
           <div className="flex items-center gap-3">
             <Link
               href="/tickets"
               className="group inline-flex items-center gap-3 text-lg font-bold tracking-tight transition-all"
             >
-              {/* Issız Ada Logosu - Light: Amber/Teal/Emerald, Dark: Purple/Violet/Indigo */}
               <div className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-600 via-teal-600 to-emerald-600 dark:from-purple-600 dark:via-violet-600 dark:to-indigo-500 text-white shadow-lg shadow-teal-600/20 dark:shadow-purple-500/25 group-hover:scale-105 group-hover:rotate-3 transition-all duration-300 overflow-hidden">
                 <svg
                   className="h-6 w-6 text-white drop-shadow-md"
@@ -129,50 +150,43 @@ export default function MainLayout({
             </Link>
           </div>
 
-          {/* Navigasyon Linkleri - Light: Yeşil/Kahve, Dark: Mor/İndigo */}
-          <nav className="hidden md:flex items-center gap-1.5 p-1.5 rounded-2xl border border-stone-300/60 dark:border-purple-900/40 bg-stone-200/60 dark:bg-slate-900/80 backdrop-blur-xl shadow-inner">
-            <Link
-              href="/tickets"
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
-                isTicketsSection
-                  ? "bg-gradient-to-r from-emerald-600 to-teal-700 dark:from-purple-600 dark:to-indigo-600 text-white shadow-md shadow-emerald-700/20 dark:shadow-purple-600/30 active:scale-95"
-                  : "text-stone-700 dark:text-slate-300 hover:text-stone-900 dark:hover:text-white hover:bg-stone-300/50 dark:hover:bg-purple-950/40"
-              }`}
-            >
-              <Ticket className="h-3.5 w-3.5" />
-              <span>{viewLabel.navigationLabel}</span>
-            </Link>
-
-            <Link
-              href="/tickets/new"
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
-                isCreateTicketPage
-                  ? "bg-gradient-to-r from-emerald-600 to-teal-700 dark:from-purple-600 dark:to-indigo-600 text-white shadow-md shadow-emerald-700/20 dark:shadow-purple-600/30 active:scale-95"
-                  : "text-stone-700 dark:text-slate-300 hover:text-stone-900 dark:hover:text-white hover:bg-stone-300/50 dark:hover:bg-purple-950/40"
-              }`}
-            >
-              <PlusCircle className="h-3.5 w-3.5" />
-              <span>Create Ticket</span>
-            </Link>
-
-            <Link
-              href="/faq"
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
-                isFaqPage
-                  ? "bg-gradient-to-r from-emerald-600 to-teal-700 dark:from-purple-600 dark:to-indigo-600 text-white shadow-md shadow-emerald-700/20 dark:shadow-purple-600/30 active:scale-95"
-                  : "text-stone-700 dark:text-slate-300 hover:text-stone-900 dark:hover:text-white hover:bg-stone-300/50 dark:hover:bg-purple-950/40"
-              }`}
-            >
-              <HelpCircle className="h-3.5 w-3.5" />
-              <span>FAQ</span>
-            </Link>
+          {/* Navigasyon Linkleri - Kayarak Geçen Animasyonlu Tab */}
+          <nav className="hidden md:flex items-center gap-1 p-1.5 rounded-2xl border border-stone-300/60 dark:border-purple-900/40 bg-stone-200/60 dark:bg-slate-900/80 backdrop-blur-xl shadow-inner relative">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`relative inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-colors duration-200 z-10 ${
+                    item.isActive
+                      ? "text-white"
+                      : "text-stone-700 dark:text-slate-300 hover:text-stone-900 dark:hover:text-white"
+                  }`}
+                >
+                  {/* Aktif Pill Arka Planı (Sayfalar/Sekmeler Arasında Kayan Animasyon) */}
+                  {item.isActive && (
+                    <motion.div
+                      layoutId="activePill"
+                      className="absolute inset-0 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 dark:from-purple-600 dark:to-indigo-600 shadow-md shadow-emerald-700/20 dark:shadow-purple-600/30 z-[-1]"
+                      transition={{
+                        type: "spring",
+                        stiffness: 380,
+                        damping: 30,
+                      }}
+                    />
+                  )}
+                  <Icon className="h-3.5 w-3.5" />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
           </nav>
 
-          {/* Sağ Aksiyonlar & Profil Kapsayıcısı */}
+          {/* Sağ Aksiyonlar */}
           <div className="flex items-center gap-3">
             <NotificationBell />
 
-            {/* Profil Dropdown */}
             <div className="dropdown dropdown-end">
               <div
                 tabIndex={0}
@@ -204,7 +218,6 @@ export default function MainLayout({
                 <ChevronDown className="h-3.5 w-3.5 text-stone-400 dark:text-purple-300/60 group-hover:text-stone-700 dark:group-hover:text-purple-300 transition-colors ml-0.5" />
               </div>
 
-              {/* Pop-up Menü */}
               <ul
                 tabIndex={0}
                 className="dropdown-content menu z-[50] mt-2.5 w-64 rounded-2xl border border-stone-300/80 dark:border-purple-800/40 bg-stone-100/95 dark:bg-slate-900/95 backdrop-blur-2xl p-2 shadow-2xl space-y-1"
@@ -301,10 +314,19 @@ export default function MainLayout({
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {children}
-      </main>
+      {/* Main Content - Yumuşak Fade ve Slide Sayfa Geçiş Animasyonu */}
+      <AnimatePresence mode="wait">
+        <motion.main
+          key={pathname}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -12 }}
+          transition={{ duration: 0.25, ease: "easeOut" }}
+          className="flex-1 mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8"
+        >
+          {children}
+        </motion.main>
+      </AnimatePresence>
     </div>
   );
 }
