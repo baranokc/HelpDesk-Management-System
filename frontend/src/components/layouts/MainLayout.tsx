@@ -52,7 +52,7 @@ export default function MainLayout({
 
   const isCreateTicketPage = pathname === "/tickets/new";
   const isTicketsSection = pathname === "/tickets";
-  const isTeamChatPage = pathname.startsWith("/tickets/team-chat");
+  const isTeamChatPage = pathname.startsWith("/tickets/chat");
   const isFaqPage = pathname === "/faq";
   const isTeamManagementPage = pathname.startsWith("/tickets/team-management");
   const isMyWorkPage = pathname.startsWith("/tickets/my-work");
@@ -99,7 +99,7 @@ export default function MainLayout({
     ...(canAccessChat
       ? [
           {
-            href: "/tickets/team-chat",
+            href: "/tickets/chat",
             label: "Team Chat",
             icon: MessageCircle,
             isActive: isTeamChatPage,

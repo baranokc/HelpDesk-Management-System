@@ -35,6 +35,7 @@ import type {
   TeamChatRoomDto,
 } from "@/src/types/team-chat";
 
+
 type ConnectionStatus = "connecting" | "connected" | "reconnecting" | "offline";
 
 const MAXIMUM_MESSAGE_LENGTH = 2000;
@@ -118,8 +119,7 @@ export function TeamChatContainer() {
   const [hasMore, setHasMore] = useState(false);
   const [nextBefore, setNextBefore] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [connectionStatus, setConnectionStatus] =
-    useState<ConnectionStatus>("connecting");
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("connecting");
   const selectedTeamIdRef = useRef(selectedTeamId);
   const messagesViewportRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -252,19 +252,37 @@ export function TeamChatContainer() {
       if (!disposed) setConnectionStatus("offline");
     });
 
-    void connection
-      .start()
-      .then(() => {
-        if (!disposed) setConnectionStatus("connected");
-      })
-      .catch(() => {
-        if (!disposed) setConnectionStatus("offline");
-      });
+    const startTimer = window.setTimeout(() => {
+      if (disposed) return;
+
+      void connection
+        .start()
+        .then(async () => {
+          if (disposed) {
+            if (connection.state !== HubConnectionState.Disconnected) {
+              await connection.stop();
+            }
+            return;
+          }
+
+          setConnectionStatus("connected");
+        })
+        .catch(() => {
+          if (!disposed) {
+            setConnectionStatus("offline");
+          }
+        });
+    }, 0);
 
     return () => {
       disposed = true;
-      if (connection?.state !== HubConnectionState.Disconnected) {
-        void connection?.stop();
+      window.clearTimeout(startTimer);
+
+      if (
+        connection.state === HubConnectionState.Connected ||
+        connection.state === HubConnectionState.Reconnecting
+      ) {
+        void connection.stop();
       }
     };
   }, [authLoading, canAccessChat]);
