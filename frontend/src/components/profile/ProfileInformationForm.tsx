@@ -9,7 +9,6 @@ import { profileService } from "@/src/services/profileService";
 import type { ProfileDto } from "@/src/types/profile";
 import { Alert } from "@/src/components/ui/Alert";
 import { Button } from "@/src/components/ui/Button";
-import { Input } from "@/src/components/ui/Input";
 
 interface ProfileInformationFormProps {
   profile: ProfileDto;
@@ -23,11 +22,11 @@ interface InformationItemProps {
 
 function InformationItem({ label, value }: InformationItemProps) {
   return (
-    <div className="min-w-0 rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-3 dark:border-slate-800 dark:bg-slate-950/40">
-      <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+    <div className="min-w-0 rounded-2xl border border-stone-200/80 bg-stone-50/60 p-3.5 dark:border-purple-900/30 dark:bg-slate-950/40">
+      <dt className="text-[10px] font-bold uppercase tracking-wider text-stone-400 dark:text-slate-500 font-mono">
         {label}
       </dt>
-      <dd className="mt-1 truncate text-sm font-bold text-slate-800 dark:text-slate-100">
+      <dd className="mt-1 truncate text-xs font-bold text-stone-800 dark:text-slate-100">
         {value}
       </dd>
     </div>
@@ -91,34 +90,34 @@ export function ProfileInformationForm({
   };
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white/90 shadow-sm backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/80">
-      <div className="flex flex-col gap-4 border-b border-slate-100 px-5 py-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
+    <section className="overflow-hidden rounded-3xl border border-stone-200/80 bg-white/80 shadow-xl backdrop-blur-2xl dark:border-purple-900/40 dark:bg-slate-900/80">
+      <div className="flex flex-col gap-4 border-b border-stone-100 px-6 py-4 dark:border-slate-800/80 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-blue-200 bg-blue-50 text-blue-600 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-400">
-            <UserRound className="h-5 w-5" />
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-600/20 bg-emerald-500/10 text-emerald-700 dark:border-purple-500/30 dark:bg-purple-500/10 dark:text-purple-300">
+            <UserRound className="h-4 w-4" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-slate-900 dark:text-white">
+            <h2 className="text-base font-extrabold text-stone-900 dark:text-white">
               Personal Information
             </h2>
-            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-              Your account and organization details.
+            <p className="text-[11px] text-stone-500 dark:text-slate-400">
+              Your account details and organization position.
             </p>
           </div>
         </div>
 
-        <span className="inline-flex w-fit rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300">
+        <span className="inline-flex w-fit rounded-lg border border-emerald-600/20 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-800 dark:border-purple-500/30 dark:bg-purple-500/10 dark:text-purple-300">
           {profile.role}
         </span>
       </div>
 
-      <div className="p-5">
+      <div className="p-6">
         <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <InformationItem label="Full Name" value={profile.fullName} />
-          <InformationItem label="Email" value={profile.email} />
-          <InformationItem label="Role" value={profile.role} />
+          <InformationItem label="Email Address" value={profile.email} />
+          <InformationItem label="System Role" value={profile.role} />
           <InformationItem
-            label="Team"
+            label="Assigned Team"
             value={profile.teamName ?? "Not assigned"}
           />
           <InformationItem
@@ -135,18 +134,18 @@ export function ProfileInformationForm({
           </div>
         )}
 
-        <div className="mt-4 flex flex-col gap-3 border-t border-slate-100 pt-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-5 flex flex-col gap-3 border-t border-stone-100 pt-5 dark:border-slate-800/80 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-xs font-bold text-slate-700 dark:text-slate-200">
-              Displayed name
+            <p className="text-xs font-bold text-stone-800 dark:text-slate-200">
+              Displayed Name
             </p>
-            <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
-              Change the name shown across tickets and comments.
+            <p className="mt-0.5 text-[11px] text-stone-500 dark:text-slate-400">
+              Change the display name shown across tickets, assignments and logs.
             </p>
           </div>
           <button
             aria-expanded={isEditing}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-indigo-300 bg-indigo-50/70 px-3.5 py-2 text-xs font-bold text-indigo-700 shadow-sm transition-all hover:bg-indigo-600 hover:text-white dark:border-violet-500/40 dark:bg-violet-500/10 dark:text-violet-300 dark:hover:bg-violet-600 dark:hover:text-white"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-stone-300/80 bg-stone-100 px-3.5 py-2 text-xs font-bold text-stone-800 shadow-sm transition-all hover:border-emerald-600/40 hover:bg-stone-200 dark:border-purple-900/40 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-purple-500/50 dark:hover:bg-slate-700"
             onClick={() => {
               setRequestError(null);
               setSuccess(null);
@@ -154,8 +153,8 @@ export function ProfileInformationForm({
             }}
             type="button"
           >
-            <Pencil className="h-3.5 w-3.5" />
-            Edit name
+            <Pencil className="h-3.5 w-3.5 text-emerald-600 dark:text-purple-400" />
+            <span>Edit Name</span>
             <ChevronDown
               className={`h-3.5 w-3.5 transition-transform ${
                 isEditing ? "rotate-180" : ""
@@ -166,21 +165,21 @@ export function ProfileInformationForm({
 
         {isEditing && (
           <form
-            className="animate-in fade-in slide-in-from-top-2 mt-4 rounded-xl border border-slate-200 bg-slate-50/70 p-4 duration-200 dark:border-slate-700 dark:bg-slate-950/40"
+            className="animate-in fade-in slide-in-from-top-2 mt-4 rounded-2xl border border-stone-200/80 bg-stone-50/70 p-4 duration-200 dark:border-purple-900/30 dark:bg-slate-950/40"
             onSubmit={(event) => void handleSubmit(event)}
           >
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                  Edit displayed name
+                <h3 className="text-xs font-bold text-stone-900 dark:text-white">
+                  Update Display Name
                 </h3>
-                <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
-                  This does not change your email or role.
+                <p className="mt-0.5 text-[10px] text-stone-500 dark:text-slate-400">
+                  This change will not modify your account email or system privileges.
                 </p>
               </div>
               <button
                 aria-label="Close name editor"
-                className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-500 transition-colors hover:text-slate-900 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-300 dark:hover:bg-violet-600 dark:hover:text-white"
+                className="rounded-lg border border-stone-200 bg-white p-1 text-stone-500 hover:text-stone-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
                 disabled={saving}
                 onClick={handleCancel}
                 type="button"
@@ -190,39 +189,51 @@ export function ProfileInformationForm({
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <Input
-                autoComplete="given-name"
-                className="rounded-xl border-slate-200 bg-white text-slate-900 transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-violet-500 dark:focus:ring-violet-500/20"
-                error={errors.firstName}
-                id="profile-first-name"
-                label="First name"
-                maxLength={100}
-                onChange={(event) => {
-                  setFirstName(event.target.value);
-                  setErrors((current) => ({
-                    ...current,
-                    firstName: undefined,
-                  }));
-                }}
-                value={firstName}
-              />
+              <div className="space-y-1">
+                <label htmlFor="profile-first-name" className="text-xs font-semibold text-stone-700 dark:text-slate-300">
+                  First Name
+                </label>
+                <input
+                  id="profile-first-name"
+                  autoComplete="given-name"
+                  maxLength={100}
+                  value={firstName}
+                  onChange={(event) => {
+                    setFirstName(event.target.value);
+                    setErrors((current) => ({
+                      ...current,
+                      firstName: undefined,
+                    }));
+                  }}
+                  className="w-full rounded-xl border border-stone-300/80 bg-white px-3.5 py-2 text-xs text-stone-800 shadow-inner focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-purple-900/40 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-purple-500 dark:focus:ring-purple-500/20 transition-all"
+                />
+                {errors.firstName && (
+                  <p className="text-[10px] font-medium text-rose-500">{errors.firstName}</p>
+                )}
+              </div>
 
-              <Input
-                autoComplete="family-name"
-                className="rounded-xl border-slate-200 bg-white text-slate-900 transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-violet-500 dark:focus:ring-violet-500/20"
-                error={errors.lastName}
-                id="profile-last-name"
-                label="Last name"
-                maxLength={100}
-                onChange={(event) => {
-                  setLastName(event.target.value);
-                  setErrors((current) => ({
-                    ...current,
-                    lastName: undefined,
-                  }));
-                }}
-                value={lastName}
-              />
+              <div className="space-y-1">
+                <label htmlFor="profile-last-name" className="text-xs font-semibold text-stone-700 dark:text-slate-300">
+                  Last Name
+                </label>
+                <input
+                  id="profile-last-name"
+                  autoComplete="family-name"
+                  maxLength={100}
+                  value={lastName}
+                  onChange={(event) => {
+                    setLastName(event.target.value);
+                    setErrors((current) => ({
+                      ...current,
+                      lastName: undefined,
+                    }));
+                  }}
+                  className="w-full rounded-xl border border-stone-300/80 bg-white px-3.5 py-2 text-xs text-stone-800 shadow-inner focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-purple-900/40 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-purple-500 dark:focus:ring-purple-500/20 transition-all"
+                />
+                {errors.lastName && (
+                  <p className="text-[10px] font-medium text-rose-500">{errors.lastName}</p>
+                )}
+              </div>
             </div>
 
             {requestError && (
@@ -233,7 +244,7 @@ export function ProfileInformationForm({
 
             <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <Button
-                className="!rounded-xl !border-slate-300 !bg-white !font-bold !text-slate-700 shadow-sm dark:!border-violet-500/30 dark:!bg-violet-500/10 dark:!text-violet-300 dark:hover:!bg-violet-600 dark:hover:!text-white"
+                className="!rounded-xl !border-stone-300 !bg-white !font-bold !text-stone-700 shadow-sm dark:!border-slate-700 dark:!bg-slate-900 dark:!text-slate-300 hover:!bg-stone-100 dark:hover:!bg-slate-800"
                 disabled={saving}
                 onClick={handleCancel}
                 size="sm"
@@ -243,13 +254,13 @@ export function ProfileInformationForm({
                 Cancel
               </Button>
               <Button
-                className="!rounded-xl !border-indigo-300 !bg-indigo-50/70 !font-bold !text-indigo-700 shadow-sm transition-all hover:!bg-indigo-600 hover:!text-white dark:!border-violet-500/40 dark:!bg-violet-500/10 dark:!text-violet-300 dark:hover:!bg-violet-600 dark:hover:!text-white"
+                className="!inline-flex !items-center !gap-2 !px-4 !py-2 !rounded-xl !text-xs !font-bold !text-white !bg-gradient-to-r !from-emerald-600 !to-teal-700 dark:!from-purple-600 dark:!to-indigo-600 hover:!from-emerald-500 hover:!to-teal-600 dark:hover:!from-purple-500 dark:hover:!to-indigo-500 shadow-md shadow-emerald-700/20 dark:shadow-purple-600/30 transition-all"
                 loading={saving}
                 size="sm"
                 type="submit"
               >
-                <Save aria-hidden="true" className="h-4 w-4" />
-                Save name
+                <Save aria-hidden="true" className="h-3.5 w-3.5" />
+                <span>Save Name</span>
               </Button>
             </div>
           </form>

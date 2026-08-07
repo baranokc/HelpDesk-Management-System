@@ -28,7 +28,8 @@ const getRoleBadgeStyle = (role?: string): string => {
   switch (normalized) {
     case "admin":
     case "0":
-      return "bg-amber-500/15 text-amber-700 dark:bg-purple-500/20 dark:text-purple-300 border-amber-600/30 dark:border-purple-500/40";
+      // 💖 NEON PINK / PEMBE EFEKTİ (Dark Mode)
+      return "bg-amber-500/15 text-amber-700 dark:bg-pink-500/25 dark:text-pink-300 border-amber-600/30 dark:border-pink-400/80 dark:shadow-[0_0_12px_rgba(244,114,182,0.35)]";
     case "teamleader":
     case "1":
       return "bg-emerald-500/15 text-emerald-800 dark:bg-rose-500/20 dark:text-rose-300 border-emerald-600/30 dark:border-rose-500/40";
@@ -272,9 +273,9 @@ export default function MainLayout({
                   <li>
                     <Link
                       href="/admin"
-                      className="flex items-center gap-2.5 rounded-xl py-2 px-3 text-xs font-semibold text-stone-700 dark:text-slate-300 hover:bg-amber-500/15 hover:text-amber-800 dark:hover:bg-purple-500/20 dark:hover:text-purple-300 transition-all"
+                      className="flex items-center gap-2.5 rounded-xl py-2 px-3 text-xs font-semibold text-stone-700 dark:text-slate-300 hover:bg-amber-500/15 hover:text-amber-800 dark:hover:bg-pink-500/20 dark:hover:text-pink-300 transition-all"
                     >
-                      <ShieldCheck className="h-4 w-4 text-amber-600 dark:text-purple-400" />
+                      <ShieldCheck className="h-4 w-4 text-amber-600 dark:text-pink-400" />
                       <span>Admin Panel</span>
                     </Link>
                   </li>
