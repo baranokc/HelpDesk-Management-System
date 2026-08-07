@@ -53,10 +53,7 @@ export function ProfileAvatarSection({
       setSuccess("Profile photo was updated.");
     } catch (requestError: unknown) {
       setError(
-        getApiErrorMessage(
-          requestError,
-          "Failed to upload the profile photo.",
-        ),
+        getApiErrorMessage(requestError, "Failed to upload the profile photo."),
       );
     } finally {
       setUploading(false);
@@ -75,10 +72,7 @@ export function ProfileAvatarSection({
       setSuccess("Profile photo was removed.");
     } catch (requestError: unknown) {
       setError(
-        getApiErrorMessage(
-          requestError,
-          "Failed to remove the profile photo.",
-        ),
+        getApiErrorMessage(requestError, "Failed to remove the profile photo."),
       );
     } finally {
       setDeleting(false);
@@ -88,24 +82,45 @@ export function ProfileAvatarSection({
   return (
     <>
       <Card
+        action={
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-600 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-400">
+            <Camera className="h-5 w-5" />
+          </div>
+        }
+        className="overflow-hidden !rounded-2xl border-slate-200 bg-white/90 shadow-sm backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/80"
         description="JPEG, PNG or WebP. Maximum file size is 2 MB."
         title="Profile photo"
       >
-        <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center">
-          <Avatar
-            avatarUrl={profile.avatarUrl}
-            className="shadow-sm"
-            name={profile.fullName}
-            size="lg"
-          />
+        <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center">
+          <div className="rounded-full bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-500 p-1 shadow-lg shadow-indigo-500/15">
+            <div className="rounded-full bg-white p-1 dark:bg-slate-900">
+              <Avatar
+                avatarUrl={profile.avatarUrl}
+                className="ring-0"
+                name={profile.fullName}
+                size="lg"
+              />
+            </div>
+          </div>
 
           <div className="flex-1 space-y-3 text-center sm:text-left">
             <div>
-              <p className="font-semibold text-slate-900 dark:text-white">
+              <p className="text-lg font-bold text-slate-900 dark:text-white">
                 {profile.fullName}
               </p>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                This photo is used in the navigation bar, ticket list, and comments.
+              <div className="mt-1.5 flex flex-wrap justify-center gap-2 sm:justify-start">
+                <span className="rounded-lg border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300">
+                  {profile.role}
+                </span>
+                {profile.teamName && (
+                  <span className="rounded-lg border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                    {profile.teamName}
+                  </span>
+                )}
+              </div>
+              <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                This photo is used in the navigation bar, ticket list, and
+                comments.
               </p>
             </div>
 
@@ -119,6 +134,7 @@ export function ProfileAvatarSection({
               />
 
               <Button
+                className="!rounded-xl !border-indigo-300 !bg-indigo-50/70 !font-bold !text-indigo-700 shadow-sm transition-all hover:!bg-indigo-600 hover:!text-white dark:!border-violet-500/40 dark:!bg-violet-500/10 dark:!text-violet-300 dark:hover:!bg-violet-600 dark:hover:!text-white"
                 loading={uploading}
                 onClick={() => fileInputRef.current?.click()}
                 size="sm"
@@ -130,6 +146,7 @@ export function ProfileAvatarSection({
 
               {profile.avatarUrl && (
                 <Button
+                  className="!rounded-xl !bg-rose-50/70 !font-bold shadow-sm dark:!bg-rose-500/10"
                   disabled={uploading}
                   onClick={() => setConfirmOpen(true)}
                   size="sm"
