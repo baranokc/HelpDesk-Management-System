@@ -36,7 +36,9 @@ public sealed class TeamManagementController : ControllerBase
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetOverview(
         [FromQuery] Guid? teamId,
-        CancellationToken cancellationToken)
+        [FromQuery] int unassignedPageNumber = 1,
+        [FromQuery] int unassignedPageSize = 10,
+        CancellationToken cancellationToken = default)
     {
         if (CurrentUserId == Guid.Empty)
             return Unauthorized(new { message = "Invalid user identity." });
@@ -46,6 +48,8 @@ public sealed class TeamManagementController : ControllerBase
             return Ok(await _teamManagementService.GetOverviewAsync(
                 CurrentUserId,
                 teamId,
+                unassignedPageNumber,
+                unassignedPageSize,
                 cancellationToken));
         }
         catch (UnauthorizedAccessException exception)

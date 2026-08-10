@@ -99,6 +99,7 @@ export interface TicketFilterDto {
   search?: string | null;
   statusId?: string | null;
   categoryId?: string | null;
+  priorityId?: string | null;
   assignedToId?: string | null;
   createdById?: string | null;
   urgencyLevelId?: string | null;

@@ -14,39 +14,9 @@ import {
   ChevronDown,
   X,
 } from "lucide-react";
-import { api } from "@/src/lib/api";
+import { lookupService } from "@/src/services/lookupService";
+import type { LookupItemDto } from "@/src/types/common";
 import type { TicketFilterDto } from "@/src/types/ticket";
-
-const STATUS_OPTIONS = [
-  { itemId: "109a1501-c342-4c4c-b357-c0f7b428345a", name: "Open" },
-  { itemId: "69414a74-392a-4e87-b578-7875ef685520", name: "Cancelled" },
-  { itemId: "26d22be0-bb7b-418a-87ac-da1c63ca14ca", name: "Closed" },
-  { itemId: "a80aabb1-9d33-499b-998b-82e9c555fdcd", name: "In Progress" },
-  { itemId: "c04275e7-53d4-480f-b5b3-49327be3df7c", name: "On Hold" },
-  { itemId: "33b68e76-f679-4b4d-ab7b-fb8b1f72c049", name: "Resolved" },
-  { itemId: "6cd0dd25-e695-498b-9b51-f90f08d9c843", name: "Waiting for User" },
-];
-
-const URGENCY_OPTIONS = [
-  { itemId: "8aef38f8-600d-4ff6-ba16-020048b7723c", name: "Low" },
-  { itemId: "f3d500c9-a18c-4de2-b4c5-878e638271db", name: "Normal" },
-  { itemId: "8fd27669-4526-4f30-b39a-6e100d73226d", name: "High" },
-  { itemId: "5d814d17-667b-4dc2-8ebe-f0f40007bee5", name: "Urgent" },
-];
-
-// Priority adıyla görünen ancak arka planda ImpactLevel GUID'lerini taşıyan liste
-const PRIORITY_OPTIONS = [
-  { itemId: "3a1d571f-732c-4618-b1e2-96f72544533d", name: "Critical" },
-  { itemId: "2141d95a-7069-4167-92d6-780fa2f7232e", name: "High" },
-  { itemId: "fa02063a-a289-43d7-a4c9-bfabd4b9c030", name: "Medium" },
-  { itemId: "8faaaa7c-2f82-4f28-a2e0-05e73c3669f6", name: "Low" },
-];
-
-interface CategoryItem {
-  id?: string;
-  itemId?: string;
-  name: string;
-}
 
 interface TicketFiltersProps {
   value: TicketFilterDto;
@@ -54,87 +24,89 @@ interface TicketFiltersProps {
 }
 
 export function TicketFilters({ value, onApply }: TicketFiltersProps) {
-  const [localFilter, setLocalFilter] = useState<TicketFilterDto>(value);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
 
-  const [categories, setCategories] = useState<CategoryItem[]>([]);
-  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [statuses, setStatuses] = useState<LookupItemDto[]>([]);
+  const [urgencyLevels, setUrgencyLevels] = useState<LookupItemDto[]>([]);
+  const [priorities, setPriorities] = useState<LookupItemDto[]>([]);
+  const [categories, setCategories] = useState<LookupItemDto[]>([]);
+  const [lookupsLoading, setLookupsLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
 
-    const fetchCategories = async () => {
-      setCategoriesLoading(true);
+    const fetchLookups = async () => {
+      setLookupsLoading(true);
       try {
-        const response = await api
-          .get<CategoryItem[]>("/categories")
-          .catch(() => api.get<CategoryItem[]>("/ticket-categories"));
+        const [statusItems, urgencyItems, priorityItems, categoryItems] =
+          await Promise.all([
+            lookupService.getStatuses(),
+            lookupService.getUrgencyLevels(),
+            lookupService.getPriorities(),
+            lookupService.getCategories(),
+          ]);
 
-        if (!cancelled && response?.data) {
-          setCategories(response.data);
+        if (!cancelled) {
+          setStatuses(statusItems);
+          setUrgencyLevels(urgencyItems);
+          setPriorities(priorityItems);
+          setCategories(categoryItems);
         }
       } catch (error) {
-        console.error("Failed to load categories:", error);
+        console.error("Failed to load ticket filter lookups:", error);
       } finally {
         if (!cancelled) {
-          setCategoriesLoading(false);
+          setLookupsLoading(false);
         }
       }
     };
 
-    void fetchCategories();
+    void fetchLookups();
 
     return () => {
       cancelled = true;
     };
   }, []);
 
-  useEffect(() => {
-    setLocalFilter(value);
-  }, [value]);
-
   const activeSelectFiltersCount = [
-    localFilter.statusId,
-    localFilter.urgencyLevelId,
-    localFilter.impactLevelId,
-    localFilter.categoryId,
-    localFilter.createdFrom,
-    localFilter.createdTo,
+    value.statusId,
+    value.urgencyLevelId,
+    value.priorityId,
+    value.categoryId,
+    value.createdFrom,
+    value.createdTo,
   ].filter(Boolean).length;
 
   const handleValueChange = (key: keyof TicketFilterDto, val: string) => {
     const updated: TicketFilterDto = {
-      ...localFilter,
+      ...value,
       [key]: val.trim() === "" ? undefined : val,
       pageNumber: 1,
     };
-    setLocalFilter(updated);
     onApply(updated);
   };
 
   const handlePageSizeChange = (val: string) => {
     const updated: TicketFilterDto = {
-      ...localFilter,
+      ...value,
       pageSize: val === "" ? 25 : Number(val),
       pageNumber: 1,
     };
-    setLocalFilter(updated);
     onApply(updated);
   };
 
   const handleClear = () => {
     const cleared: TicketFilterDto = {
       pageNumber: 1,
-      pageSize: localFilter.pageSize ?? 25,
-      sortBy: localFilter.sortBy,
-      sortDirection: localFilter.sortDirection
+      pageSize: value.pageSize ?? 25,
+      sortBy: value.sortBy,
+      sortDirection: value.sortDirection
     };
-    setLocalFilter(cleared);
     onApply(cleared);
   };
 
-  const isSearchExpanded = searchFocused || Boolean(localFilter.search);
+  const isSearchExpanded = searchFocused || Boolean(value.search);
 
   return (
     <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl shadow-lg transition-all overflow-hidden">
@@ -151,13 +123,13 @@ export function TicketFilters({ value, onApply }: TicketFiltersProps) {
           <input
             type="text"
             placeholder={isSearchExpanded ? "Search ticket # or title..." : "Search tickets..."}
-            value={localFilter.search ?? ""}
+            value={value.search ?? ""}
             onFocus={() => setSearchFocused(true)}
             onBlur={() => setSearchFocused(false)}
             onChange={(e) => handleValueChange("search", e.target.value)}
             className="w-full bg-transparent px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none"
           />
-          {localFilter.search && (
+          {value.search && (
             <button
               type="button"
               onClick={() => handleValueChange("search", "")}
@@ -169,7 +141,7 @@ export function TicketFilters({ value, onApply }: TicketFiltersProps) {
         </div>
 
         <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
-          {(localFilter.search || activeSelectFiltersCount > 0) && (
+          {(value.search || activeSelectFiltersCount > 0) && (
             <button
               type="button"
               onClick={handleClear}
@@ -216,12 +188,13 @@ export function TicketFilters({ value, onApply }: TicketFiltersProps) {
                 Status
               </label>
               <select
-                value={localFilter.statusId?.toString() ?? ""}
+                value={value.statusId?.toString() ?? ""}
                 onChange={(e) => handleValueChange("statusId", e.target.value)}
+                disabled={lookupsLoading}
                 className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/80 px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
               >
                 <option value="">All Statuses</option>
-                {STATUS_OPTIONS.map((item) => (
+                {statuses.map((item) => (
                   <option key={item.itemId} value={item.itemId}>
                     {item.name}
                   </option>
@@ -236,12 +209,13 @@ export function TicketFilters({ value, onApply }: TicketFiltersProps) {
                 Urgency
               </label>
               <select
-                value={localFilter.urgencyLevelId?.toString() ?? ""}
+                value={value.urgencyLevelId?.toString() ?? ""}
                 onChange={(e) => handleValueChange("urgencyLevelId", e.target.value)}
+                disabled={lookupsLoading}
                 className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/80 px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
               >
                 <option value="">All Urgencies</option>
-                {URGENCY_OPTIONS.map((item) => (
+                {urgencyLevels.map((item) => (
                   <option key={item.itemId} value={item.itemId}>
                     {item.name}
                   </option>
@@ -249,19 +223,20 @@ export function TicketFilters({ value, onApply }: TicketFiltersProps) {
               </select>
             </div>
 
-            {/* Priority (Arka planda ImpactLevelId alanına yazar) */}
+            {/* Priority */}
             <div className="space-y-1.5">
               <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                 <BarChart3 className="h-3 w-3 text-emerald-500" />
                 Priority
               </label>
               <select
-                value={localFilter.impactLevelId?.toString() ?? ""}
-                onChange={(e) => handleValueChange("impactLevelId", e.target.value)}
+                value={value.priorityId?.toString() ?? ""}
+                onChange={(e) => handleValueChange("priorityId", e.target.value)}
+                disabled={lookupsLoading}
                 className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/80 px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
               >
                 <option value="">All Priorities</option>
-                {PRIORITY_OPTIONS.map((item) => (
+                {priorities.map((item) => (
                   <option key={item.itemId} value={item.itemId}>
                     {item.name}
                   </option>
@@ -276,20 +251,17 @@ export function TicketFilters({ value, onApply }: TicketFiltersProps) {
                 Category
               </label>
               <select
-                value={localFilter.categoryId?.toString() ?? ""}
+                value={value.categoryId?.toString() ?? ""}
                 onChange={(e) => handleValueChange("categoryId", e.target.value)}
-                disabled={categoriesLoading && categories.length === 0}
+                disabled={lookupsLoading}
                 className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/80 px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer disabled:opacity-50"
               >
                 <option value="">All Categories</option>
-                {categories.map((cat) => {
-                  const catId = cat.id || cat.itemId;
-                  return (
-                    <option key={catId} value={catId}>
-                      {cat.name}
-                    </option>
-                  );
-                })}
+                {categories.map((cat) => (
+                  <option key={cat.itemId} value={cat.itemId}>
+                    {cat.name}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -302,7 +274,7 @@ export function TicketFilters({ value, onApply }: TicketFiltersProps) {
               </label>
               <input
                 type="date"
-                value={localFilter.createdFrom ?? ""}
+                value={value.createdFrom ?? ""}
                 onChange={(e) => handleValueChange("createdFrom", e.target.value)}
                 className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/80 px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
               />
@@ -315,7 +287,7 @@ export function TicketFilters({ value, onApply }: TicketFiltersProps) {
               </label>
               <input
                 type="date"
-                value={localFilter.createdTo ?? ""}
+                value={value.createdTo ?? ""}
                 onChange={(e) => handleValueChange("createdTo", e.target.value)}
                 className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/80 px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
               />
@@ -327,7 +299,7 @@ export function TicketFilters({ value, onApply }: TicketFiltersProps) {
                 Page Size
               </label>
               <select
-                value={localFilter.pageSize ?? 25}
+                value={value.pageSize ?? 25}
                 onChange={(e) => handlePageSizeChange(e.target.value)}
                 className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/80 px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
               >

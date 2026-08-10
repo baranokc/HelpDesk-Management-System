@@ -12,18 +12,24 @@ import { Button } from "@/src/components/ui/Button";
 
 interface TicketAssignmentFormProps {
   currentTeamId?: string | null;
+  lockToCurrentTeam?: boolean;
+  requireTeamMember?: boolean;
   loading?: boolean;
   onSubmit: (dto: TicketAssignmentDto) => Promise<void>;
 }
 
 export function TicketAssignmentForm({
   currentTeamId,
+  lockToCurrentTeam = false,
+  requireTeamMember = false,
   loading = false,
   onSubmit,
 }: TicketAssignmentFormProps) {
   const [teams, setTeams] = useState<LookupItemDto[]>([]);
   const [members, setMembers] = useState<TeamMemberLookupDto[]>([]);
-  const [teamId, setTeamId] = useState("");
+  const [teamId, setTeamId] = useState(
+    lockToCurrentTeam ? (currentTeamId ?? "") : "",
+  );
   const [teamMemberId, setTeamMemberId] = useState("");
   const [reason, setReason] = useState("");
   const [validationErrors, setValidationErrors] = useState<FormErrors>({});
@@ -33,17 +39,22 @@ export function TicketAssignmentForm({
   );
 
   useEffect(() => {
+    if (lockToCurrentTeam) return;
     lookupService.getTeams().then(setTeams);
-  }, []);
+  }, [lockToCurrentTeam]);
 
   useEffect(() => {
-    if (!teamId || isCrossTeamTransfer) {
-      setMembers([]);
-      setTeamMemberId("");
-      return;
-    }
+    if (!teamId || isCrossTeamTransfer) return;
 
-    lookupService.getTeamMembers(teamId).then(setMembers);
+    let cancelled = false;
+
+    lookupService.getTeamMembers(teamId).then((response) => {
+      if (!cancelled) setMembers(response);
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [isCrossTeamTransfer, teamId]);
 
   const submit = async (event: SubmitEvent<HTMLFormElement>) => {
@@ -60,6 +71,13 @@ export function TicketAssignmentForm({
       return;
     }
 
+    if (requireTeamMember && !result.data.teamMemberId) {
+      setValidationErrors({
+        teamMemberId: "Please select a team member.",
+      });
+      return;
+    }
+
     setValidationErrors({});
     await onSubmit(result.data);
   };
@@ -67,41 +85,52 @@ export function TicketAssignmentForm({
   return (
     <form className="space-y-4" onSubmit={submit}>
       {/* TAKIM SEÇİMİ */}
-      <div className="space-y-1.5">
-        <label className="flex items-center gap-1.5 text-xs font-semibold text-stone-700 dark:text-slate-300">
-          <Users className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-          <span>Support Team</span>
-          <span className="text-rose-500">*</span>
-        </label>
-        <div className="relative">
-          <select
-            required
-            value={teamId}
-            onChange={(e) => {
-              setTeamId(e.target.value);
-              setTeamMemberId("");
-              setMembers([]);
-            }}
-            className="w-full appearance-none rounded-xl border border-stone-300/80 dark:border-purple-900/40 bg-stone-50/70 dark:bg-slate-900/80 px-3.5 py-2.5 text-xs font-medium text-stone-800 dark:text-slate-100 shadow-inner focus:border-emerald-600 dark:focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:focus:ring-purple-500/20 transition-all"
-          >
-            <option value="" className="bg-stone-100 dark:bg-slate-900">Select support team...</option>
-            {teams.map((team) => (
-              <option key={team.itemId} value={team.itemId} className="bg-stone-100 dark:bg-slate-900">
-                {team.name}
+      {!lockToCurrentTeam && (
+        <div className="space-y-1.5">
+          <label className="flex items-center gap-1.5 text-xs font-semibold text-stone-700 dark:text-slate-300">
+            <Users className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span>Support Team</span>
+            <span className="text-rose-500">*</span>
+          </label>
+          <div className="relative">
+            <select
+              required
+              value={teamId}
+              onChange={(e) => {
+                setTeamId(e.target.value);
+                setTeamMemberId("");
+                setMembers([]);
+              }}
+              className="w-full appearance-none rounded-xl border border-stone-300/80 dark:border-purple-900/40 bg-stone-50/70 dark:bg-slate-900/80 px-3.5 py-2.5 text-xs font-medium text-stone-800 dark:text-slate-100 shadow-inner focus:border-emerald-600 dark:focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:focus:ring-purple-500/20 transition-all"
+            >
+              <option value="" className="bg-stone-100 dark:bg-slate-900">
+                Select support team...
               </option>
-            ))}
-          </select>
+              {teams.map((team) => (
+                <option
+                  key={team.itemId}
+                  value={team.itemId}
+                  className="bg-stone-100 dark:bg-slate-900"
+                >
+                  {team.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          {validationErrors.teamId && (
+            <p className="text-[11px] font-medium text-rose-500">
+              {validationErrors.teamId}
+            </p>
+          )}
         </div>
-        {validationErrors.teamId && (
-          <p className="text-[11px] font-medium text-rose-500">{validationErrors.teamId}</p>
-        )}
-      </div>
+      )}
 
       {/* TAKIM ÜYESİ SEÇİMİ */}
       <div className="space-y-1.5">
         <label className="flex items-center gap-1.5 text-xs font-semibold text-stone-700 dark:text-slate-300">
           <UserCheck className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
           <span>Team Member</span>
+          {requireTeamMember && <span className="text-rose-500">*</span>}
         </label>
         <select
           disabled={!teamId || isCrossTeamTransfer}
@@ -110,7 +139,9 @@ export function TicketAssignmentForm({
           className="w-full appearance-none rounded-xl border border-stone-300/80 dark:border-purple-900/40 bg-stone-50/70 dark:bg-slate-900/80 px-3.5 py-2.5 text-xs font-medium text-stone-800 dark:text-slate-100 shadow-inner focus:border-emerald-600 dark:focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:focus:ring-purple-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <option value="" className="bg-stone-100 dark:bg-slate-900">
-            {isCrossTeamTransfer
+            {requireTeamMember
+              ? "Select team member..."
+              : isCrossTeamTransfer
               ? "The new team leader will assign a member"
               : "Unassigned (Team queue)"}
           </option>

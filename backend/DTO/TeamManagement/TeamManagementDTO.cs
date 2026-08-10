@@ -53,6 +53,19 @@ public sealed class TeamMemberSummaryDto
     public IReadOnlyCollection<TeamMemberTicketDto> RecentTickets { get; set; } = [];
 }
 
+public sealed class UnassignedTeamTicketDto
+{
+    public Guid Id { get; set; }
+    public string TicketNumber { get; set; } = string.Empty;
+    public string TicketTitle { get; set; } = string.Empty;
+    public string CategoryName { get; set; } = string.Empty;
+    public string StatusName { get; set; } = string.Empty;
+    public string PriorityName { get; set; } = string.Empty;
+    public string CreatedByName { get; set; } = string.Empty;
+    public string? CreatedByAvatarUrl { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
 public sealed class TeamManagementOverviewDto
 {
     public Guid TeamId { get; set; }
@@ -61,6 +74,7 @@ public sealed class TeamManagementOverviewDto
     public IReadOnlyCollection<ManagedTeamDto> ManagedTeams { get; set; } = [];
     public TeamTicketStatsDto Stats { get; set; } = new();
     public CsatStatsDto Csat { get; set; } = new();
+    public PagedResultDto<UnassignedTeamTicketDto> UnassignedTickets { get; set; } = new();
     public IReadOnlyCollection<TeamMemberSummaryDto> Members { get; set; } = [];
 }
 

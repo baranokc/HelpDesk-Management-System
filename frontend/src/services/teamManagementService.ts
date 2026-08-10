@@ -9,11 +9,19 @@ import type {
 } from "@/src/types/team-management";
 
 export const teamManagementService = {
-  getOverview: async (teamId?: string): Promise<TeamManagementOverviewDto> => {
+  getOverview: async (
+    teamId?: string,
+    unassignedPageNumber = 1,
+    unassignedPageSize = 10,
+  ): Promise<TeamManagementOverviewDto> => {
     const response = await api.get<TeamManagementOverviewDto>(
       "/team-management",
       {
-        params: teamId ? { teamId } : undefined,
+        params: {
+          teamId: teamId || undefined,
+          unassignedPageNumber,
+          unassignedPageSize,
+        },
       },
     );
 

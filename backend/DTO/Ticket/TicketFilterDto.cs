@@ -4,6 +4,7 @@ public class TicketFilterDto
     public string? Search {get; set; }
     public Guid? StatusId {get; set; }
     public Guid? CategoryId {get; set; }
+    public Guid? PriorityId {get; set; }
     public Guid? AssignedToId {get; set;}
     public Guid? CreatedById {get; set; }
     public Guid? UrgencyLevelId {get; set; }
