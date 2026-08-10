@@ -22,7 +22,7 @@ import { Avatar } from "@/src/components/ui/Avatar";
 import { useAuth } from "@/src/context/AuthContext";
 import { getTicketViewLabel } from "@/src/lib/ticketPermissions";
 
-// Rol bazlı rozet (Badge) stilleri (İstediğin Renk Paletine Göre Güncellendi)
+// Rol bazlı rozet (Badge) stilleri
 const getRoleBadgeStyle = (role?: string): string => {
   const normalized = role?.toLowerCase().trim();
   switch (normalized) {
@@ -32,8 +32,8 @@ const getRoleBadgeStyle = (role?: string): string => {
       return "bg-amber-500/15 text-amber-800 dark:bg-pink-500/25 dark:text-pink-300 border-amber-600/30 dark:border-pink-400/80 dark:shadow-[0_0_12px_rgba(244,114,182,0.35)]";
     case "teamleader":
     case "1":
-      // Light: Amber/Emerald | Dark: Kırmızı (Red)
-      return "bg-amber-500/15 text-amber-800 dark:bg-red-500/20 dark:text-red-300 border-amber-600/30 dark:border-red-500/40";
+      // Light: Kırmızı (Red) | Dark: Parlak Sarı (Bright Yellow)
+      return "bg-red-500/15 text-red-800 dark:bg-yellow-400/20 dark:text-yellow-300 border-red-600/30 dark:border-yellow-400/80 dark:shadow-[0_0_12px_rgba(250,204,21,0.35)]";
     case "supportagent":
     case "2":
       // Light: Teal | Dark: Mavi (Blue)
@@ -291,11 +291,11 @@ export default function MainLayout({
                       href="/tickets/team-management"
                       className={`flex items-center gap-2.5 rounded-xl py-2 px-3 text-xs font-semibold transition-all ${
                         isTeamManagementPage
-                          ? "bg-amber-500/15 text-amber-800 dark:bg-red-500/20 dark:text-red-300 font-bold"
+                          ? "bg-red-500/15 text-red-800 dark:bg-yellow-400/20 dark:text-yellow-300 font-bold"
                           : "text-stone-700 dark:text-slate-300 hover:bg-stone-200/60 dark:hover:bg-slate-800/80"
                       }`}
                     >
-                      <Settings className="h-4 w-4 text-amber-600 dark:text-red-400" />
+                      <Settings className="h-4 w-4 text-red-600 dark:text-yellow-400" />
                       <span>Management Page</span>
                     </Link>
                   </li>

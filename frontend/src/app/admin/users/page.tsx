@@ -65,7 +65,7 @@ function UserAvatar({ avatarSrc, fullName }: { avatarSrc?: string | null; fullNa
 
   if (!finalSrc || hasError) {
     return (
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-600 via-teal-600 to-amber-600 dark:from-violet-600 dark:via-purple-600 dark:to-indigo-500 text-xs font-black text-white shadow-sm ring-1 ring-stone-200 dark:ring-slate-700/80">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-emerald-600 via-teal-600 to-amber-600 dark:from-indigo-500 dark:via-indigo-600 dark:to-purple-600 text-xs font-black text-white shadow-sm ring-1 ring-stone-200 dark:ring-slate-700/80">
         {getInitials(fullName)}
       </div>
     );
@@ -209,22 +209,22 @@ export default function AdminUsersPage() {
         );
       case "TeamLeader":
         return (
-          <span className="inline-flex items-center gap-1 rounded-lg bg-rose-500/10 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300 border border-rose-500/20 dark:border-rose-500/30 px-2.5 py-1 text-xs font-bold">
-            <ShieldCheck className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
+          <span className="inline-flex items-center gap-1 rounded-lg bg-red-500/15 text-red-800 dark:bg-yellow-400/20 dark:text-yellow-300 border border-red-600/30 dark:border-yellow-400/80 dark:shadow-[0_0_12px_rgba(250,204,21,0.35)] px-2.5 py-1 text-xs font-bold">
+            <ShieldCheck className="h-3.5 w-3.5 text-red-600 dark:text-yellow-400" />
             Team Leader
           </span>
         );
       case "SupportAgent":
         return (
-          <span className="inline-flex items-center gap-1 rounded-lg bg-teal-500/10 text-teal-800 dark:bg-indigo-500/20 dark:text-indigo-300 border border-teal-500/20 dark:border-indigo-500/30 px-2.5 py-1 text-xs font-bold">
-            <UserCheck className="h-3.5 w-3.5 text-teal-600 dark:text-indigo-400" />
+          <span className="inline-flex items-center gap-1 rounded-lg bg-teal-500/15 text-teal-800 dark:bg-blue-500/20 dark:text-blue-300 border border-teal-600/30 dark:border-blue-500/40 px-2.5 py-1 text-xs font-bold">
+            <UserCheck className="h-3.5 w-3.5 text-teal-600 dark:text-blue-400" />
             Support Agent
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1 rounded-lg bg-stone-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-semibold text-stone-700 dark:text-slate-300 border border-stone-200 dark:border-slate-700">
-            <Users className="h-3.5 w-3.5 text-stone-500 dark:text-slate-400" />
+          <span className="inline-flex items-center gap-1 rounded-lg bg-stone-900/10 text-stone-900 dark:bg-slate-100/15 dark:text-slate-100 border border-stone-900/25 dark:border-slate-100/30 px-2.5 py-1 text-xs font-semibold">
+            <Users className="h-3.5 w-3.5 text-stone-900 dark:text-slate-100" />
             User
           </span>
         );
@@ -281,7 +281,7 @@ export default function AdminUsersPage() {
             <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 dark:text-slate-500">Support Staff</span>
             <div className="text-2xl font-black text-stone-900 dark:text-white mt-0.5">{stats.support}</div>
           </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-teal-500/10 dark:bg-indigo-500/20 text-teal-800 dark:text-indigo-300 border border-teal-500/20 dark:border-indigo-500/30">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-teal-500/10 dark:bg-blue-500/20 text-teal-800 dark:text-blue-300 border border-teal-500/20 dark:border-blue-500/30">
             <UserCheck className="h-5 w-5" />
           </div>
         </div>
@@ -291,7 +291,7 @@ export default function AdminUsersPage() {
             <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 dark:text-slate-500">Standard Users</span>
             <div className="text-2xl font-black text-stone-900 dark:text-white mt-0.5">{stats.standardUsers}</div>
           </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-stone-100 dark:bg-slate-800 text-stone-600 dark:text-slate-300 border border-stone-200 dark:border-slate-700">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-stone-900/10 dark:bg-slate-100/15 text-stone-900 dark:text-slate-100 border border-stone-900/20 dark:border-slate-100/30">
             <Users className="h-5 w-5" />
           </div>
         </div>
