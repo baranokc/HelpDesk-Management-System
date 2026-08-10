@@ -23,6 +23,8 @@ public sealed class TeamManagementService : ITeamManagementService
         Guid? teamId,
         int unassignedPageNumber,
         int unassignedPageSize,
+        string unassignedSortBy,
+        string unassignedSortDirection,
         CancellationToken cancellationToken = default)
     {
         var managedTeams = await GetManagedTeamsAsync(
@@ -72,6 +74,8 @@ public sealed class TeamManagementService : ITeamManagementService
                 ticket.Status.Name != "Closed"),
             unassignedPageNumber,
             unassignedPageSize,
+            unassignedSortBy,
+            unassignedSortDirection,
             cancellationToken);
 
         var csat = await GetCsatStatsAsync(
@@ -184,6 +188,10 @@ public sealed class TeamManagementService : ITeamManagementService
         int activePageNumber,
         int inactivePageNumber,
         int pageSize,
+        string activeSortBy,
+        string activeSortDirection,
+        string inactiveSortBy,
+        string inactiveSortDirection,
         CancellationToken cancellationToken = default)
     {
         var member = await _db.TeamMembers
@@ -264,6 +272,8 @@ public sealed class TeamManagementService : ITeamManagementService
             member.UserId,
             activePageNumber,
             pageSize,
+            activeSortBy,
+            activeSortDirection,
             cancellationToken);
 
         var inactiveTickets = await GetMemberTicketsPageAsync(
@@ -272,6 +282,8 @@ public sealed class TeamManagementService : ITeamManagementService
             member.UserId,
             inactivePageNumber,
             pageSize,
+            inactiveSortBy,
+            inactiveSortDirection,
             cancellationToken);
 
         var schedule = await GetMemberScheduleAsync(
@@ -304,6 +316,10 @@ public sealed class TeamManagementService : ITeamManagementService
         int activePageNumber,
         int inactivePageNumber,
         int pageSize,
+        string activeSortBy,
+        string activeSortDirection,
+        string inactiveSortBy,
+        string inactiveSortDirection,
         CancellationToken cancellationToken = default)
     {
         var memberships = await _db.TeamMembers
@@ -371,6 +387,8 @@ public sealed class TeamManagementService : ITeamManagementService
             userId,
             activePageNumber,
             pageSize,
+            activeSortBy,
+            activeSortDirection,
             cancellationToken);
 
         var inactiveTickets = await GetMemberTicketsPageAsync(
@@ -379,6 +397,8 @@ public sealed class TeamManagementService : ITeamManagementService
             userId,
             inactivePageNumber,
             pageSize,
+            inactiveSortBy,
+            inactiveSortDirection,
             cancellationToken);
 
         var schedule = await GetMemberScheduleAsync(
@@ -759,6 +779,8 @@ public sealed class TeamManagementService : ITeamManagementService
             Guid memberUserId,
             int pageNumber,
             int pageSize,
+            string sortBy,
+            string sortDirection,
             CancellationToken cancellationToken)
     {
         var normalizedPageNumber = Math.Max(pageNumber, 1);
@@ -771,7 +793,7 @@ public sealed class TeamManagementService : ITeamManagementService
         if (totalPages > 0 && normalizedPageNumber > totalPages)
             normalizedPageNumber = totalPages;
 
-        var tickets = await query
+        var tickets = await ApplyTicketSorting(query, sortBy, sortDirection)
             .Select(ticket => new
             {
                 Ticket = ticket,
@@ -782,9 +804,6 @@ public sealed class TeamManagementService : ITeamManagementService
                         teamMemberIds.Contains(assignment.AssignedToId.Value))
                     .Max(assignment => (DateTime?)assignment.AssignedAt)
             })
-            .OrderByDescending(item =>
-                item.AssignedAt ?? item.Ticket.CreatedAt)
-            .ThenByDescending(item => item.Ticket.TicketNumber)
             .Skip((normalizedPageNumber - 1) * normalizedPageSize)
             .Take(normalizedPageSize)
             .Select(item => new TeamMemberTicketDto
@@ -824,6 +843,8 @@ public sealed class TeamManagementService : ITeamManagementService
             IQueryable<TicketEntity> query,
             int pageNumber,
             int pageSize,
+            string sortBy,
+            string sortDirection,
             CancellationToken cancellationToken)
     {
         var normalizedPageNumber = Math.Max(pageNumber, 1);
@@ -836,9 +857,7 @@ public sealed class TeamManagementService : ITeamManagementService
         if (totalPages > 0 && normalizedPageNumber > totalPages)
             normalizedPageNumber = totalPages;
 
-        var tickets = await query
-            .OrderByDescending(ticket => ticket.TicketNumber)
-            .ThenByDescending(ticket => ticket.CreatedAt)
+        var tickets = await ApplyTicketSorting(query, sortBy, sortDirection)
             .Skip((normalizedPageNumber - 1) * normalizedPageSize)
             .Take(normalizedPageSize)
             .Select(ticket => new UnassignedTeamTicketDto
@@ -864,6 +883,52 @@ public sealed class TeamManagementService : ITeamManagementService
             normalizedPageSize,
             totalCount,
             totalPages);
+    }
+
+    private static IOrderedQueryable<TicketEntity> ApplyTicketSorting(
+        IQueryable<TicketEntity> query,
+        string sortBy,
+        string sortDirection)
+    {
+        var descending = !string.Equals(
+            sortDirection,
+            "asc",
+            StringComparison.OrdinalIgnoreCase);
+
+        return (sortBy?.Trim().ToLowerInvariant() ?? "ticketnumber") switch
+        {
+            "title" => descending
+                ? query.OrderByDescending(ticket => ticket.TicketTitle)
+                    .ThenByDescending(ticket => ticket.TicketNumber)
+                : query.OrderBy(ticket => ticket.TicketTitle)
+                    .ThenBy(ticket => ticket.TicketNumber),
+
+            "status" => descending
+                ? query.OrderByDescending(ticket => ticket.Status.Name)
+                    .ThenByDescending(ticket => ticket.TicketNumber)
+                : query.OrderBy(ticket => ticket.Status.Name)
+                    .ThenBy(ticket => ticket.TicketNumber),
+
+            "priority" => descending
+                ? query.OrderBy(ticket => ticket.Priority.ResponseTime)
+                    .ThenByDescending(ticket => ticket.TicketNumber)
+                : query.OrderByDescending(ticket => ticket.Priority.ResponseTime)
+                    .ThenBy(ticket => ticket.TicketNumber),
+
+            "createdby" => descending
+                ? query.OrderByDescending(ticket => ticket.CreatedBy.Name)
+                    .ThenByDescending(ticket => ticket.CreatedBy.LastName)
+                    .ThenByDescending(ticket => ticket.TicketNumber)
+                : query.OrderBy(ticket => ticket.CreatedBy.Name)
+                    .ThenBy(ticket => ticket.CreatedBy.LastName)
+                    .ThenBy(ticket => ticket.TicketNumber),
+
+            _ => descending
+                ? query.OrderByDescending(ticket => ticket.TicketNumber)
+                    .ThenByDescending(ticket => ticket.CreatedAt)
+                : query.OrderBy(ticket => ticket.TicketNumber)
+                    .ThenBy(ticket => ticket.CreatedAt)
+        };
     }
 
     private async Task<List<ManagedTeamDto>> GetManagedTeamsAsync(

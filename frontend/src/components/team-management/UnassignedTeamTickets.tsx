@@ -1,7 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Clock3, Inbox, UserPlus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  Clock3,
+  Inbox,
+  UserPlus,
+} from "lucide-react";
 import { Alert } from "@/src/components/ui/Alert";
 import { Avatar } from "@/src/components/ui/Avatar";
 import { Modal } from "@/src/components/ui/Modal";
@@ -14,6 +22,7 @@ import { getApiErrorMessage } from "@/src/lib/api";
 import { ticketAssignmentService } from "@/src/services/ticketAssignmentService";
 import type { PagedResultDto } from "@/src/types/common";
 import type { UnassignedTeamTicketDto } from "@/src/types/team-management";
+import type { TicketSortDirection, TicketSortField } from "@/src/types/ticket";
 import type { TicketAssignmentDto } from "@/src/types/ticket-assignment";
 
 interface UnassignedTeamTicketsProps {
@@ -23,6 +32,61 @@ interface UnassignedTeamTicketsProps {
   loading?: boolean;
   onAssigned: () => Promise<void>;
   onPageChange: (pageNumber: number) => void;
+  onSort: (sortBy: TicketSortField) => void;
+  sortBy: TicketSortField;
+  sortDirection: TicketSortDirection;
+}
+
+interface SortableHeaderProps {
+  label: string;
+  field: TicketSortField;
+  activeField: TicketSortField;
+  direction: TicketSortDirection;
+  onSort: (field: TicketSortField) => void;
+}
+
+function SortableHeader({
+  label,
+  field,
+  activeField,
+  direction,
+  onSort,
+}: SortableHeaderProps) {
+  const isActive = activeField === field;
+  const Icon = !isActive
+    ? ArrowUpDown
+    : direction === "desc"
+      ? ArrowDown
+      : ArrowUp;
+
+  return (
+    <th className="px-5 py-3.5" scope="col">
+      <button
+        aria-label={`Sort by ${label}${
+          isActive
+            ? `, currently ${direction === "desc" ? "descending" : "ascending"}`
+            : ""
+        }`}
+        className={`group/sort inline-flex items-center gap-1.5 rounded-md text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 ${
+          isActive
+            ? "text-indigo-700 dark:text-violet-300"
+            : "hover:text-slate-800 dark:hover:text-violet-200"
+        }`}
+        onClick={() => onSort(field)}
+        type="button"
+      >
+        <span>{label}</span>
+        <Icon
+          aria-hidden="true"
+          className={`h-3.5 w-3.5 ${
+            isActive
+              ? "opacity-100"
+              : "opacity-45 transition-opacity group-hover/sort:opacity-100"
+          }`}
+        />
+      </button>
+    </th>
+  );
 }
 
 function formatDate(value: string): string {
@@ -38,7 +102,11 @@ export function UnassignedTeamTickets({
   loading = false,
   onAssigned,
   onPageChange,
+  onSort,
+  sortBy,
+  sortDirection,
 }: UnassignedTeamTicketsProps) {
+  const router = useRouter();
   const [selectedTicket, setSelectedTicket] =
     useState<UnassignedTeamTicketDto | null>(null);
   const [assigning, setAssigning] = useState(false);
@@ -134,25 +202,66 @@ export function UnassignedTeamTickets({
             <table className="w-full min-w-[1000px] border-collapse text-left">
               <thead className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-400">
                 <tr>
-                  <th className="px-5 py-3.5">Ticket #</th>
-                  <th className="px-5 py-3.5">Title</th>
+                  <SortableHeader
+                    activeField={sortBy}
+                    direction={sortDirection}
+                    field="ticketNumber"
+                    label="Ticket #"
+                    onSort={onSort}
+                  />
+                  <SortableHeader
+                    activeField={sortBy}
+                    direction={sortDirection}
+                    field="title"
+                    label="Title"
+                    onSort={onSort}
+                  />
                   <th className="px-5 py-3.5">Category</th>
-                  <th className="px-5 py-3.5">Status</th>
-                  <th className="px-5 py-3.5">Priority</th>
-                  <th className="px-5 py-3.5">Created By</th>
+                  <SortableHeader
+                    activeField={sortBy}
+                    direction={sortDirection}
+                    field="status"
+                    label="Status"
+                    onSort={onSort}
+                  />
+                  <SortableHeader
+                    activeField={sortBy}
+                    direction={sortDirection}
+                    field="priority"
+                    label="Priority"
+                    onSort={onSort}
+                  />
+                  <SortableHeader
+                    activeField={sortBy}
+                    direction={sortDirection}
+                    field="createdBy"
+                    label="Created By"
+                    onSort={onSort}
+                  />
                   <th className="px-5 py-3.5 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs font-medium dark:divide-slate-800/60">
                 {tickets.items.map((ticket) => (
                   <tr
-                    className="transition-colors hover:bg-slate-50/80 dark:hover:bg-violet-950/20"
+                    aria-label={`View ${ticket.ticketNumber}: ${ticket.ticketTitle}`}
+                    className="group cursor-pointer transition-colors hover:bg-indigo-50/60 focus-visible:bg-indigo-50/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500/40 dark:hover:bg-violet-500/10 dark:focus-visible:bg-violet-500/10"
                     key={ticket.id}
+                    onClick={() => router.push(`/tickets/${ticket.id}`)}
+                    onKeyDown={(event) => {
+                      if (event.target !== event.currentTarget) return;
+                      if (event.key !== "Enter" && event.key !== " ") return;
+
+                      event.preventDefault();
+                      router.push(`/tickets/${ticket.id}`);
+                    }}
+                    role="link"
+                    tabIndex={0}
                   >
-                    <td className="px-5 py-4 font-mono font-bold text-indigo-600 dark:text-violet-400">
+                    <td className="px-5 py-4 font-mono font-bold text-indigo-600 transition-colors group-hover:text-indigo-800 dark:text-violet-400 dark:group-hover:text-violet-300">
                       {ticket.ticketNumber}
                     </td>
-                    <td className="max-w-60 truncate px-5 py-4 font-semibold text-slate-900 dark:text-slate-100">
+                    <td className="max-w-60 truncate px-5 py-4 font-semibold text-slate-900 transition-colors group-hover:text-indigo-700 dark:text-slate-100 dark:group-hover:text-violet-300">
                       {ticket.ticketTitle}
                     </td>
                     <td className="px-5 py-4 text-slate-600 dark:text-slate-300">
@@ -186,7 +295,10 @@ export function UnassignedTeamTickets({
                       <button
                         className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 shadow-sm transition-all hover:border-indigo-500 hover:bg-indigo-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-50 dark:border-violet-500/40 dark:bg-violet-500/10 dark:text-violet-300 dark:hover:border-violet-500 dark:hover:bg-violet-600 dark:hover:text-white"
                         disabled={loading || assigning}
-                        onClick={() => openAssignment(ticket)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openAssignment(ticket);
+                        }}
                         type="button"
                       >
                         <UserPlus className="h-3.5 w-3.5" />

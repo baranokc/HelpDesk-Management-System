@@ -22,8 +22,17 @@ import { useAuth } from "@/src/context/AuthContext";
 import { getApiErrorMessage } from "@/src/lib/api";
 import { teamManagementService } from "@/src/services/teamManagementService";
 import type { TeamManagementOverviewDto } from "@/src/types/team-management";
+import type { TicketSortDirection, TicketSortField } from "@/src/types/ticket";
 
 const UNASSIGNED_TICKETS_PAGE_SIZE = 10;
+
+const defaultSortDirections: Record<TicketSortField, TicketSortDirection> = {
+  ticketNumber: "desc",
+  title: "asc",
+  status: "asc",
+  priority: "desc",
+  createdBy: "asc",
+};
 
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat("tr-TR", {
@@ -58,6 +67,13 @@ export function TeamManagementContainer() {
     null,
   );
   const [unassignedPageNumber, setUnassignedPageNumber] = useState(1);
+  const [unassignedSort, setUnassignedSort] = useState<{
+    sortBy: TicketSortField;
+    sortDirection: TicketSortDirection;
+  }>({
+    sortBy: "ticketNumber",
+    sortDirection: "desc",
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -81,6 +97,8 @@ export function TeamManagementContainer() {
           selectedTeamId,
           unassignedPageNumber,
           UNASSIGNED_TICKETS_PAGE_SIZE,
+          unassignedSort.sortBy,
+          unassignedSort.sortDirection,
         );
 
         if (!cancelled) {
@@ -108,7 +126,14 @@ export function TeamManagementContainer() {
     return () => {
       cancelled = true;
     };
-  }, [authLoading, selectedTeamId, unassignedPageNumber, user?.role]);
+  }, [
+    authLoading,
+    selectedTeamId,
+    unassignedPageNumber,
+    unassignedSort.sortBy,
+    unassignedSort.sortDirection,
+    user?.role,
+  ]);
 
   const refreshOverview = async () => {
     setLoading(true);
@@ -119,6 +144,8 @@ export function TeamManagementContainer() {
         overview?.teamId ?? selectedTeamId,
         unassignedPageNumber,
         UNASSIGNED_TICKETS_PAGE_SIZE,
+        unassignedSort.sortBy,
+        unassignedSort.sortDirection,
       );
 
       setOverview(response);
@@ -134,6 +161,19 @@ export function TeamManagementContainer() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const changeUnassignedSort = (sortBy: TicketSortField) => {
+    setUnassignedSort((current) => ({
+      sortBy,
+      sortDirection:
+        current.sortBy === sortBy
+          ? current.sortDirection === "asc"
+            ? "desc"
+            : "asc"
+          : defaultSortDirections[sortBy],
+    }));
+    setUnassignedPageNumber(1);
   };
 
   if (authLoading || user?.role !== "TeamLeader") {
@@ -208,6 +248,9 @@ export function TeamManagementContainer() {
             loading={loading}
             onAssigned={refreshOverview}
             onPageChange={setUnassignedPageNumber}
+            onSort={changeUnassignedSort}
+            sortBy={unassignedSort.sortBy}
+            sortDirection={unassignedSort.sortDirection}
             teamId={overview.teamId}
             teamName={overview.teamName}
             tickets={overview.unassignedTickets}
@@ -248,13 +291,15 @@ export function TeamManagementContainer() {
             ) : (
               <div className="space-y-4">
                 {overview.members.map((member) => (
-                  <Link
-                    className="group block overflow-hidden rounded-2xl border border-slate-200 bg-white/90 shadow-sm backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-lg hover:shadow-indigo-500/5 dark:border-slate-800 dark:bg-slate-900/80 dark:hover:border-indigo-500/40"
-                    href={`/tickets/team-management/${member.teamMemberId}`}
+                  <article
+                    className="block overflow-hidden rounded-2xl border border-slate-200 bg-white/90 shadow-sm backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-lg hover:shadow-indigo-500/5 dark:border-slate-800 dark:bg-slate-900/80 dark:hover:border-indigo-500/40"
                     key={member.teamMemberId}
                   >
                     <div className="flex flex-col gap-4 border-b border-slate-100 px-5 py-4 dark:border-slate-800/80 lg:flex-row lg:items-center">
-                      <div className="flex min-w-0 items-center gap-3 lg:flex-1">
+                      <Link
+                        className="group flex min-w-0 items-center gap-3 rounded-xl outline-none transition-colors focus-visible:ring-2 focus-visible:ring-indigo-500/40 lg:flex-1"
+                        href={`/tickets/team-management/${member.teamMemberId}`}
+                      >
                         <Avatar name={member.fullName} size="md" />
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
@@ -272,7 +317,7 @@ export function TeamManagementContainer() {
                             Team member since {formatDate(member.joinedAt)}
                           </p>
                         </div>
-                      </div>
+                      </Link>
 
                       <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2.5 dark:border-slate-700/80 dark:bg-slate-950/40">
                         {member.csat.totalSurveysCount > 0 ? (
@@ -311,10 +356,13 @@ export function TeamManagementContainer() {
                         )}
                       </div>
 
-                      <span className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 shadow-sm transition-all group-hover:border-indigo-500 group-hover:bg-indigo-600 group-hover:text-white dark:border-violet-500/40 dark:bg-violet-500/10 dark:text-violet-300 dark:group-hover:border-violet-500 dark:group-hover:bg-violet-600 dark:group-hover:text-white">
+                      <Link
+                        className="group inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 shadow-sm transition-all hover:border-indigo-500 hover:bg-indigo-600 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 dark:border-violet-500/40 dark:bg-violet-500/10 dark:text-violet-300 dark:hover:border-violet-500 dark:hover:bg-violet-600 dark:hover:text-white"
+                        href={`/tickets/team-management/${member.teamMemberId}`}
+                      >
                         View Details
                         <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-                      </span>
+                      </Link>
                     </div>
 
                     {member.recentTickets.length === 0 ? (
@@ -331,12 +379,14 @@ export function TeamManagementContainer() {
 
                         <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
                           {member.recentTickets.map((ticket) => (
-                            <div
-                              className="grid gap-3 px-5 py-3.5 text-sm transition-colors group-hover:bg-slate-50/70 dark:group-hover:bg-slate-800/30 md:grid-cols-[minmax(0,1fr)_7rem_7rem] md:items-center"
+                            <Link
+                              aria-label={`View ${ticket.ticketNumber}: ${ticket.ticketTitle}`}
+                              className="group grid gap-3 px-5 py-3.5 text-sm transition-colors hover:bg-indigo-50/60 focus-visible:bg-indigo-50/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500/40 dark:hover:bg-violet-500/10 dark:focus-visible:bg-violet-500/10 md:grid-cols-[minmax(0,1fr)_7rem_7rem] md:items-center"
+                              href={`/tickets/${ticket.id}`}
                               key={ticket.id}
                             >
                               <div className="min-w-0">
-                                <p className="truncate font-semibold text-slate-900 dark:text-white">
+                                <p className="truncate font-semibold text-slate-900 transition-colors group-hover:text-indigo-700 dark:text-white dark:group-hover:text-violet-300">
                                   {ticket.ticketTitle}
                                 </p>
                                 <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
@@ -363,12 +413,12 @@ export function TeamManagementContainer() {
                                 </span>
                                 <TicketStatusBadge status={ticket.statusName} />
                               </div>
-                            </div>
+                            </Link>
                           ))}
                         </div>
                       </div>
                     )}
-                  </Link>
+                  </article>
                 ))}
               </div>
             )}

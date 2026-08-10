@@ -5,7 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
+  ArrowDown,
   ArrowRight,
+  ArrowUp,
+  ArrowUpDown,
   CalendarDays,
   Clock3,
   Edit3,
@@ -30,6 +33,7 @@ import type {
   TeamMemberShiftDto,
   TeamMemberTicketDto,
 } from "@/src/types/team-management";
+import type { TicketSortDirection, TicketSortField } from "@/src/types/ticket";
 
 interface TeamMemberDetailContainerProps {
   teamMemberId?: string;
@@ -67,6 +71,71 @@ const weekDays = [
   { dayOfWeek: 0, label: "Sunday" },
 ] as const;
 
+const defaultSortDirections: Record<TicketSortField, TicketSortDirection> = {
+  ticketNumber: "desc",
+  title: "asc",
+  status: "asc",
+  priority: "desc",
+  createdBy: "asc",
+};
+
+interface TicketSortState {
+  sortBy: TicketSortField;
+  sortDirection: TicketSortDirection;
+}
+
+interface SortableHeaderProps {
+  label: string;
+  field: TicketSortField;
+  activeField: TicketSortField;
+  direction: TicketSortDirection;
+  onSort: (field: TicketSortField) => void;
+}
+
+function SortableHeader({
+  label,
+  field,
+  activeField,
+  direction,
+  onSort,
+}: SortableHeaderProps) {
+  const isActive = activeField === field;
+  const Icon = !isActive
+    ? ArrowUpDown
+    : direction === "desc"
+      ? ArrowDown
+      : ArrowUp;
+
+  return (
+    <th className="px-5 py-3.5" scope="col">
+      <button
+        aria-label={`Sort by ${label}${
+          isActive
+            ? `, currently ${direction === "desc" ? "descending" : "ascending"}`
+            : ""
+        }`}
+        className={`group/sort inline-flex items-center gap-1.5 rounded-md text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 dark:focus-visible:ring-purple-500/50 ${
+          isActive
+            ? "text-emerald-700 dark:text-purple-300"
+            : "hover:text-stone-800 dark:hover:text-purple-200"
+        }`}
+        onClick={() => onSort(field)}
+        type="button"
+      >
+        <span>{label}</span>
+        <Icon
+          aria-hidden="true"
+          className={`h-3.5 w-3.5 ${
+            isActive
+              ? "opacity-100"
+              : "opacity-45 transition-opacity group-hover/sort:opacity-100"
+          }`}
+        />
+      </button>
+    </th>
+  );
+}
+
 function normalizeTime(value: string): string {
   return value.slice(0, 5);
 }
@@ -97,6 +166,9 @@ interface MemberTicketListProps {
   emptyMessage: string;
   result: PagedResultDto<TeamMemberTicketDto>;
   onPageChange: (pageNumber: number) => void;
+  onSort: (sortBy: TicketSortField) => void;
+  sortBy: TicketSortField;
+  sortDirection: TicketSortDirection;
 }
 
 function MemberTicketList({
@@ -105,6 +177,9 @@ function MemberTicketList({
   emptyMessage,
   result,
   onPageChange,
+  onSort,
+  sortBy,
+  sortDirection,
 }: MemberTicketListProps) {
   const isActiveList = title.toLowerCase().startsWith("active");
 
@@ -151,11 +226,35 @@ function MemberTicketList({
             <table className="w-full min-w-[1000px] border-collapse text-left">
               <thead className="border-b border-stone-100 bg-stone-50/80 text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 dark:border-slate-800 dark:bg-slate-800/50 dark:text-slate-400">
                 <tr>
-                  <th className="px-5 py-3.5">Ticket #</th>
-                  <th className="px-5 py-3.5">Title</th>
+                  <SortableHeader
+                    activeField={sortBy}
+                    direction={sortDirection}
+                    field="ticketNumber"
+                    label="Ticket #"
+                    onSort={onSort}
+                  />
+                  <SortableHeader
+                    activeField={sortBy}
+                    direction={sortDirection}
+                    field="title"
+                    label="Title"
+                    onSort={onSort}
+                  />
                   <th className="px-5 py-3.5">Relation</th>
-                  <th className="px-5 py-3.5">Priority</th>
-                  <th className="px-5 py-3.5">Status</th>
+                  <SortableHeader
+                    activeField={sortBy}
+                    direction={sortDirection}
+                    field="priority"
+                    label="Priority"
+                    onSort={onSort}
+                  />
+                  <SortableHeader
+                    activeField={sortBy}
+                    direction={sortDirection}
+                    field="status"
+                    label="Status"
+                    onSort={onSort}
+                  />
                   <th className="px-5 py-3.5">Latest Assignment</th>
                   <th className="px-5 py-3.5 text-right">Action</th>
                 </tr>
@@ -243,6 +342,14 @@ export function TeamMemberDetailContainer({
   const { user, loading: authLoading } = useAuth();
   const [activePageNumber, setActivePageNumber] = useState(1);
   const [inactivePageNumber, setInactivePageNumber] = useState(1);
+  const [activeSort, setActiveSort] = useState<TicketSortState>({
+    sortBy: "ticketNumber",
+    sortDirection: "desc",
+  });
+  const [inactiveSort, setInactiveSort] = useState<TicketSortState>({
+    sortBy: "ticketNumber",
+    sortDirection: "desc",
+  });
   const [detail, setDetail] = useState<TeamMemberDetailDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -280,12 +387,20 @@ export function TeamMemberDetailContainer({
               activePageNumber,
               inactivePageNumber,
               25,
+              activeSort.sortBy,
+              activeSort.sortDirection,
+              inactiveSort.sortBy,
+              inactiveSort.sortDirection,
             )
           : await teamManagementService.getMemberDetail(
               teamMemberId!,
               activePageNumber,
               inactivePageNumber,
               25,
+              activeSort.sortBy,
+              activeSort.sortDirection,
+              inactiveSort.sortBy,
+              inactiveSort.sortDirection,
             );
 
         if (!cancelled) {
@@ -313,12 +428,42 @@ export function TeamMemberDetailContainer({
     };
   }, [
     activePageNumber,
+    activeSort.sortBy,
+    activeSort.sortDirection,
     authLoading,
     canViewPage,
     inactivePageNumber,
+    inactiveSort.sortBy,
+    inactiveSort.sortDirection,
     selfView,
     teamMemberId,
   ]);
+
+  const changeActiveSort = (sortBy: TicketSortField) => {
+    setActiveSort((current) => ({
+      sortBy,
+      sortDirection:
+        current.sortBy === sortBy
+          ? current.sortDirection === "asc"
+            ? "desc"
+            : "asc"
+          : defaultSortDirections[sortBy],
+    }));
+    setActivePageNumber(1);
+  };
+
+  const changeInactiveSort = (sortBy: TicketSortField) => {
+    setInactiveSort((current) => ({
+      sortBy,
+      sortDirection:
+        current.sortBy === sortBy
+          ? current.sortDirection === "asc"
+            ? "desc"
+            : "asc"
+          : defaultSortDirections[sortBy],
+    }));
+    setInactivePageNumber(1);
+  };
 
   const updateShiftRow = (dayOfWeek: number, changes: Partial<ShiftRow>) => {
     setShiftRows((current) =>
@@ -885,6 +1030,9 @@ export function TeamMemberDetailContainer({
             }
             result={detail.activeTickets}
             onPageChange={setActivePageNumber}
+            onSort={changeActiveSort}
+            sortBy={activeSort.sortBy}
+            sortDirection={activeSort.sortDirection}
           />
 
           <MemberTicketList
@@ -901,6 +1049,9 @@ export function TeamMemberDetailContainer({
             }
             result={detail.inactiveTickets}
             onPageChange={setInactivePageNumber}
+            onSort={changeInactiveSort}
+            sortBy={inactiveSort.sortBy}
+            sortDirection={inactiveSort.sortDirection}
           />
         </>
       )}
