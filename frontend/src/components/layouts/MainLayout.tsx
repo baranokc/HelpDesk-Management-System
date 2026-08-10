@@ -22,22 +22,25 @@ import { Avatar } from "@/src/components/ui/Avatar";
 import { useAuth } from "@/src/context/AuthContext";
 import { getTicketViewLabel } from "@/src/lib/ticketPermissions";
 
-// Rol bazlı rozet (Badge) stilleri
+// Rol bazlı rozet (Badge) stilleri (İstediğin Renk Paletine Göre Güncellendi)
 const getRoleBadgeStyle = (role?: string): string => {
   const normalized = role?.toLowerCase().trim();
   switch (normalized) {
     case "admin":
     case "0":
-      // 💖 NEON PINK / PEMBE EFEKTİ (Dark Mode)
-      return "bg-amber-500/15 text-amber-700 dark:bg-pink-500/25 dark:text-pink-300 border-amber-600/30 dark:border-pink-400/80 dark:shadow-[0_0_12px_rgba(244,114,182,0.35)]";
+      // Light: Amber | Dark: Neon Pink
+      return "bg-amber-500/15 text-amber-800 dark:bg-pink-500/25 dark:text-pink-300 border-amber-600/30 dark:border-pink-400/80 dark:shadow-[0_0_12px_rgba(244,114,182,0.35)]";
     case "teamleader":
     case "1":
-      return "bg-emerald-500/15 text-emerald-800 dark:bg-rose-500/20 dark:text-rose-300 border-emerald-600/30 dark:border-rose-500/40";
+      // Light: Amber/Emerald | Dark: Kırmızı (Red)
+      return "bg-amber-500/15 text-amber-800 dark:bg-red-500/20 dark:text-red-300 border-amber-600/30 dark:border-red-500/40";
     case "supportagent":
     case "2":
-      return "bg-teal-500/15 text-teal-800 dark:bg-indigo-500/20 dark:text-indigo-300 border-teal-600/30 dark:border-indigo-500/40";
+      // Light: Teal | Dark: Mavi (Blue)
+      return "bg-teal-500/15 text-teal-800 dark:bg-blue-500/20 dark:text-blue-300 border-teal-600/30 dark:border-blue-500/40";
     default:
-      return "bg-stone-500/15 text-stone-700 dark:bg-slate-500/20 dark:text-slate-300 border-stone-500/30 dark:border-slate-500/40";
+      // User: Light Siyah (Stone-900) | Dark Beyaz
+      return "bg-stone-900/10 text-stone-900 dark:bg-slate-100/15 dark:text-slate-100 border-stone-900/25 dark:border-slate-100/30";
   }
 };
 
@@ -288,11 +291,11 @@ export default function MainLayout({
                       href="/tickets/team-management"
                       className={`flex items-center gap-2.5 rounded-xl py-2 px-3 text-xs font-semibold transition-all ${
                         isTeamManagementPage
-                          ? "bg-emerald-500/15 text-emerald-800 dark:bg-rose-500/20 dark:text-rose-300 font-bold"
+                          ? "bg-amber-500/15 text-amber-800 dark:bg-red-500/20 dark:text-red-300 font-bold"
                           : "text-stone-700 dark:text-slate-300 hover:bg-stone-200/60 dark:hover:bg-slate-800/80"
                       }`}
                     >
-                      <Settings className="h-4 w-4 text-emerald-600 dark:text-rose-400" />
+                      <Settings className="h-4 w-4 text-amber-600 dark:text-red-400" />
                       <span>Management Page</span>
                     </Link>
                   </li>
