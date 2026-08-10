@@ -70,7 +70,7 @@ function SortableHeader({
       <button
         type="button"
         onClick={() => onSort(field)}
-        className={`group/sort inline-flex items-center gap-1.5 rounded-md text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 ${
+        className={`group/sort inline-flex items-center gap-1.5 rounded-md text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/50 ${
           isActive
             ? "text-emerald-700 dark:text-purple-300"
             : "hover:text-stone-800 dark:hover:text-purple-200"
@@ -170,7 +170,7 @@ function TicketRow({ ticket, index }: { ticket: TicketListDto; index: number }) 
             avatarUrl={ticket.createdByAvatarUrl}
             name={ticket.createdByName}
             size="xs"
-            className="border border-stone-300/80 dark:border-purple-800/40"
+            className="border border-emerald-600/30 dark:border-purple-800/40 shadow-sm"
           />
           <span className="font-medium truncate max-w-[130px]">
             {ticket.createdByName}
@@ -375,7 +375,7 @@ export function TicketListContainer() {
           <div className="rounded-3xl border border-stone-200/80 dark:border-purple-900/40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl shadow-xl overflow-hidden">
             {result.items.length === 0 ? (
               <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
-                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/10 dark:bg-purple-500/15 border border-amber-600/20 dark:border-purple-500/30 text-amber-700 dark:text-purple-300 shadow-inner">
+                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/10 dark:bg-purple-500/15 border border-emerald-600/20 dark:border-purple-500/30 text-emerald-700 dark:text-purple-300 shadow-inner">
                   <SearchX className="h-7 w-7" />
                 </div>
                 <h3 className="mb-1 text-base font-bold text-stone-900 dark:text-white">
