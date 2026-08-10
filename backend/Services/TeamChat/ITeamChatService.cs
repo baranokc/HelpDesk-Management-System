@@ -20,4 +20,15 @@ public interface ITeamChatService
         Guid teamId,
         CreateTeamChatMessageDto dto,
         CancellationToken cancellationToken = default);
+
+    Task<TeamChatMessagesPageDto> GetTeamLeaderMessagesAsync(
+        Guid userId,
+        DateTime? before,
+        int limit,
+        CancellationToken cancellationToken = default);
+
+    Task<TeamChatMessageDto> SendTeamLeaderMessageAsync(
+        Guid userId,
+        CreateTeamChatMessageDto dto,
+        CancellationToken cancellationToken = default);
 }

@@ -8,4 +8,5 @@ namespace backend.Hubs;
 public sealed class TeamChatHub : Hub
 {
     public const string MessageReceivedEvent = "TeamChatMessageReceived";
+    public const string TeamLeaderMessageReceivedEvent = "TeamLeaderChatMessageReceived";
 }

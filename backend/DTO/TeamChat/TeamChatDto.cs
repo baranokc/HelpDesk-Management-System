@@ -12,7 +12,8 @@ public sealed class TeamChatRoomDto
 public sealed class TeamChatMessageDto
 {
     public Guid Id { get; set; }
-    public Guid TeamId { get; set; }
+    public Guid? TeamId { get; set; }
+    public string Audience { get; set; } = string.Empty;
     public Guid SenderId { get; set; }
     public string SenderName { get; set; } = string.Empty;
     public string? SenderAvatarUrl { get; set; }
