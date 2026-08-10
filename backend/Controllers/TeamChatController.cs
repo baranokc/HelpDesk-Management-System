@@ -34,6 +34,71 @@ public sealed class TeamChatController : ControllerBase
             cancellationToken));
     }
 
+    [HttpGet("leader-room/messages")]
+    [Authorize(Roles = Roles.TeamLeader)]
+    [ProducesResponseType(
+        typeof(TeamChatMessagesPageDto),
+        StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetTeamLeaderMessages(
+        [FromQuery] DateTime? before = null,
+        [FromQuery] int limit = 50,
+        CancellationToken cancellationToken = default)
+    {
+        if (CurrentUserId == Guid.Empty)
+            return Unauthorized(new { message = "Invalid user identity." });
+
+        try
+        {
+            return Ok(await _teamChatService.GetTeamLeaderMessagesAsync(
+                CurrentUserId,
+                before,
+                limit,
+                cancellationToken));
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                new { message = exception.Message });
+        }
+    }
+
+    [HttpPost("leader-room/messages")]
+    [Authorize(Roles = Roles.TeamLeader)]
+    [ProducesResponseType(
+        typeof(TeamChatMessageDto),
+        StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> SendTeamLeaderMessage(
+        [FromBody] CreateTeamChatMessageDto dto,
+        CancellationToken cancellationToken)
+    {
+        if (CurrentUserId == Guid.Empty)
+            return Unauthorized(new { message = "Invalid user identity." });
+
+        try
+        {
+            var message = await _teamChatService.SendTeamLeaderMessageAsync(
+                CurrentUserId,
+                dto,
+                cancellationToken);
+
+            return StatusCode(StatusCodes.Status201Created, message);
+        }
+        catch (ArgumentException exception)
+        {
+            return BadRequest(new { message = exception.Message });
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                new { message = exception.Message });
+        }
+    }
+
     [HttpGet("rooms/{teamId:guid}/messages")]
     [ProducesResponseType(
         typeof(TeamChatMessagesPageDto),

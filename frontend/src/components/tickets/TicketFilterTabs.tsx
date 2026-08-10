@@ -127,6 +127,8 @@ export function TicketFilters({ value, onApply }: TicketFiltersProps) {
     const cleared: TicketFilterDto = {
       pageNumber: 1,
       pageSize: localFilter.pageSize ?? 25,
+      sortBy: localFilter.sortBy,
+      sortDirection: localFilter.sortDirection
     };
     setLocalFilter(cleared);
     onApply(cleared);

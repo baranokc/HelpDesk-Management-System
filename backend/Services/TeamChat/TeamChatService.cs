@@ -87,7 +87,9 @@ public sealed class TeamChatService : ITeamChatService
         var normalizedLimit = Math.Clamp(limit, 1, 100);
         var query = _db.TeamChatMessages
             .AsNoTracking()
-            .Where(message => message.TeamId == teamId);
+            .Where(message =>
+                message.Audience == TeamChatAudience.Team &&
+                message.TeamId == teamId);
 
         if (before.HasValue)
         {
@@ -109,6 +111,7 @@ public sealed class TeamChatService : ITeamChatService
             {
                 Id = message.Id,
                 TeamId = message.TeamId,
+                Audience = nameof(TeamChatAudience.Team),
                 SenderId = message.SenderId,
                 SenderName =
                     message.Sender.Name + " " + message.Sender.LastName,
@@ -184,6 +187,7 @@ public sealed class TeamChatService : ITeamChatService
         {
             Id = Guid.NewGuid(),
             TeamId = teamId,
+            Audience = TeamChatAudience.Team,
             SenderId = userId,
             Content = content,
             CreatedAt = DateTime.UtcNow
@@ -196,6 +200,7 @@ public sealed class TeamChatService : ITeamChatService
         {
             Id = entity.Id,
             TeamId = entity.TeamId,
+            Audience = nameof(TeamChatAudience.Team),
             SenderId = sender.Id,
             SenderName = $"{sender.Name} {sender.LastName}".Trim(),
             SenderAvatarUrl = string.IsNullOrWhiteSpace(sender.AvatarFileName)
@@ -245,6 +250,172 @@ public sealed class TeamChatService : ITeamChatService
         return message;
     }
 
+    public async Task<TeamChatMessagesPageDto> GetTeamLeaderMessagesAsync(
+        Guid userId,
+        DateTime? before,
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        await EnsureTeamLeaderAsync(userId, cancellationToken);
+
+        var normalizedLimit = Math.Clamp(limit, 1, 100);
+        var query = _db.TeamChatMessages
+            .AsNoTracking()
+            .Where(message =>
+                message.Audience == TeamChatAudience.TeamLeaders &&
+                message.TeamId == null);
+
+        if (before.HasValue)
+        {
+            var beforeUtc = before.Value.Kind switch
+            {
+                DateTimeKind.Utc => before.Value,
+                DateTimeKind.Local => before.Value.ToUniversalTime(),
+                _ => DateTime.SpecifyKind(before.Value, DateTimeKind.Utc)
+            };
+
+            query = query.Where(message => message.CreatedAt < beforeUtc);
+        }
+
+        var rows = await query
+            .OrderByDescending(message => message.CreatedAt)
+            .ThenByDescending(message => message.Id)
+            .Take(normalizedLimit + 1)
+            .Select(message => new TeamChatMessageDto
+            {
+                Id = message.Id,
+                TeamId = null,
+                Audience = nameof(TeamChatAudience.TeamLeaders),
+                SenderId = message.SenderId,
+                SenderName =
+                    message.Sender.Name + " " + message.Sender.LastName,
+                SenderAvatarUrl = message.Sender.AvatarFileName == null
+                    ? null
+                    : "/uploads/avatars/" + message.Sender.AvatarFileName,
+                SenderRole = message.Sender.Role != null
+                    ? message.Sender.Role.Name
+                    : "User",
+                Content = message.Content,
+                CreatedAt = message.CreatedAt
+            })
+            .ToListAsync(cancellationToken);
+
+        var hasMore = rows.Count > normalizedLimit;
+        var items = rows
+            .Take(normalizedLimit)
+            .OrderBy(message => message.CreatedAt)
+            .ThenBy(message => message.Id)
+            .ToList();
+
+        return new TeamChatMessagesPageDto
+        {
+            Items = items,
+            HasMore = hasMore,
+            NextBefore = hasMore && items.Count > 0
+                ? items[0].CreatedAt
+                : null
+        };
+    }
+
+    public async Task<TeamChatMessageDto> SendTeamLeaderMessageAsync(
+        Guid userId,
+        CreateTeamChatMessageDto dto,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(dto);
+
+        var content = dto.Content?.Replace("\r\n", "\n").Trim()
+            ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(content))
+            throw new ArgumentException("Message content is required.");
+
+        if (content.Length > MaximumMessageLength)
+        {
+            throw new ArgumentException(
+                $"Message content cannot exceed {MaximumMessageLength} characters.");
+        }
+
+        await EnsureTeamLeaderAsync(userId, cancellationToken);
+
+        var sender = await _db.Users
+            .AsNoTracking()
+            .Where(user => user.Id == userId && user.IsActive)
+            .Select(user => new
+            {
+                user.Id,
+                user.Name,
+                user.LastName,
+                user.AvatarFileName,
+                RoleName = user.Role != null
+                    ? user.Role.Name
+                    : "User"
+            })
+            .SingleAsync(cancellationToken);
+
+        var entity = new TeamChatMessage
+        {
+            Id = Guid.NewGuid(),
+            TeamId = null,
+            Audience = TeamChatAudience.TeamLeaders,
+            SenderId = userId,
+            Content = content,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _db.TeamChatMessages.Add(entity);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        var message = new TeamChatMessageDto
+        {
+            Id = entity.Id,
+            TeamId = null,
+            Audience = nameof(TeamChatAudience.TeamLeaders),
+            SenderId = sender.Id,
+            SenderName = $"{sender.Name} {sender.LastName}".Trim(),
+            SenderAvatarUrl = string.IsNullOrWhiteSpace(sender.AvatarFileName)
+                ? null
+                : $"/uploads/avatars/{sender.AvatarFileName}",
+            SenderRole = sender.RoleName,
+            Content = entity.Content,
+            CreatedAt = entity.CreatedAt
+        };
+
+        var recipientUserIds = await _db.Users
+            .AsNoTracking()
+            .Where(user =>
+                user.IsActive &&
+                user.Role != null &&
+                user.Role.IsActive &&
+                user.Role.Name == Roles.TeamLeader)
+            .Select(user => user.Id)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        var recipientIds = recipientUserIds
+            .Select(recipientUserId => recipientUserId.ToString())
+            .ToList();
+
+        try
+        {
+            await _hubContext.Clients
+                .Users(recipientIds)
+                .SendAsync(
+                    TeamChatHub.TeamLeaderMessageReceivedEvent,
+                    message,
+                    cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(
+                exception,
+                "Team leader chat message {MessageId} was persisted but could not be delivered in real time.",
+                entity.Id);
+        }
+
+        return message;
+    }
+
     private async Task EnsureActiveMembershipAsync(
         Guid userId,
         Guid teamId,
@@ -268,6 +439,27 @@ public sealed class TeamChatService : ITeamChatService
         {
             throw new UnauthorizedAccessException(
                 "You can access only chats for teams where you are an active member.");
+        }
+    }
+
+    private async Task EnsureTeamLeaderAsync(
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        var isTeamLeader = await _db.Users
+            .AsNoTracking()
+            .AnyAsync(user =>
+                user.Id == userId &&
+                user.IsActive &&
+                user.Role != null &&
+                user.Role.IsActive &&
+                user.Role.Name == Roles.TeamLeader,
+                cancellationToken);
+
+        if (!isTeamLeader)
+        {
+            throw new UnauthorizedAccessException(
+                "Only active team leaders can access this room.");
         }
     }
 }

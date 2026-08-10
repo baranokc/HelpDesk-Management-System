@@ -6,9 +6,12 @@ export interface TeamChatRoomDto {
   activeMemberCount: number;
 }
 
+export type TeamChatAudience = "Team" | "TeamLeaders";
+
 export interface TeamChatMessageDto {
   id: string;
-  teamId: string;
+  teamId?: string | null;
+  audience: TeamChatAudience;
   senderId: string;
   senderName: string;
   senderAvatarUrl?: string | null;

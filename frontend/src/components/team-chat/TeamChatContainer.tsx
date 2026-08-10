@@ -38,6 +38,7 @@ import type {
 type ConnectionStatus = "connecting" | "connected" | "reconnecting" | "offline";
 
 const MAXIMUM_MESSAGE_LENGTH = 2000;
+const TEAM_LEADER_ROOM_ID = "team-leaders";
 
 function getTeamChatHubUrl(): string {
   const configuredHubUrl = process.env.NEXT_PUBLIC_TEAM_CHAT_SIGNALR_URL;
@@ -105,10 +106,11 @@ function TeamChatSkeleton() {
 export function TeamChatContainer() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const isTeamLeader = user?.role === "TeamLeader";
   const canAccessChat =
-    user?.role === "TeamLeader" || user?.role === "SupportAgent";
+    isTeamLeader || user?.role === "SupportAgent";
   const [rooms, setRooms] = useState<TeamChatRoomDto[]>([]);
-  const [selectedTeamId, setSelectedTeamId] = useState("");
+  const [selectedRoomId, setSelectedRoomId] = useState("");
   const [messages, setMessages] = useState<TeamChatMessageDto[]>([]);
   const [draft, setDraft] = useState("");
   const [roomsLoading, setRoomsLoading] = useState(true);
@@ -118,21 +120,29 @@ export function TeamChatContainer() {
   const [hasMore, setHasMore] = useState(false);
   const [nextBefore, setNextBefore] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [connectionStatus, setConnectionStatus] =
-    useState<ConnectionStatus>("connecting");
-  const selectedTeamIdRef = useRef(selectedTeamId);
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("connecting");
+  const selectedRoomIdRef = useRef(selectedRoomId);
   const messagesViewportRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const shouldScrollToBottomRef = useRef(true);
 
   const activeRoom = useMemo(
-    () => rooms.find((room) => room.teamId === selectedTeamId) ?? null,
-    [rooms, selectedTeamId],
+    () => rooms.find((room) => room.teamId === selectedRoomId) ?? null,
+    [rooms, selectedRoomId],
   );
+  const isTeamLeaderRoom =
+    isTeamLeader && selectedRoomId === TEAM_LEADER_ROOM_ID;
+  const availableRoomCount = rooms.length + (isTeamLeader ? 1 : 0);
+  const activeRoomName = isTeamLeaderRoom
+    ? "Team Leaders"
+    : activeRoom?.teamName;
+  const activeRoomDescription = isTeamLeaderRoom
+    ? "Private leadership room shared by active team leaders."
+    : activeRoom?.teamDescription || "Private space for your team.";
 
   useEffect(() => {
-    selectedTeamIdRef.current = selectedTeamId;
-  }, [selectedTeamId]);
+    selectedRoomIdRef.current = selectedRoomId;
+  }, [selectedRoomId]);
 
   useEffect(() => {
     if (!authLoading && !canAccessChat) {
@@ -151,11 +161,16 @@ export function TeamChatContainer() {
         if (cancelled) return;
 
         setRooms(loadedRooms);
-        setSelectedTeamId((current) =>
-          loadedRooms.some((room) => room.teamId === current)
-            ? current
-            : (loadedRooms[0]?.teamId ?? ""),
-        );
+        setSelectedRoomId((current) => {
+          const currentRoomStillExists =
+            (isTeamLeader && current === TEAM_LEADER_ROOM_ID) ||
+            loadedRooms.some((room) => room.teamId === current);
+
+          if (currentRoomStillExists) return current;
+          if (isTeamLeader) return TEAM_LEADER_ROOM_ID;
+
+          return loadedRooms[0]?.teamId ?? "";
+        });
       })
       .catch((requestError: unknown) => {
         if (!cancelled) {
@@ -171,10 +186,10 @@ export function TeamChatContainer() {
     return () => {
       cancelled = true;
     };
-  }, [authLoading, canAccessChat]);
+  }, [authLoading, canAccessChat, isTeamLeader]);
 
   useEffect(() => {
-    if (!selectedTeamId) {
+    if (!selectedRoomId) {
       Promise.resolve().then(() => {
         setMessages([]);
         setHasMore(false);
@@ -191,8 +206,11 @@ export function TeamChatContainer() {
       }
     });
 
-    void teamChatService
-      .getMessages(selectedTeamId)
+    const messagesRequest = isTeamLeaderRoom
+      ? teamChatService.getTeamLeaderMessages()
+      : teamChatService.getMessages(selectedRoomId);
+
+    void messagesRequest
       .then((page) => {
         if (cancelled) return;
 
@@ -216,7 +234,7 @@ export function TeamChatContainer() {
     return () => {
       cancelled = true;
     };
-  }, [selectedTeamId]);
+  }, [isTeamLeaderRoom, selectedRoomId]);
 
   useEffect(() => {
     if (authLoading || !canAccessChat || !authService.getToken()) return;
@@ -234,11 +252,31 @@ export function TeamChatContainer() {
       .build();
 
     connection.on("TeamChatMessageReceived", (message: TeamChatMessageDto) => {
-      if (message.teamId !== selectedTeamIdRef.current) return;
+      if (
+        message.audience !== "Team" ||
+        message.teamId !== selectedRoomIdRef.current
+      ) {
+        return;
+      }
 
       shouldScrollToBottomRef.current = true;
       setMessages((current) => mergeMessages(current, [message]));
     });
+
+    connection.on(
+      "TeamLeaderChatMessageReceived",
+      (message: TeamChatMessageDto) => {
+        if (
+          message.audience !== "TeamLeaders" ||
+          selectedRoomIdRef.current !== TEAM_LEADER_ROOM_ID
+        ) {
+          return;
+        }
+
+        shouldScrollToBottomRef.current = true;
+        setMessages((current) => mergeMessages(current, [message]));
+      },
+    );
 
     connection.onreconnecting(() => {
       if (!disposed) setConnectionStatus("reconnecting");
@@ -252,19 +290,37 @@ export function TeamChatContainer() {
       if (!disposed) setConnectionStatus("offline");
     });
 
-    void connection
-      .start()
-      .then(() => {
-        if (!disposed) setConnectionStatus("connected");
-      })
-      .catch(() => {
-        if (!disposed) setConnectionStatus("offline");
-      });
+    const startTimer = window.setTimeout(() => {
+      if (disposed) return;
+
+      void connection
+        .start()
+        .then(async () => {
+          if (disposed) {
+            if (connection.state !== HubConnectionState.Disconnected) {
+              await connection.stop();
+            }
+            return;
+          }
+
+          setConnectionStatus("connected");
+        })
+        .catch(() => {
+          if (!disposed) {
+            setConnectionStatus("offline");
+          }
+        });
+    }, 0);
 
     return () => {
       disposed = true;
-      if (connection?.state !== HubConnectionState.Disconnected) {
-        void connection?.stop();
+      window.clearTimeout(startTimer);
+
+      if (
+        connection.state === HubConnectionState.Connected ||
+        connection.state === HubConnectionState.Reconnecting
+      ) {
+        void connection.stop();
       }
     };
   }, [authLoading, canAccessChat]);
@@ -277,7 +333,7 @@ export function TeamChatContainer() {
   }, [messages]);
 
   const handleLoadOlder = async () => {
-    if (!selectedTeamId || !nextBefore || loadingOlder) return;
+    if (!selectedRoomId || !nextBefore || loadingOlder) return;
 
     const viewport = messagesViewportRef.current;
     const previousScrollHeight = viewport?.scrollHeight ?? 0;
@@ -285,10 +341,9 @@ export function TeamChatContainer() {
     setError(null);
 
     try {
-      const page = await teamChatService.getMessages(
-        selectedTeamId,
-        nextBefore,
-      );
+      const page = isTeamLeaderRoom
+        ? await teamChatService.getTeamLeaderMessages(nextBefore)
+        : await teamChatService.getMessages(selectedRoomId, nextBefore);
 
       shouldScrollToBottomRef.current = false;
       setMessages((current) => mergeMessages(page.items, current));
@@ -314,15 +369,15 @@ export function TeamChatContainer() {
 
   const handleSend = async () => {
     const content = draft.trim();
-    if (!selectedTeamId || !content || sending) return;
+    if (!selectedRoomId || !content || sending) return;
 
     setSending(true);
     setError(null);
 
     try {
-      const message = await teamChatService.sendMessage(selectedTeamId, {
-        content,
-      });
+      const message = isTeamLeaderRoom
+        ? await teamChatService.sendTeamLeaderMessage({ content })
+        : await teamChatService.sendMessage(selectedRoomId, { content });
 
       shouldScrollToBottomRef.current = true;
       setMessages((current) => mergeMessages(current, [message]));
@@ -356,7 +411,7 @@ export function TeamChatContainer() {
             Team Chat
           </h1>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            Private conversations shared only with active members of your team.
+            Private conversations for teams and their leaders.
           </p>
         </div>
 
@@ -384,7 +439,7 @@ export function TeamChatContainer() {
 
       {error && <Alert variant="error">{error}</Alert>}
 
-      {rooms.length === 0 ? (
+      {availableRoomCount === 0 ? (
         <div className="flex min-h-96 flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white px-6 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-indigo-500/20 bg-indigo-500/10 text-indigo-500 dark:text-violet-400">
             <UsersRound className="h-7 w-7" />
@@ -402,16 +457,47 @@ export function TeamChatContainer() {
           <aside className="border-b border-slate-200 bg-slate-50/70 dark:border-slate-800 dark:bg-slate-950/30 lg:border-b-0 lg:border-r">
             <div className="border-b border-slate-200 px-4 py-4 dark:border-slate-800">
               <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                Your Teams
+                Chat Rooms
               </p>
               <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
-                {rooms.length} available room(s)
+                {availableRoomCount} available room(s)
               </p>
             </div>
 
             <div className="flex gap-2 overflow-x-auto p-3 lg:block lg:space-y-2 lg:overflow-visible">
+              {isTeamLeader && (
+                <button
+                  className={`min-w-56 rounded-xl border p-3 text-left transition-all lg:w-full lg:min-w-0 ${
+                    isTeamLeaderRoom
+                      ? "border-violet-300 bg-violet-50 text-violet-950 shadow-sm dark:border-violet-400/50 dark:bg-violet-500/15 dark:text-white"
+                      : "border-violet-200/70 bg-violet-50/50 text-slate-700 hover:border-violet-300 hover:bg-violet-50 dark:border-violet-500/20 dark:bg-violet-500/5 dark:text-slate-300 dark:hover:border-violet-500/40 dark:hover:bg-violet-500/10"
+                  }`}
+                  onClick={() => setSelectedRoomId(TEAM_LEADER_ROOM_ID)}
+                  type="button"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="flex items-center gap-1.5 truncate text-sm font-bold">
+                        <ShieldCheck className="h-4 w-4 shrink-0 text-violet-600 dark:text-violet-300" />
+                        Team Leaders
+                      </p>
+                      <p className="mt-1 truncate text-[11px] text-violet-600/80 dark:text-violet-300/80">
+                        Leadership Room
+                      </p>
+                    </div>
+                    {isTeamLeaderRoom && (
+                      <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-violet-500 dark:bg-violet-300" />
+                    )}
+                  </div>
+                  <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-semibold text-violet-600 dark:text-violet-300">
+                    <ShieldCheck className="h-3 w-3" />
+                    Team leaders only
+                  </span>
+                </button>
+              )}
+
               {rooms.map((room) => {
-                const isActive = room.teamId === selectedTeamId;
+                const isActive = room.teamId === selectedRoomId;
 
                 return (
                   <button
@@ -421,7 +507,7 @@ export function TeamChatContainer() {
                         : "border-transparent bg-white/70 text-slate-700 hover:border-slate-200 hover:bg-white dark:bg-slate-900/40 dark:text-slate-300 dark:hover:border-violet-500/30 dark:hover:bg-violet-500/10"
                     }`}
                     key={room.teamId}
-                    onClick={() => setSelectedTeamId(room.teamId)}
+                    onClick={() => setSelectedRoomId(room.teamId)}
                     type="button"
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -451,16 +537,21 @@ export function TeamChatContainer() {
             <header className="flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-4 dark:border-slate-800">
               <div className="min-w-0">
                 <h2 className="truncate text-base font-bold text-slate-900 dark:text-white">
-                  {activeRoom?.teamName}
+                  {activeRoomName}
                 </h2>
                 <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
-                  {activeRoom?.teamDescription ||
-                    "Private space for your team."}
+                  {activeRoomDescription}
                 </p>
               </div>
-              <span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+              <span
+                className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[10px] font-bold ${
+                  isTeamLeaderRoom
+                    ? "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-300"
+                    : "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                }`}
+              >
                 <ShieldCheck className="h-3.5 w-3.5 text-indigo-500 dark:text-violet-400" />
-                Team only
+                {isTeamLeaderRoom ? "Leaders only" : "Team only"}
               </span>
             </header>
 
@@ -499,7 +590,9 @@ export function TeamChatContainer() {
                     Start the conversation
                   </h3>
                   <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                    Messages posted here are visible only to this team.
+                    {isTeamLeaderRoom
+                      ? "Messages posted here are visible only to active team leaders."
+                      : "Messages posted here are visible only to this team."}
                   </p>
                 </div>
               ) : (
@@ -590,7 +683,7 @@ export function TeamChatContainer() {
                   maxLength={MAXIMUM_MESSAGE_LENGTH}
                   onChange={(event) => setDraft(event.target.value)}
                   onKeyDown={handleComposerKeyDown}
-                  placeholder={`Message ${activeRoom?.teamName ?? "your team"}...`}
+                  placeholder={`Message ${activeRoomName ?? "your team"}...`}
                   rows={2}
                   value={draft}
                 />

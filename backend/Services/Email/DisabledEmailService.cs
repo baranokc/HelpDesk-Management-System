@@ -10,4 +10,11 @@ public sealed class DisabledEmailService : IEmailService
     {
         return Task.CompletedTask;
     }
+    public Task SendRegistrationEmailAsync(
+        string recipientEmail,
+        string recipientName,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.CompletedTask;
+}
 }

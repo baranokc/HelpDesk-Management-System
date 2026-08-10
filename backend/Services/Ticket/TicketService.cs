@@ -121,9 +121,12 @@ public class TicketService : ITicketService
             "Closed",
             "Cancelled");
 
-        var items = await query
-            .OrderByDescending(t => t.TicketNumber)
-            .ThenByDescending(t => t.CreatedAt)
+        var sortedQuery = ApplySorting(
+            query,
+            filter.SortBy,
+            filter.SortDirection);
+
+        var items = await sortedQuery
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .Select(t => new TicketListDto
@@ -166,6 +169,52 @@ public class TicketService : ITicketService
             openCount,
             inProgressCount,
             completedCount);
+    }
+
+    private static IOrderedQueryable<Entities.Ticket> ApplySorting(
+        IQueryable<Entities.Ticket> query,
+        string sortBy,
+        string sortDirection)
+    {
+        var descending = !string.Equals(
+            sortDirection,
+            "asc",
+            StringComparison.OrdinalIgnoreCase);
+
+        return (sortBy?.Trim().ToLowerInvariant() ?? "ticketnumber") switch
+        {
+            "title" => descending
+                ? query.OrderByDescending(ticket => ticket.TicketTitle)
+                    .ThenByDescending(ticket => ticket.TicketNumber)
+                : query.OrderBy(ticket => ticket.TicketTitle)
+                    .ThenBy(ticket => ticket.TicketNumber),
+
+            "status" => descending
+                ? query.OrderByDescending(ticket => ticket.Status.Name)
+                    .ThenByDescending(ticket => ticket.TicketNumber)
+                : query.OrderBy(ticket => ticket.Status.Name)
+                    .ThenBy(ticket => ticket.TicketNumber),
+
+            "priority" => descending
+                ? query.OrderBy(ticket => ticket.Priority.ResponseTime)
+                    .ThenByDescending(ticket => ticket.TicketNumber)
+                : query.OrderByDescending(ticket => ticket.Priority.ResponseTime)
+                    .ThenBy(ticket => ticket.TicketNumber),
+
+            "createdby" => descending
+                ? query.OrderByDescending(ticket => ticket.CreatedBy.Name)
+                    .ThenByDescending(ticket => ticket.CreatedBy.LastName)
+                    .ThenByDescending(ticket => ticket.TicketNumber)
+                : query.OrderBy(ticket => ticket.CreatedBy.Name)
+                    .ThenBy(ticket => ticket.CreatedBy.LastName)
+                    .ThenBy(ticket => ticket.TicketNumber),
+
+            _ => descending
+                ? query.OrderByDescending(ticket => ticket.TicketNumber)
+                    .ThenByDescending(ticket => ticket.CreatedAt)
+                : query.OrderBy(ticket => ticket.TicketNumber)
+                    .ThenBy(ticket => ticket.CreatedAt)
+        };
     }
 
     public async Task<TicketDetailDto?> GetTicketByAsync(

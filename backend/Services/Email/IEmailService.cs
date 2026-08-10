@@ -7,4 +7,9 @@ public interface IEmailService
         string recipientName,
         string resetLink,
         CancellationToken cancellationToken = default);
+    
+    Task SendRegistrationEmailAsync(
+    string recipientEmail,
+    string recipientName,
+    CancellationToken cancellationToken = default);
 }

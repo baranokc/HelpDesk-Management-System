@@ -62,4 +62,62 @@ public sealed class SmtpEmailService : IEmailService
 
         await client.SendMailAsync(message, cancellationToken);
     }
+
+    public async Task SendRegistrationEmailAsync(
+        string recipientEmail,
+        string recipientName,
+        CancellationToken cancellationToken = default)
+    {
+        var encodedName = HtmlEncoder.Default.Encode(recipientName);
+
+        using var message = new MailMessage
+        {
+            From = new MailAddress(
+                _settings.FromAddress,
+                _settings.FromName),
+            Subject = "Your Help Desk account has been created",
+            IsBodyHtml = true,
+            Body = $$"""
+                <!DOCTYPE html>
+                <html lang="en">
+                <body style="font-family:Arial,sans-serif;background:#f8fafc;padding:24px;">
+                    <div style="max-width:560px;margin:auto;background:#ffffff;padding:32px;border:1px solid #e2e8f0;border-radius:12px;">
+                        <h2 style="color:#0f172a;">
+                            Welcome to Help Desk
+                        </h2>
+
+                        <p style="color:#475569;">
+                            Hello {{encodedName}},
+                        </p>
+
+                        <p style="color:#475569;">
+                            Your Help Desk account has been created successfully.
+                        </p>
+
+                        <p style="color:#64748b;font-size:14px;">
+                            You can now sign in using your registered email address.
+                        </p>
+                    </div>
+                </body>
+                </html>
+                """
+        };
+
+        message.To.Add(
+            new MailAddress(recipientEmail, recipientName));
+
+        using var client = new SmtpClient(
+            _settings.Host,
+            _settings.Port)
+        {
+            EnableSsl = _settings.UseStartTls,
+            Credentials = new NetworkCredential(
+                _settings.Username,
+                _settings.Password)
+        };
+
+        await client.SendMailAsync(
+            message,
+            cancellationToken);
+    }
 }

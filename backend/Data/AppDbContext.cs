@@ -292,9 +292,20 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<TeamChatMessage>(entity =>
         {
+            entity.ToTable(
+                "TeamChatMessages",
+                table => table.HasCheckConstraint(
+                    "CK_TeamChatMessages_Audience",
+                    "(\"Audience\" = 0 AND \"TeamId\" IS NOT NULL) OR " +
+                    "(\"Audience\" = 1 AND \"TeamId\" IS NULL)"));
+
             entity.Property(message => message.Content)
                 .HasMaxLength(2000)
                 .IsRequired();
+
+            entity.Property(message => message.Audience)
+                .HasConversion<int>()
+                .HasDefaultValue(TeamChatAudience.Team);
 
             entity.HasOne(message => message.Team)
                 .WithMany(team => team.ChatMessages)
@@ -309,6 +320,12 @@ public class AppDbContext : DbContext
             entity.HasIndex(message => new
                 {
                     message.TeamId,
+                    message.CreatedAt
+                });
+
+            entity.HasIndex(message => new
+                {
+                    message.Audience,
                     message.CreatedAt
                 });
         });

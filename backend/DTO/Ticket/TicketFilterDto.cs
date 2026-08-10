@@ -10,6 +10,8 @@ public class TicketFilterDto
     public Guid? ImpactLevelId {get; set; }
     public DateTime? CreatedFrom {get; set; }
     public DateTime? CreatedTo {get; set; }
+    public string SortBy { get; set; } = "ticketNumber";
+    public string SortDirection { get; set; } = "desc";
     public int PageNumber {get; set; } = 1;
     public int PageSize {get; set; } = 25;
 }
