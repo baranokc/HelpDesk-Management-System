@@ -47,8 +47,8 @@ export function Avatar({
 
   const classes = [
     "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full",
-    // DÜZELTME: bg-blue-600 yerine tatlı mor-indigo gradyanı eklendi
-    "bg-gradient-to-br from-indigo-500 to-purple-600 font-black text-white ring-1 ring-slate-200 dark:ring-slate-700/80 shadow-sm",
+    // Light mode: Emerald -> Teal -> Amber | Dark mode: Saf Indigo -> Purple (yeşil sızıntısı engellendi)
+    "bg-gradient-to-br from-emerald-600 via-teal-600 to-amber-600 dark:from-indigo-500 dark:via-indigo-600 dark:to-purple-600 font-black text-white ring-1 ring-stone-200 dark:ring-slate-700/80 shadow-sm",
     sizeClasses[size],
     className,
   ]
