@@ -10,13 +10,12 @@ function getUrgencyTextColor(urgencyName?: string): string {
   if (
     u.includes("critical") ||
     u.includes("kritik") ||
+    u.includes("urgent") ||
     u.includes("high") ||
-    u.includes("yüksek") ||
-    u.includes("urgent")
+    u.includes("yüksek")
   ) {
     return "text-rose-600 dark:text-rose-400";
   }
-
   if (
     u.includes("medium") ||
     u.includes("orta") ||
@@ -24,7 +23,6 @@ function getUrgencyTextColor(urgencyName?: string): string {
   ) {
     return "text-amber-600 dark:text-amber-400";
   }
-
   if (u.includes("low") || u.includes("düşük")) {
     return "text-emerald-600 dark:text-emerald-400";
   }
@@ -38,32 +36,35 @@ export function TicketPriorityBadge({
 }: TicketPriorityBadgeProps) {
   const p = priority.trim().toLowerCase();
 
-  const isCritical = p.includes("critical") || p.includes("kritik");
+  const isCritical = p.includes("critical") || p.includes("kritik") || p.includes("urgent");
   const isHigh = p.includes("high") || p.includes("yüksek");
   const isMedium = p.includes("medium") || p.includes("orta");
   const isLow = p.includes("low") || p.includes("düşük");
 
-  // Light Mode ve Dark Mode ayrımlı sınıflar
   let badgeStyle =
-    "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-500/10 dark:text-slate-400 dark:border-slate-700/50";
-  let dotStyle = "bg-slate-400 dark:bg-slate-500";
+    "bg-stone-100 text-stone-700 border-stone-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700";
+  let dotStyle = "bg-stone-400 dark:bg-slate-500";
 
   if (isCritical) {
+    // 🚨 Critical / Urgent: Parlayan Neon Kırmızı + Pulse Efekti
     badgeStyle =
-      "bg-rose-100 text-rose-800 border-rose-300 shadow-sm shadow-rose-200/50 animate-pulse dark:bg-rose-500/20 dark:text-rose-200 dark:border-rose-500/60 dark:shadow-[0_0_12px_rgba(244,63,94,0.4)]";
-    dotStyle = "bg-rose-600 dark:bg-rose-500";
+      "bg-rose-500/15 text-rose-800 border-rose-600/40 animate-pulse shadow-sm dark:bg-rose-500/25 dark:text-rose-200 dark:border-rose-400/80 dark:shadow-[0_0_15px_rgba(244,63,94,0.45)] font-black";
+    dotStyle = "bg-rose-600 dark:bg-rose-400";
   } else if (isHigh) {
+    // 🟥 High: Critical ile aynı kırmızı tonu (Pulse yok)
     badgeStyle =
-      "bg-rose-50 text-rose-700 border-rose-200/80 dark:bg-rose-500/10 dark:text-rose-300 dark:border-rose-500/20";
-    dotStyle = "bg-rose-500 dark:bg-rose-400";
+      "bg-rose-500/15 text-rose-800 border-rose-600/30 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-400/50 font-bold";
+    dotStyle = "bg-rose-600 dark:bg-rose-400";
   } else if (isMedium) {
+    // 🟨 Medium: Sarı / Amber
     badgeStyle =
-      "bg-amber-50 text-amber-800 border-amber-200/80 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/20";
-    dotStyle = "bg-amber-500 dark:bg-amber-400";
+      "bg-amber-500/15 text-amber-800 border-amber-600/30 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-400/50 font-bold";
+    dotStyle = "bg-amber-600 dark:bg-amber-400";
   } else if (isLow) {
+    // 🟩 Low: Yeşil
     badgeStyle =
-      "bg-emerald-50 text-emerald-800 border-emerald-200/80 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/20";
-    dotStyle = "bg-emerald-500 dark:bg-emerald-400";
+      "bg-emerald-500/15 text-emerald-800 border-emerald-600/30 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-400/50 font-semibold";
+    dotStyle = "bg-emerald-600 dark:bg-emerald-400";
   }
 
   const urgencyColorClass = getUrgencyTextColor(urgency);
@@ -71,9 +72,8 @@ export function TicketPriorityBadge({
   return (
     <div className="relative group/tooltip inline-flex items-center justify-center">
       <span
-        className={`inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${badgeStyle} w-28 shrink-0 cursor-help transition-all text-center`}
+        className={`inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-xl text-xs border ${badgeStyle} w-28 shrink-0 cursor-help transition-all text-center shadow-sm`}
       >
-        {/* Hepsine eklenen renkli durum noktaları */}
         <span className="relative flex h-1.5 w-1.5 shrink-0">
           {isCritical && (
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75" />
@@ -86,14 +86,13 @@ export function TicketPriorityBadge({
         <span className="truncate">{priority}</span>
       </span>
 
-      {/* Light & Dark Uyumlu Tooltip */}
       {urgency && (
         <div className="absolute bottom-full mb-2 hidden group-hover/tooltip:flex flex-col items-center pointer-events-none z-30 whitespace-nowrap animate-in fade-in zoom-in-95 duration-150">
-          <div className="bg-slate-900 text-slate-100 dark:bg-slate-800 dark:text-slate-200 text-[11px] font-medium px-2.5 py-1 rounded-lg border border-slate-700/80 shadow-xl flex items-center gap-1.5 backdrop-blur-md">
-            <span className="text-slate-400">Urgency:</span>
-            <span className={`font-bold ${urgencyColorClass}`}>{urgency}</span>
+          <div className="bg-stone-900 text-stone-100 dark:bg-slate-900 dark:text-slate-200 text-[11px] font-bold px-3 py-1.5 rounded-xl border border-stone-700/80 dark:border-purple-900/40 shadow-2xl flex items-center gap-1.5 backdrop-blur-xl">
+            <span className="text-stone-400 dark:text-slate-400 font-medium">Urgency:</span>
+            <span className={`font-black ${urgencyColorClass}`}>{urgency}</span>
           </div>
-          <div className="w-2 h-2 bg-slate-900 dark:bg-slate-800 border-r border-b border-slate-700/80 rotate-45 -mt-1" />
+          <div className="w-2 h-2 bg-stone-900 dark:bg-slate-900 border-r border-b border-stone-700/80 dark:border-purple-900/40 rotate-45 -mt-1" />
         </div>
       )}
     </div>
