@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { 
   Users, 
   Shield, 
@@ -27,6 +28,29 @@ interface AdminStats {
   systemStatus: string;
 }
 
+// Framer Motion Animasyon Varyantları (as const eklendi)
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.08,
+    },
+  },
+} as const;
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.35,
+      ease: "easeOut",
+    },
+  },
+} as const;
+
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -50,14 +74,19 @@ export default function AdminDashboardPage() {
   const isHealthy = stats?.systemStatus === "Healthy";
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-8 max-w-7xl mx-auto px-1">
+      {/* HEADER */}
+      <motion.div 
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+      >
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-2xl font-black tracking-tight text-stone-900 dark:text-white">
             Admin Overview
           </h1>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+          <p className="mt-1 text-xs font-medium text-stone-500 dark:text-slate-400">
             Manage system configurations, access rights, and global metrics.
           </p>
         </div>
@@ -65,95 +94,100 @@ export default function AdminDashboardPage() {
         <button
           onClick={() => void fetchStats()}
           disabled={loading}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800/80 self-start sm:self-auto"
+          className="inline-flex items-center gap-2 rounded-xl border border-stone-300/80 bg-stone-100 px-3.5 py-2 text-xs font-bold text-stone-800 shadow-sm transition-all hover:border-emerald-600/40 hover:bg-stone-200 dark:border-purple-900/40 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-purple-500/50 dark:hover:bg-slate-700 self-start sm:self-auto active:scale-95"
         >
-          <RotateCw className={`h-3.5 w-3.5 ${loading ? "animate-spin text-indigo-500" : ""}`} />
+          <RotateCw className={`h-3.5 w-3.5 ${loading ? "animate-spin text-emerald-600 dark:text-pink-400" : ""}`} />
           <span>Refresh Stats</span>
         </button>
-      </div>
+      </motion.div>
 
-      {/* METRİK KARTLARI */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Total Users */}
-        <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-slate-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700">
+      {/* METRİK KARTLARI (SIRA SIRALANAN ANİMASYONLU GRID) */}
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
+      >
+        {/* Total Users - Indigo / Pink */}
+        <motion.div variants={cardVariants} className="relative overflow-hidden rounded-2xl border border-indigo-200/80 bg-indigo-50/30 p-5 shadow-lg backdrop-blur-2xl transition-all hover:border-indigo-400 hover:shadow-indigo-500/10 dark:border-purple-900/40 dark:bg-slate-900/80 dark:hover:border-pink-500/50">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-indigo-900/70 dark:text-slate-400">
               Total Users
             </span>
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400">
-              <Users className="h-5 w-5" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500/15 text-indigo-700 dark:bg-pink-500/20 dark:text-pink-300 border border-indigo-500/20 dark:border-pink-500/30">
+              <Users className="h-4 w-4" />
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-3xl font-black text-slate-900 dark:text-white">
+            <div className="text-3xl font-black text-indigo-950 dark:text-white">
               {loading ? "..." : stats?.totalUsers ?? 0}
             </div>
-            <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+            <p className="mt-1 flex items-center gap-1 text-xs font-bold text-indigo-700 dark:text-pink-300">
               {loading ? "Loading..." : `+${stats?.usersThisWeek ?? 0} this week`}
             </p>
           </div>
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-indigo-500" />
-        </div>
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-purple-600 dark:from-pink-500 dark:to-purple-500" />
+        </motion.div>
 
-        {/* Active Teams */}
-        <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-slate-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700">
+        {/* Active Teams - Blue / Violet */}
+        <motion.div variants={cardVariants} className="relative overflow-hidden rounded-2xl border border-blue-200/80 bg-blue-50/30 p-5 shadow-lg backdrop-blur-2xl transition-all hover:border-blue-400 hover:shadow-blue-500/10 dark:border-purple-900/40 dark:bg-slate-900/80 dark:hover:border-indigo-500/50">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-900/70 dark:text-slate-400">
               Active Teams
             </span>
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
-              <Shield className="h-5 w-5" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/15 text-blue-700 dark:bg-indigo-500/20 dark:text-indigo-300 border border-blue-500/20 dark:border-indigo-500/30">
+              <Shield className="h-4 w-4" />
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-3xl font-black text-slate-900 dark:text-white">
+            <div className="text-3xl font-black text-blue-950 dark:text-white">
               {loading ? "..." : stats?.activeTeams ?? 0}
             </div>
-            <p className="mt-1 text-xs font-medium text-slate-500 dark:text-slate-400">
-              Support & Dev teams
+            <p className="mt-1 text-xs font-semibold text-blue-800/80 dark:text-slate-400">
+              Support & Dev units
             </p>
           </div>
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-500" />
-        </div>
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-teal-500 dark:from-indigo-500 dark:to-violet-500" />
+        </motion.div>
 
-        {/* Categories */}
-        <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-slate-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700">
+        {/* Categories - Amber */}
+        <motion.div variants={cardVariants} className="relative overflow-hidden rounded-2xl border border-amber-200/80 bg-amber-50/30 p-5 shadow-lg backdrop-blur-2xl transition-all hover:border-amber-400 hover:shadow-amber-500/10 dark:border-purple-900/40 dark:bg-slate-900/80 dark:hover:border-amber-500/50">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-900/70 dark:text-slate-400">
               Categories
             </span>
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400">
-              <Tag className="h-5 w-5" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/15 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300 border border-amber-500/20 dark:border-amber-500/30">
+              <Tag className="h-4 w-4" />
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-3xl font-black text-slate-900 dark:text-white">
+            <div className="text-3xl font-black text-amber-950 dark:text-white">
               {loading ? "..." : stats?.categoriesCount ?? 0}
             </div>
-            <p className="mt-1 text-xs font-medium text-slate-500 dark:text-slate-400">
+            <p className="mt-1 text-xs font-semibold text-amber-800/80 dark:text-slate-400">
               {loading ? "Loading..." : `${stats?.subcategoriesCount ?? 0} Subcategories`}
             </p>
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-amber-500" />
-        </div>
+        </motion.div>
 
-        {/* System Status */}
-        <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-slate-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700">
+        {/* System Status - Emerald / Rose */}
+        <motion.div variants={cardVariants} className="relative overflow-hidden rounded-2xl border border-emerald-200/80 bg-emerald-50/30 p-5 shadow-lg backdrop-blur-2xl transition-all hover:border-emerald-400 hover:shadow-emerald-500/10 dark:border-purple-900/40 dark:bg-slate-900/80 dark:hover:border-purple-500/50">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-900/70 dark:text-slate-400">
               System Status
             </span>
-            <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${
+            <div className={`flex h-9 w-9 items-center justify-center rounded-xl border ${
               isHealthy 
-                ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400" 
-                : "bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400"
+                ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30" 
+                : "bg-rose-500/15 text-rose-700 border-rose-500/20 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/30"
             }`}>
-              {isHealthy ? <SaveCheck className="h-5 w-5" /> : <ServerOff className="h-5 w-5" />}
+              {isHealthy ? <SaveCheck className="h-4 w-4" /> : <ServerOff className="h-4 w-4" />}
             </div>
           </div>
           <div className="mt-3">
             <div className="flex items-center gap-2">
-              <span className="text-3xl font-black text-slate-900 dark:text-white">
+              <span className="text-3xl font-black text-emerald-950 dark:text-white">
                 {loading ? "..." : (stats?.systemStatus ?? "Unknown")}
               </span>
               {!loading && (
@@ -167,210 +201,227 @@ export default function AdminDashboardPage() {
                 </span>
               )}
             </div>
-            <p className="mt-1 text-xs font-medium text-slate-500 dark:text-slate-400">
+            <p className="mt-1 text-xs font-semibold text-emerald-800/80 dark:text-slate-400">
               API & DB Connected
             </p>
           </div>
           <div className={`absolute bottom-0 left-0 right-0 h-1 ${isHealthy ? "bg-emerald-500" : "bg-rose-500"}`} />
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
-      {/* MANAGEMENT HUB */}
+      {/* MANAGEMENT HUB (ANİMASYONLU GRID) */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-slate-400 font-mono">
             Management Hub
           </h2>
-          <span className="text-xs text-slate-400 font-medium">Quick administrative actions</span>
+          <span className="text-[11px] text-stone-400 dark:text-slate-500 font-medium">Quick administrative actions</span>
         </div>
         
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {/* User Management */}
-          <Link
-            href="/admin/users"
-            className="group relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-indigo-500/50 dark:hover:shadow-indigo-500/10"
-          >
-            <div>
-              <div className="flex items-center justify-between">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 transition-transform duration-300 group-hover:scale-110 dark:bg-indigo-500/10 dark:text-indigo-400">
-                  <UserCheck className="h-6 w-6" />
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3"
+        >
+          {/* User Management - Indigo/Pink */}
+          <motion.div variants={cardVariants}>
+            <Link
+              href="/admin/users"
+              className="group relative flex flex-col justify-between h-full rounded-3xl border border-indigo-200/80 bg-white/90 p-6 shadow-xl backdrop-blur-2xl transition-all duration-300 hover:-translate-y-1 hover:border-indigo-500/60 hover:shadow-indigo-500/10 dark:border-purple-900/40 dark:bg-slate-900/80 dark:hover:border-pink-500/50"
+            >
+              <div>
+                <div className="flex items-center justify-between">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-600 dark:bg-pink-500/20 dark:text-pink-300 transition-transform duration-300 group-hover:scale-110 border border-indigo-500/20 dark:border-pink-500/30">
+                    <UserCheck className="h-5 w-5" />
+                  </div>
+                  <span className="inline-flex items-center rounded-lg bg-indigo-500/10 px-2.5 py-0.5 text-[10px] font-bold text-indigo-700 dark:bg-pink-500/20 dark:text-pink-300 border border-indigo-500/20 dark:border-pink-500/30 font-mono">
+                    Access Control
+                  </span>
                 </div>
-                <span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-[10px] font-bold text-indigo-700 dark:bg-indigo-950/80 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/60">
-                  Access Control
-                </span>
-              </div>
-              
-              <div className="mt-4">
-                <h3 className="text-base font-bold text-slate-900 transition-colors group-hover:text-indigo-600 dark:text-white dark:group-hover:text-indigo-400">
-                  User Management
-                </h3>
-                <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                  Assign roles (Admin, Support Agent, Member), reset credentials, and control platform permissions.
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6 flex items-center gap-1 text-xs font-bold text-indigo-600 dark:text-indigo-400">
-              <span>Manage Accounts</span>
-              <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-            </div>
-          </Link>
-
-          {/* Support Teams */}
-          <Link
-            href="/admin/teams"
-            className="group relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/5 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-blue-500/50 dark:hover:shadow-blue-500/10"
-          >
-            <div>
-              <div className="flex items-center justify-between">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-transform duration-300 group-hover:scale-110 dark:bg-blue-500/10 dark:text-blue-400">
-                  <Shield className="h-6 w-6" />
+                
+                <div className="mt-4">
+                  <h3 className="text-base font-extrabold text-indigo-950 transition-colors group-hover:text-indigo-600 dark:text-white dark:group-hover:text-pink-300">
+                    User Management
+                  </h3>
+                  <p className="mt-1.5 text-xs text-stone-500 dark:text-slate-400 leading-relaxed font-medium">
+                    Assign roles (Admin, Support Agent, Member), reset credentials, and control platform permissions.
+                  </p>
                 </div>
-                <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-blue-950/80 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
-                  Operations
-                </span>
               </div>
-              
-              <div className="mt-4">
-                <h3 className="text-base font-bold text-slate-900 transition-colors group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400">
-                  Support Teams
-                </h3>
-                <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                  Structure support units, appoint Team Leaders, and manage routing rules for ticket distribution.
-                </p>
+
+              <div className="mt-6 flex items-center gap-1 text-xs font-bold text-indigo-600 dark:text-pink-300">
+                <span>Manage Accounts</span>
+                <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </div>
-            </div>
+            </Link>
+          </motion.div>
 
-            <div className="mt-6 flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-blue-400">
-              <span>Configure Teams</span>
-              <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-            </div>
-          </Link>
-
-          {/* CSAT Analytics */}
-          <Link
-            href="/admin/csat"
-            className="group relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-amber-500/50 hover:shadow-lg hover:shadow-amber-500/5 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-amber-500/50 dark:hover:shadow-amber-500/10"
-          >
-            <div>
-              <div className="flex items-center justify-between">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50 text-amber-600 transition-transform duration-300 group-hover:scale-110 dark:bg-amber-500/10 dark:text-amber-400">
-                  <Award className="h-6 w-6" />
+          {/* Support Teams - Blue/Violet */}
+          <motion.div variants={cardVariants}>
+            <Link
+              href="/admin/teams"
+              className="group relative flex flex-col justify-between h-full rounded-3xl border border-blue-200/80 bg-white/90 p-6 shadow-xl backdrop-blur-2xl transition-all duration-300 hover:-translate-y-1 hover:border-blue-500/60 hover:shadow-blue-500/10 dark:border-purple-900/40 dark:bg-slate-900/80 dark:hover:border-purple-500/50"
+            >
+              <div>
+                <div className="flex items-center justify-between">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-600 dark:bg-indigo-500/20 dark:text-indigo-300 transition-transform duration-300 group-hover:scale-110 border border-blue-500/20 dark:border-indigo-500/30">
+                    <Shield className="h-5 w-5" />
+                  </div>
+                  <span className="inline-flex items-center rounded-lg bg-blue-500/10 px-2.5 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-indigo-500/20 dark:text-indigo-300 border border-blue-500/20 dark:border-indigo-500/30 font-mono">
+                    Operations
+                  </span>
                 </div>
-                <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60">
-                  Quality
-                </span>
-              </div>
-              
-              <div className="mt-4">
-                <h3 className="text-base font-bold text-slate-900 transition-colors group-hover:text-amber-600 dark:text-white dark:group-hover:text-amber-400">
-                  CSAT Analytics
-                </h3>
-                <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                  View customer satisfaction ratings, team averages, and communication/solution breakdown scores.
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6 flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400">
-              <span>View CSAT Reports</span>
-              <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-            </div>
-          </Link>
-
-          {/* Categories & Tags */}
-          <Link
-            href="/admin/categories"
-            className="group relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-emerald-500/50 hover:shadow-lg hover:shadow-emerald-500/5 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-emerald-500/50 dark:hover:shadow-emerald-500/10"
-          >
-            <div>
-              <div className="flex items-center justify-between">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 transition-transform duration-300 group-hover:scale-110 dark:bg-emerald-500/10 dark:text-emerald-400">
-                  <FolderTree className="h-6 w-6" />
+                
+                <div className="mt-4">
+                  <h3 className="text-base font-extrabold text-blue-950 transition-colors group-hover:text-blue-600 dark:text-white dark:group-hover:text-indigo-300">
+                    Support Teams
+                  </h3>
+                  <p className="mt-1.5 text-xs text-stone-500 dark:text-slate-400 leading-relaxed font-medium">
+                    Structure support units, appoint Team Leaders, and manage routing rules for ticket distribution.
+                  </p>
                 </div>
-                <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60">
-                  Taxonomy
-                </span>
               </div>
-              
-              <div className="mt-4">
-                <h3 className="text-base font-bold text-slate-900 transition-colors group-hover:text-emerald-600 dark:text-white dark:group-hover:text-emerald-400">
-                  Categories & Tags
-                </h3>
-                <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                  Organize issue types, set up subcategories, and customize labels for ticket categorization.
-                </p>
+
+              <div className="mt-6 flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-indigo-300">
+                <span>Configure Teams</span>
+                <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </div>
-            </div>
+            </Link>
+          </motion.div>
 
-            <div className="mt-6 flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-              <span>Manage Categories</span>
-              <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-            </div>
-          </Link>
-
-          {/* FAQ Management */}
-          <Link
-            href="/admin/faq"
-            className="group relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-purple-500/50 hover:shadow-lg hover:shadow-purple-500/5 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-purple-500/50 dark:hover:shadow-purple-500/10"
-          >
-            <div>
-              <div className="flex items-center justify-between">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-50 text-purple-600 transition-transform duration-300 group-hover:scale-110 dark:bg-purple-500/10 dark:text-purple-400">
-                  <HelpCircle className="h-6 w-6" />
+          {/* CSAT Analytics - Amber */}
+          <motion.div variants={cardVariants}>
+            <Link
+              href="/admin/csat"
+              className="group relative flex flex-col justify-between h-full rounded-3xl border border-amber-200/80 bg-white/90 p-6 shadow-xl backdrop-blur-2xl transition-all duration-300 hover:-translate-y-1 hover:border-amber-500/60 hover:shadow-amber-500/10 dark:border-purple-900/40 dark:bg-slate-900/80 dark:hover:border-amber-500/50"
+            >
+              <div>
+                <div className="flex items-center justify-between">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-300 transition-transform duration-300 group-hover:scale-110 border border-amber-500/20 dark:border-amber-500/30">
+                    <Award className="h-5 w-5" />
+                  </div>
+                  <span className="inline-flex items-center rounded-lg bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-500/20 dark:text-amber-300 border border-amber-500/20 dark:border-amber-500/30 font-mono">
+                    Quality
+                  </span>
                 </div>
-                <span className="inline-flex items-center rounded-full bg-purple-50 px-2.5 py-0.5 text-[10px] font-bold text-purple-700 dark:bg-purple-950/80 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/60">
-                  Knowledge Base
-                </span>
-              </div>
-              
-              <div className="mt-4">
-                <h3 className="text-base font-bold text-slate-900 transition-colors group-hover:text-purple-600 dark:text-white dark:group-hover:text-purple-400">
-                  FAQ Management
-                </h3>
-                <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                  Publish help articles, update questions, and drag-and-drop to reorder items for end users.
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6 flex items-center gap-1 text-xs font-bold text-purple-600 dark:text-purple-400">
-              <span>Edit Knowledge Base</span>
-              <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-            </div>
-          </Link>
-
-          {/* Audit Logs */}
-          <Link
-            href="/admin/audit-logs"
-            className="group relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-slate-500/50 hover:shadow-lg hover:shadow-slate-500/5 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-500/50 dark:hover:shadow-slate-500/10"
-          >
-            <div>
-              <div className="flex items-center justify-between">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-600 transition-transform duration-300 group-hover:scale-110 dark:bg-slate-800 dark:text-slate-300">
-                  <History className="h-6 w-6" />
+                
+                <div className="mt-4">
+                  <h3 className="text-base font-extrabold text-amber-950 transition-colors group-hover:text-amber-600 dark:text-white dark:group-hover:text-amber-300">
+                    CSAT Analytics
+                  </h3>
+                  <p className="mt-1.5 text-xs text-stone-500 dark:text-slate-400 leading-relaxed font-medium">
+                    View customer satisfaction ratings, team averages, and communication/solution breakdown scores.
+                  </p>
                 </div>
-                <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                  Security & Audit
-                </span>
               </div>
-              
-              <div className="mt-4">
-                <h3 className="text-base font-bold text-slate-900 transition-colors group-hover:text-slate-600 dark:text-white dark:group-hover:text-slate-300">
-                  Audit Logs
-                </h3>
-                <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                  Inspect real-time activity trails, export change histories to Excel, and review security logs.
-                </p>
-              </div>
-            </div>
 
-            <div className="mt-6 flex items-center gap-1 text-xs font-bold text-slate-600 dark:text-slate-300">
-              <span>View Audit Trail</span>
-              <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-            </div>
-          </Link>
-        </div>
+              <div className="mt-6 flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-300">
+                <span>View CSAT Reports</span>
+                <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </div>
+            </Link>
+          </motion.div>
+
+          {/* Categories & Tags - Emerald */}
+          <motion.div variants={cardVariants}>
+            <Link
+              href="/admin/categories"
+              className="group relative flex flex-col justify-between h-full rounded-3xl border border-emerald-200/80 bg-white/90 p-6 shadow-xl backdrop-blur-2xl transition-all duration-300 hover:-translate-y-1 hover:border-emerald-500/60 hover:shadow-emerald-500/10 dark:border-purple-900/40 dark:bg-slate-900/80 dark:hover:border-emerald-500/50"
+            >
+              <div>
+                <div className="flex items-center justify-between">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-300 transition-transform duration-300 group-hover:scale-110 border border-emerald-500/20 dark:border-emerald-500/30">
+                    <FolderTree className="h-5 w-5" />
+                  </div>
+                  <span className="inline-flex items-center rounded-lg bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-500/20 dark:border-emerald-500/30 font-mono">
+                    Taxonomy
+                  </span>
+                </div>
+                
+                <div className="mt-4">
+                  <h3 className="text-base font-extrabold text-emerald-950 transition-colors group-hover:text-emerald-600 dark:text-white dark:group-hover:text-emerald-300">
+                    Categories & Tags
+                  </h3>
+                  <p className="mt-1.5 text-xs text-stone-500 dark:text-slate-400 leading-relaxed font-medium">
+                    Organize issue types, set up subcategories, and customize labels for ticket categorization.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-300">
+                <span>Manage Categories</span>
+                <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </div>
+            </Link>
+          </motion.div>
+
+          {/* FAQ Management - Purple/Violet */}
+          <motion.div variants={cardVariants}>
+            <Link
+              href="/admin/faq"
+              className="group relative flex flex-col justify-between h-full rounded-3xl border border-purple-200/80 bg-white/90 p-6 shadow-xl backdrop-blur-2xl transition-all duration-300 hover:-translate-y-1 hover:border-purple-500/60 hover:shadow-purple-500/10 dark:border-purple-900/40 dark:bg-slate-900/80 dark:hover:border-purple-500/50"
+            >
+              <div>
+                <div className="flex items-center justify-between">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-purple-500/10 text-purple-600 dark:bg-purple-500/20 dark:text-purple-300 transition-transform duration-300 group-hover:scale-110 border border-purple-500/20 dark:border-purple-500/30">
+                    <HelpCircle className="h-5 w-5" />
+                  </div>
+                  <span className="inline-flex items-center rounded-lg bg-purple-500/10 px-2.5 py-0.5 text-[10px] font-bold text-purple-700 dark:bg-purple-500/20 dark:text-purple-300 border border-purple-500/20 dark:border-purple-500/30 font-mono">
+                    Knowledge Base
+                  </span>
+                </div>
+                
+                <div className="mt-4">
+                  <h3 className="text-base font-extrabold text-purple-950 transition-colors group-hover:text-purple-600 dark:text-white dark:group-hover:text-purple-300">
+                    FAQ Management
+                  </h3>
+                  <p className="mt-1.5 text-xs text-stone-500 dark:text-slate-400 leading-relaxed font-medium">
+                    Publish help articles, update questions, and drag-and-drop to reorder items for end users.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 flex items-center gap-1 text-xs font-bold text-purple-600 dark:text-purple-300">
+                <span>Edit Knowledge Base</span>
+                <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </div>
+            </Link>
+          </motion.div>
+
+          {/* Audit Logs - Slate */}
+          <motion.div variants={cardVariants}>
+            <Link
+              href="/admin/audit-logs"
+              className="group relative flex flex-col justify-between h-full rounded-3xl border border-stone-200/80 bg-white/90 p-6 shadow-xl backdrop-blur-2xl transition-all duration-300 hover:-translate-y-1 hover:border-stone-400 hover:shadow-stone-500/10 dark:border-purple-900/40 dark:bg-slate-900/80 dark:hover:border-slate-600"
+            >
+              <div>
+                <div className="flex items-center justify-between">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-stone-100 text-stone-700 transition-transform duration-300 group-hover:scale-110 dark:bg-slate-800 dark:text-slate-300 border border-stone-200 dark:border-slate-700">
+                    <History className="h-5 w-5" />
+                  </div>
+                  <span className="inline-flex items-center rounded-lg bg-stone-100 px-2.5 py-0.5 text-[10px] font-bold text-stone-700 dark:bg-slate-800 dark:text-slate-300 border border-stone-200 dark:border-slate-700 font-mono">
+                    Security & Audit
+                  </span>
+                </div>
+                
+                <div className="mt-4">
+                  <h3 className="text-base font-extrabold text-stone-900 transition-colors group-hover:text-stone-700 dark:text-white dark:group-hover:text-slate-300">
+                    Audit Logs
+                  </h3>
+                  <p className="mt-1.5 text-xs text-stone-500 dark:text-slate-400 leading-relaxed font-medium">
+                    Inspect real-time activity trails, export change histories to Excel, and review security logs.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 flex items-center gap-1 text-xs font-bold text-stone-700 dark:text-slate-300">
+                <span>View Audit Trail</span>
+                <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </div>
+            </Link>
+          </motion.div>
+        </motion.div>
       </div>
     </div>
   );

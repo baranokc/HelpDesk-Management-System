@@ -1,12 +1,14 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { Bell, CheckCheck, Inbox } from "lucide-react";
 import { useNotifications } from "@/src/context/NotificationContext";
 import type { NotificationDto } from "@/src/types/notification";
 
 function formatNotificationDate(value: string): string {
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat("tr-TR", {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
@@ -14,7 +16,9 @@ function formatNotificationDate(value: string): string {
 
 export function NotificationBell() {
   const router = useRouter();
-  const detailsRef = useRef<HTMLDetailsElement>(null);
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
   const {
     notifications,
     unreadCount,
@@ -24,116 +28,145 @@ export function NotificationBell() {
     markAllAsRead,
   } = useNotifications();
 
+  // Dışarıya tıklandığında menüyü kapatma
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   const openNotification = async (notification: NotificationDto) => {
     if (!notification.isRead) await markAsRead(notification.id);
 
-    detailsRef.current?.removeAttribute("open");
-    if (notification.ticketId)
+    setIsOpen(false);
+    if (notification.ticketId) {
       router.push(`/tickets/${notification.ticketId}`);
+    }
   };
 
   return (
-    <details ref={detailsRef} className="dropdown dropdown-end">
-      <summary
+    <div ref={containerRef} className="relative inline-block text-left">
+      {/* ZİL BUTONU */}
+      <button
+        type="button"
         aria-label={`${unreadCount} unread notifications`}
-        className="btn btn-ghost btn-circle btn-sm relative list-none text-slate-600 dark:text-slate-300"
-        role="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        className="relative flex h-10 w-10 items-center justify-center rounded-2xl border border-stone-300/70 dark:border-purple-800/40 bg-stone-100/90 dark:bg-slate-900/90 text-stone-700 dark:text-slate-200 hover:border-emerald-600/40 dark:hover:border-purple-500/50 hover:bg-stone-200/50 dark:hover:bg-slate-800/80 transition-all cursor-pointer shadow-sm group outline-none"
       >
-        <svg
-          aria-hidden="true"
-          className="h-5 w-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0a3 3 0 11-6 0m6 0H9"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.8}
-          />
-        </svg>
+        <Bell className="h-4 w-4 transition-transform group-hover:rotate-12 group-hover:scale-110 text-stone-600 dark:text-purple-300" />
 
         {unreadCount > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
+          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-gradient-to-r from-rose-500 to-pink-600 px-1 text-[9px] font-black text-white shadow-md shadow-rose-500/40 animate-in zoom-in-50">
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}
-      </summary>
+      </button>
 
-      <div className="dropdown-content z-[60] mt-3 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900">
-        <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 dark:border-slate-800">
-          <div>
-            <h2 className="text-sm font-bold text-slate-900 dark:text-white">
-              Notifications
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              {unreadCount} unread
-            </p>
-          </div>
-
-          {unreadCount > 0 && (
-            <button
-              className="text-xs font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-              onClick={() => void markAllAsRead()}
-              type="button"
-            >
-              Mark all as read
-            </button>
-          )}
-        </div>
-
-        {error && (
-          <div className="border-b border-amber-100 bg-amber-50 px-4 py-2 text-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200">
-            {error}
-          </div>
-        )}
-
-        <div className="max-h-96 overflow-y-auto">
-          {loading && notifications.length === 0 ? (
-            <div className="flex justify-center p-8">
-              <span className="loading loading-spinner loading-sm text-primary" />
-            </div>
-          ) : notifications.length === 0 ? (
-            <p className="px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
-              No notifications yet.
-            </p>
-          ) : (
-            notifications.map((notification) => (
-              <button
-                className={`block w-full border-b border-slate-100 px-4 py-3 text-left transition last:border-b-0 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800 ${
-                  notification.isRead
-                    ? "bg-white dark:bg-slate-900"
-                    : "bg-blue-50 dark:bg-blue-950/40"
-                }`}
-                key={notification.id}
-                onClick={() => void openNotification(notification)}
-                type="button"
-              >
-                <span className="flex gap-3">
-                  <span
-                    aria-hidden="true"
-                    className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
-                      notification.isRead ? "bg-slate-300" : "bg-blue-600"
-                    }`}
-                  />
-                  <span className="min-w-0">
-                    <span className="block text-sm font-semibold text-slate-900 dark:text-white">
-                      {notification.title}
-                    </span>
-                    <span className="mt-1 block text-xs leading-5 text-slate-600 dark:text-slate-300">
-                      {notification.message}
-                    </span>
-                    <span className="mt-1.5 block text-[11px] text-slate-400 dark:text-slate-500">
-                      {formatNotificationDate(notification.createdAt)}
-                    </span>
+      {/* ANIMASYONLU DROPDOWN MENÜ */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: -8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -8 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="absolute right-0 z-[60] mt-3 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-stone-300/80 dark:border-purple-800/40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl shadow-2xl"
+          >
+            {/* ÜST BAŞLIK BAR */}
+            <div className="flex items-center justify-between border-b border-stone-100 dark:border-slate-800/80 px-4 py-3">
+              <div className="flex items-center gap-2">
+                <h2 className="text-xs font-black tracking-tight text-stone-900 dark:text-white">
+                  Notifications
+                </h2>
+                {unreadCount > 0 && (
+                  <span className="rounded-md border border-emerald-600/20 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800 dark:border-purple-500/30 dark:bg-purple-500/20 dark:text-purple-300 font-mono">
+                    {unreadCount} unread
                   </span>
-                </span>
-              </button>
-            ))
-          )}
-        </div>
-      </div>
-    </details>
+                )}
+              </div>
+
+              {unreadCount > 0 && (
+                <button
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-800 dark:text-purple-300 dark:hover:text-purple-200 transition-colors"
+                  onClick={() => void markAllAsRead()}
+                  type="button"
+                >
+                  <CheckCheck className="h-3.5 w-3.5" />
+                  <span>Mark all read</span>
+                </button>
+              )}
+            </div>
+
+            {/* HATA MESAJI */}
+            {error && (
+              <div className="border-b border-rose-100 bg-rose-50/80 px-4 py-2 text-xs text-rose-800 dark:border-rose-900/40 dark:bg-rose-950/40 dark:text-rose-300">
+                {error}
+              </div>
+            )}
+
+            {/* BİLDİRİM LİSTESİ */}
+            <div className="max-h-80 overflow-y-auto divide-y divide-stone-100 dark:divide-slate-800/60">
+              {loading && notifications.length === 0 ? (
+                <div className="flex justify-center p-8">
+                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-emerald-600 dark:border-purple-500 border-t-transparent" />
+                </div>
+              ) : notifications.length === 0 ? (
+                <div className="flex flex-col items-center justify-center px-4 py-8 text-center text-stone-400 dark:text-slate-500">
+                  <Inbox className="h-8 w-8 mb-2 opacity-50 stroke-1" />
+                  <p className="text-xs font-semibold">No notifications yet</p>
+                </div>
+              ) : (
+                notifications.map((notification) => (
+                  <button
+                    className={`block w-full px-4 py-3 text-left transition-all hover:bg-stone-50 dark:hover:bg-slate-800/50 ${
+                      notification.isRead
+                        ? "bg-transparent opacity-75"
+                        : "bg-emerald-500/5 dark:bg-purple-500/10"
+                    }`}
+                    key={notification.id}
+                    onClick={() => void openNotification(notification)}
+                    type="button"
+                  >
+                    <div className="flex items-start gap-2.5">
+                      {/* Durum Noktası */}
+                      <span
+                        aria-hidden="true"
+                        className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
+                          notification.isRead
+                            ? "bg-stone-300 dark:bg-slate-700"
+                            : "bg-emerald-600 dark:bg-purple-400 shadow-sm shadow-emerald-500/50 dark:shadow-purple-500/50"
+                        }`}
+                      />
+
+                      <div className="min-w-0 flex-1">
+                        <span className="block text-xs font-bold text-stone-900 dark:text-slate-100 truncate">
+                          {notification.title}
+                        </span>
+                        <span className="mt-0.5 block text-xs leading-relaxed text-stone-600 dark:text-slate-300 line-clamp-2">
+                          {notification.message}
+                        </span>
+                        <span className="mt-1 block text-[10px] font-mono text-stone-400 dark:text-slate-500">
+                          {formatNotificationDate(notification.createdAt)}
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
