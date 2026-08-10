@@ -4,7 +4,6 @@ import { Lock, MessageSquare, MoreHorizontal } from "lucide-react";
 import type { TicketAttachmentDto } from "@/src/types/ticket-attachment";
 import type { TicketCommentDto } from "@/src/types/ticket-comment";
 import { Avatar } from "@/src/components/ui/Avatar";
-import { Badge } from "@/src/components/ui/Badge";
 import { Dropdown } from "@/src/components/ui/Dropdown";
 import { EmptyState } from "@/src/components/ui/EmptyState";
 import { TicketAttachments } from "./TicketAttachments";
@@ -27,9 +26,10 @@ function getCommentStyle(comment: TicketCommentDto) {
   if (comment.isInternal) {
     return {
       bubbleClass:
-        "bg-amber-500/10 dark:bg-amber-950/40 border-amber-500/30 dark:border-amber-500/40 text-stone-800 dark:text-amber-100 rounded-2xl rounded-tl-sm",
+        "bg-amber-500/10 dark:bg-amber-950/30 border-amber-500/30 dark:border-amber-500/40 text-stone-900 dark:text-amber-200 rounded-3xl rounded-tl-md shadow-inner",
       roleLabel: "Internal Note",
-      badgeTone: "amber" as const,
+      badgeClass:
+        "bg-amber-500/15 text-amber-800 dark:bg-amber-500/25 dark:text-amber-300 border-amber-600/30 dark:border-amber-400/80",
       isInternal: true,
     };
   }
@@ -47,29 +47,31 @@ function getCommentStyle(comment: TicketCommentDto) {
     .replace(/\s+/g, "")
     .trim();
 
-  // 2. ADMIN -> Mor / Violet
+  // 2. ADMIN -> Amber / Neon Pink
   if (rawRole.includes("admin")) {
     return {
       bubbleClass:
-        "bg-purple-500/10 dark:bg-purple-950/40 border-purple-500/30 dark:border-purple-500/40 text-stone-800 dark:text-purple-100 rounded-2xl rounded-tl-sm",
+        "bg-purple-500/10 dark:bg-purple-950/30 border-purple-500/30 dark:border-purple-500/40 text-stone-900 dark:text-purple-200 rounded-3xl rounded-tl-md shadow-inner",
       roleLabel: "Admin",
-      badgeTone: "purple" as const,
+      badgeClass:
+        "bg-amber-500/15 text-amber-800 dark:bg-pink-500/25 dark:text-pink-300 border-amber-600/30 dark:border-pink-400/80 dark:shadow-[0_0_12px_rgba(244,114,182,0.35)]",
       isInternal: false,
     };
   }
 
-  // 3. TEAM LEADER -> Rose / Kırmızı
+  // 3. TEAM LEADER -> Kırmızı / Parlak Sarı
   if (rawRole.includes("teamleader") || rawRole.includes("leader")) {
     return {
       bubbleClass:
-        "bg-rose-500/10 dark:bg-rose-950/40 border-rose-500/30 dark:border-rose-500/40 text-stone-800 dark:text-rose-100 rounded-2xl rounded-tl-sm",
+        "bg-rose-500/10 dark:bg-rose-950/30 border-rose-500/30 dark:border-rose-500/40 text-stone-900 dark:text-rose-200 rounded-3xl rounded-tl-md shadow-inner",
       roleLabel: "Team Leader",
-      badgeTone: "red" as const,
+      badgeClass:
+        "bg-red-500/15 text-red-800 dark:bg-yellow-400/20 dark:text-yellow-300 border-red-600/30 dark:border-yellow-400/80 dark:shadow-[0_0_12px_rgba(250,204,21,0.35)]",
       isInternal: false,
     };
   }
 
-  // 4. SUPPORT AGENT -> Mavi / İndigo
+  // 4. SUPPORT AGENT -> Teal / Mavi
   if (
     rawRole.includes("supportagent") ||
     rawRole.includes("support") ||
@@ -77,19 +79,21 @@ function getCommentStyle(comment: TicketCommentDto) {
   ) {
     return {
       bubbleClass:
-        "bg-blue-500/10 dark:bg-blue-950/40 border-blue-500/30 dark:border-blue-500/40 text-stone-800 dark:text-blue-100 rounded-2xl rounded-tl-sm",
+        "bg-blue-500/10 dark:bg-blue-950/30 border-blue-500/30 dark:border-blue-500/40 text-stone-900 dark:text-blue-200 rounded-3xl rounded-tl-md shadow-inner",
       roleLabel: "Support Agent",
-      badgeTone: "blue" as const,
+      badgeClass:
+        "bg-teal-500/15 text-teal-800 dark:bg-blue-500/20 dark:text-blue-300 border-teal-600/30 dark:border-blue-500/40",
       isInternal: false,
     };
   }
 
-  // 5. USER -> Yeşil / Nötr
+  // 5. USER -> Nötr / Siyah-Beyaz (Stone / Slate)
   return {
     bubbleClass:
-      "bg-emerald-500/10 dark:bg-slate-900/90 border-emerald-600/20 dark:border-purple-900/40 text-stone-800 dark:text-slate-100 rounded-2xl rounded-tl-sm",
+      "bg-white/90 dark:bg-slate-800/80 border-stone-200/80 dark:border-slate-700 text-stone-900 dark:text-slate-100 rounded-3xl rounded-tl-md shadow-inner",
     roleLabel: "User",
-    badgeTone: "green" as const,
+    badgeClass:
+      "bg-stone-900/10 text-stone-900 dark:bg-slate-100/15 dark:text-slate-100 border-stone-900/25 dark:border-slate-100/30",
     isInternal: false,
   };
 }
@@ -116,7 +120,7 @@ export function TicketComments({
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {comments.map((comment) => {
         const attachments = comment.attachments ?? [];
         const style = getCommentStyle(comment);
@@ -125,43 +129,43 @@ export function TicketComments({
         return (
           <article
             key={comment.id}
-            className="flex gap-3 items-start group animate-in fade-in slide-in-from-bottom-2 duration-300"
+            className="flex gap-4 items-start group animate-in fade-in slide-in-from-bottom-2 duration-300"
           >
             {/* AVATAR */}
-            <div className="shrink-0 mt-1">
+            <div className="shrink-0 mt-0.5">
               <Avatar
                 avatarUrl={comment.createdByAvatarUrl}
                 name={comment.createdByName}
-                size="sm"
-                className="shadow-sm border border-stone-200 dark:border-purple-800/40"
+                size="md"
+                className="shadow-md border border-stone-200 dark:border-purple-800/40"
               />
             </div>
 
-            {/* MESAJ İÇERİĞİ VE BALONCUK (WHATSAPP TARZI DİNAMİK GENİŞLİK) */}
-            <div className="flex flex-col items-start min-w-0 max-w-[85%] sm:max-w-[75%] space-y-1">
+            {/* MESAJ İÇERİĞİ VE BALONCUK */}
+            <div className="flex flex-col items-start min-w-0 max-w-[88%] sm:max-w-[78%] space-y-2">
               {/* HEADER (Kullanıcı Adı, Rol, Zaman & Aksiyonlar) */}
-              <div className="flex items-center gap-2 flex-wrap px-1">
-                <span className="font-bold text-xs text-stone-900 dark:text-slate-100">
+              <div className="flex items-center gap-2.5 flex-wrap px-1">
+                <span className="font-bold text-xs sm:text-sm text-stone-900 dark:text-white">
                   {comment.createdByName}
                 </span>
 
                 {style.roleLabel && (
-                  <Badge tone={style.badgeTone}>
-                    {style.isInternal && (
-                      <Lock className="h-3 w-3 mr-1 inline" />
-                    )}
+                  <span
+                    className={`inline-flex items-center gap-1 text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md border ${style.badgeClass}`}
+                  >
+                    {style.isInternal && <Lock className="h-3 w-3 inline" />}
                     {style.roleLabel}
-                  </Badge>
+                  </span>
                 )}
 
-                <time className="text-[10px] font-medium text-stone-400 dark:text-slate-400 font-mono">
+                <time className="text-[10px] font-mono font-medium text-stone-400 dark:text-slate-400">
                   {new Date(comment.createdAt).toLocaleString("tr-TR")}
                   {comment.editedAt && " · edited"}
                 </time>
 
                 {showActions && (onEdit || onDelete) && (
                   <Dropdown
-                    label={<MoreHorizontal className="h-3.5 w-3.5 text-stone-400 dark:text-slate-400 hover:text-stone-700 dark:hover:text-white" />}
+                    label={<MoreHorizontal className="h-4 w-4 text-stone-400 dark:text-slate-400 hover:text-stone-700 dark:hover:text-white transition-colors" />}
                     items={[
                       ...(onEdit
                         ? [
@@ -187,12 +191,12 @@ export function TicketComments({
                 )}
               </div>
 
-              {/* WHATSAPP BALONCUĞU (`w-fit` KULLANILARAK METİN UZUNLUĞUNA GÖRE BOYUTLANIR) */}
+              {/* MESAJ BALONCUĞU */}
               <div
-                className={`w-fit px-4 py-3 text-xs sm:text-sm font-medium border shadow-md backdrop-blur-2xl transition-all ${style.bubbleClass}`}
+                className={`w-fit px-5 py-3.5 text-xs sm:text-sm font-medium border shadow-lg backdrop-blur-2xl transition-all ${style.bubbleClass}`}
               >
                 {comment.comment && (
-                  <p className="whitespace-pre-wrap leading-relaxed break-words">
+                  <p className="whitespace-pre-wrap leading-relaxed break-words text-stone-900 dark:text-slate-100 font-medium">
                     {comment.comment}
                   </p>
                 )}
@@ -202,11 +206,11 @@ export function TicketComments({
                   <div
                     className={
                       comment.comment
-                        ? "mt-2.5 border-t border-stone-200/60 dark:border-slate-700/60 pt-2.5"
+                        ? "mt-3.5 border-t border-stone-200/60 dark:border-slate-700/60 pt-3.5"
                         : ""
                     }
                   >
-                    <p className="mb-2 text-[10px] font-bold uppercase tracking-wider opacity-80 flex items-center gap-1.5">
+                    <p className="mb-2.5 text-[10px] font-mono font-extrabold uppercase tracking-wider opacity-80 flex items-center gap-1.5 text-stone-500 dark:text-slate-400">
                       <MessageSquare className="h-3 w-3" />
                       <span>{attachments.length} attachment(s)</span>
                     </p>

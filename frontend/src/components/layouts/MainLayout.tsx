@@ -28,18 +28,14 @@ const getRoleBadgeStyle = (role?: string): string => {
   switch (normalized) {
     case "admin":
     case "0":
-      // Light: Amber | Dark: Neon Pink
       return "bg-amber-500/15 text-amber-800 dark:bg-pink-500/25 dark:text-pink-300 border-amber-600/30 dark:border-pink-400/80 dark:shadow-[0_0_12px_rgba(244,114,182,0.35)]";
     case "teamleader":
     case "1":
-      // Light: Kırmızı (Red) | Dark: Parlak Sarı (Bright Yellow)
       return "bg-red-500/15 text-red-800 dark:bg-yellow-400/20 dark:text-yellow-300 border-red-600/30 dark:border-yellow-400/80 dark:shadow-[0_0_12px_rgba(250,204,21,0.35)]";
     case "supportagent":
     case "2":
-      // Light: Teal | Dark: Mavi (Blue)
       return "bg-teal-500/15 text-teal-800 dark:bg-blue-500/20 dark:text-blue-300 border-teal-600/30 dark:border-blue-500/40";
     default:
-      // User: Light Siyah (Stone-900) | Dark Beyaz
       return "bg-stone-900/10 text-stone-900 dark:bg-slate-100/15 dark:text-slate-100 border-stone-900/25 dark:border-slate-100/30";
   }
 };
@@ -62,7 +58,6 @@ export default function MainLayout({
   const isMyWorkPage = pathname.startsWith("/tickets/my-work");
   const isProfilePage = pathname === "/tickets/profile";
 
-  // Rol değerini normalize ederek kontrol etme
   const normalizedRole = user?.role?.toLowerCase().trim();
   const canAccessChat =
     normalizedRole === "teamleader" ||
@@ -137,15 +132,15 @@ export default function MainLayout({
       <header className="sticky top-0 z-50 border-b border-amber-900/10 dark:border-purple-900/30 bg-stone-100/80 dark:bg-slate-900/70 backdrop-blur-2xl transition-all">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
           
-          {/* Logo */}
+          {/* Logo & Archipelago Alanı */}
           <div className="flex items-center gap-3">
             <Link
               href="/tickets"
               className="group inline-flex items-center gap-3 text-lg font-bold tracking-tight transition-all"
             >
-              <div className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-600 via-teal-600 to-emerald-600 dark:from-purple-600 dark:via-violet-600 dark:to-indigo-500 text-white shadow-lg shadow-teal-600/20 dark:shadow-purple-500/25 group-hover:scale-105 group-hover:rotate-3 transition-all duration-300 overflow-hidden">
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-600 via-teal-600 to-emerald-600 dark:from-purple-600 dark:via-violet-600 dark:to-indigo-500 text-white shadow-lg shadow-teal-600/20 dark:shadow-purple-500/25 overflow-hidden transition-transform duration-300 group-hover:scale-105">
                 <svg
-                  className="h-6 w-6 text-white drop-shadow-md"
+                  className="h-6 w-6 text-white drop-shadow-md relative z-10"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -163,11 +158,23 @@ export default function MainLayout({
                 </svg>
               </div>
 
+              {/* 🌟 Temiz, Modern Sans Font ve Akan Renksel Animasyon */}
               <div className="flex flex-col leading-none">
-                <span className="font-black text-base tracking-wider bg-gradient-to-r from-amber-700 via-emerald-700 to-teal-800 dark:from-purple-400 dark:via-violet-300 dark:to-indigo-300 bg-clip-text text-transparent">
-                  ISLAND
-                </span>
-                <span className="text-[10px] font-bold tracking-widest text-stone-500 dark:text-purple-300/60 uppercase">
+                <motion.span
+                  animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
+                  transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+                  style={{
+                    backgroundImage:
+                      "linear-gradient(270deg, #d97706, #059669, #0d9488, #7c3aed, #d97706)",
+                    backgroundSize: "300% auto",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                  }}
+                  className="font-sans font-black text-base tracking-tight uppercase"
+                >
+                  ARCHIPELAGO
+                </motion.span>
+                <span className="text-[10px] font-extrabold tracking-[0.25em] text-stone-400 dark:text-purple-300/60 uppercase mt-0.5">
                   HelpDesk
                 </span>
               </div>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, type SubmitEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { motion } from "framer-motion";
 import {
   Mail,
   Lock,
@@ -59,7 +60,7 @@ export function LoginForm() {
       setTimeout(() => {
         setWelcomeIndex((prev) => (prev + 1) % WELCOME_WORDS.length);
         setFade(true);
-      }, 300); // Yumuşak geçiş efekti süresi
+      }, 300);
     }, 2500);
 
     return () => clearInterval(interval);
@@ -174,8 +175,9 @@ export function LoginForm() {
               </h2>
             </div>
 
+            {/* 🌟 Güncellenen Archipelago İbaresi */}
             <p className="text-xs font-medium text-stone-500 dark:text-slate-400">
-              Sign in to manage your Island support tickets
+              Sign in to manage your Archipelago support tickets
             </p>
           </div>
 
