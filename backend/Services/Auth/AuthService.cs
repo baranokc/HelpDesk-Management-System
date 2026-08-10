@@ -149,6 +149,20 @@ public class AuthService : IAuthService
         await _context.Users.AddAsync(newUser);
         await _context.SaveChangesAsync();
 
+        try
+        {
+            await _emailService.SendRegistrationEmailAsync(
+                newUser.Email,
+                $"{newUser.Name} {newUser.LastName}".Trim());
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(
+                exception,
+                "Registration email could not be sent to {RecipientEmail}.",
+                newUser.Email);
+        }
+
         return true;
     }
 
@@ -183,7 +197,6 @@ public class AuthService : IAuthService
 
         await _context.PasswordResetTokens.AddAsync(passwordResetToken, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
-        await _emailService.SendRegistrationEmailAsync(user.Email, $"{user.Name} {user.LastName}", cancellationToken);
 
         var frontendBaseUrl = _configuration["Frontend:BaseUrl"]?.TrimEnd('/');
         if (string.IsNullOrWhiteSpace(frontendBaseUrl))
