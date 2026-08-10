@@ -142,6 +142,84 @@ export function RegisterForm() {
         - Cleanest UI I&apos;ve ever used 💎
       </motion.div>
 
+      <motion.div
+        animate={{ y: [0, -13, 0], opacity: [0.35, 0.7, 0.35] }}
+        transition={{
+          duration: 8.8,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 0.5,
+        }}
+        className="absolute top-[30%] left-[2%] hidden xl:block text-xs font-mono font-bold text-cyan-900/60 dark:text-cyan-300/60 pointer-events-none select-none drop-shadow-sm"
+      >
+        - My tickets finally found their harbor ⚓
+      </motion.div>
+
+      <motion.div
+        animate={{ y: [0, 11, 0], opacity: [0.4, 0.75, 0.4] }}
+        transition={{
+          duration: 9.2,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 1.3,
+        }}
+        className="absolute top-[34%] right-[3%] hidden xl:block text-xs font-mono font-bold text-teal-900/60 dark:text-teal-300/60 pointer-events-none select-none drop-shadow-sm"
+      >
+        - Support without the stormy seas 🌊
+      </motion.div>
+
+      <motion.div
+        animate={{ y: [0, -9, 0], opacity: [0.35, 0.65, 0.35] }}
+        transition={{
+          duration: 7.8,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 1.8,
+        }}
+        className="absolute top-[66%] left-[3%] hidden xl:block text-xs font-mono font-bold text-emerald-900/60 dark:text-emerald-300/60 pointer-events-none select-none drop-shadow-sm"
+      >
+        - Every issue reaches the right shore 🧭
+      </motion.div>
+
+      <motion.div
+        animate={{ y: [0, 13, 0], opacity: [0.35, 0.7, 0.35] }}
+        transition={{
+          duration: 10.2,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 0.9,
+        }}
+        className="absolute top-[70%] right-[4%] hidden xl:block text-xs font-mono font-bold text-sky-900/60 dark:text-sky-300/60 pointer-events-none select-none drop-shadow-sm"
+      >
+        - Fast, simple, and beautifully organized 🌴
+      </motion.div>
+
+      <motion.div
+        animate={{ y: [0, -12, 0], opacity: [0.4, 0.72, 0.4] }}
+        transition={{
+          duration: 9.7,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 2.5,
+        }}
+        className="absolute bottom-[7%] left-[20%] hidden xl:block text-xs font-mono font-bold text-indigo-900/60 dark:text-indigo-300/60 pointer-events-none select-none drop-shadow-sm"
+      >
+        - The perfect compass for our support team 🗺️
+      </motion.div>
+
+      <motion.div
+        animate={{ y: [0, 10, 0], opacity: [0.35, 0.68, 0.35] }}
+        transition={{
+          duration: 8.3,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 1.6,
+        }}
+        className="absolute top-[8%] right-[25%] hidden xl:block text-xs font-mono font-bold text-violet-900/60 dark:text-violet-300/60 pointer-events-none select-none drop-shadow-sm"
+      >
+        - HelpDesk management has never felt this smooth 🐚
+      </motion.div>
+
       {/* Sağ Üst Köşe Theme Toggle Button */}
       <div className="absolute top-5 right-5 z-20">
         <ThemeToggle />
