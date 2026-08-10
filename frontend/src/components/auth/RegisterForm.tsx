@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, type SubmitEvent } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import {
   User,
   Mail,
@@ -86,11 +87,60 @@ export function RegisterForm() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-amber-50/30 dark:bg-slate-950 px-4 py-12 transition-colors overflow-hidden">
+    <div className="relative flex min-h-screen items-center justify-center bg-sky-50/70 dark:bg-slate-950 px-4 py-12 transition-colors overflow-hidden">
       
       {/* Glow Arka Plan Efektleri */}
-      <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-amber-500/10 dark:bg-purple-600/15 blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-teal-500/10 dark:bg-indigo-600/15 blur-3xl pointer-events-none" />
+      <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-sky-400/20 dark:bg-purple-600/15 blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-teal-400/20 dark:bg-indigo-600/15 blur-3xl pointer-events-none" />
+
+      {/* 🏝️ Arka Planda Yüzen Net Okunabilir Fake Yorumlar / Testimoniallar */}
+      <motion.div
+        animate={{ y: [0, -15, 0], opacity: [0.4, 0.75, 0.4] }}
+        transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute top-20 left-[6%] hidden xl:block text-xs font-mono font-bold text-sky-800/70 dark:text-purple-300/60 pointer-events-none select-none drop-shadow-sm"
+      >
+        - Archipelago saved my life 🏝️
+      </motion.div>
+
+      <motion.div
+        animate={{ y: [0, 15, 0], opacity: [0.35, 0.7, 0.35] }}
+        transition={{ duration: 9, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+        className="absolute bottom-24 left-[8%] hidden xl:block text-xs font-mono font-bold text-teal-800/70 dark:text-indigo-300/60 pointer-events-none select-none drop-shadow-sm"
+      >
+        - Best HelpDesk website out there ⚡
+      </motion.div>
+
+      <motion.div
+        animate={{ y: [0, -12, 0], opacity: [0.4, 0.75, 0.4] }}
+        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+        className="absolute top-28 right-[8%] hidden xl:block text-xs font-mono font-bold text-emerald-800/70 dark:text-violet-300/60 pointer-events-none select-none drop-shadow-sm"
+      >
+        - 10/10 ticket management 🚀
+      </motion.div>
+
+      <motion.div
+        animate={{ y: [0, 14, 0], opacity: [0.35, 0.7, 0.35] }}
+        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+        className="absolute bottom-32 right-[10%] hidden xl:block text-xs font-mono font-bold text-cyan-800/70 dark:text-purple-400/60 pointer-events-none select-none drop-shadow-sm"
+      >
+        - Smooth sailing on this island ✨
+      </motion.div>
+
+      <motion.div
+        animate={{ y: [0, -10, 0], opacity: [0.35, 0.7, 0.35] }}
+        transition={{ duration: 8.5, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
+        className="absolute top-[48%] left-[4%] hidden xl:block text-xs font-mono font-bold text-sky-900/60 dark:text-indigo-400/60 pointer-events-none select-none drop-shadow-sm"
+      >
+        - Finally, support tickets are actually fun ⛵
+      </motion.div>
+
+      <motion.div
+        animate={{ y: [0, 12, 0], opacity: [0.35, 0.7, 0.35] }}
+        transition={{ duration: 9.5, repeat: Infinity, ease: "easeInOut", delay: 2.2 }}
+        className="absolute top-[52%] right-[5%] hidden xl:block text-xs font-mono font-bold text-teal-900/60 dark:text-purple-300/60 pointer-events-none select-none drop-shadow-sm"
+      >
+        - Cleanest UI I&apos;ve ever used 💎
+      </motion.div>
 
       {/* Sağ Üst Köşe Theme Toggle Button */}
       <div className="absolute top-5 right-5 z-20">
@@ -98,7 +148,7 @@ export function RegisterForm() {
       </div>
 
       {/* Kayıt Kartı */}
-      <div className="relative w-full max-w-lg rounded-3xl border border-stone-200/80 dark:border-purple-900/40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl p-8 shadow-2xl transition-all">
+      <div className="relative w-full max-w-lg rounded-3xl border border-sky-200/80 dark:border-purple-900/40 bg-white/85 dark:bg-slate-900/80 backdrop-blur-2xl p-8 shadow-2xl transition-all z-10">
         
         {/* LOGO & BAŞLIK */}
         <div className="text-center space-y-2">
