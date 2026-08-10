@@ -112,44 +112,44 @@ function MemberTicketList({
     <section className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="flex items-center gap-2 text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+          <h2 className="flex items-center gap-2 text-lg font-black tracking-tight text-stone-900 dark:text-white">
             <span
-              className={`flex h-8 w-8 items-center justify-center rounded-lg border ${
+              className={`flex h-8 w-8 items-center justify-center rounded-xl border ${
                 isActiveList
-                  ? "border-indigo-200 bg-indigo-50 text-indigo-600 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-400"
-                  : "border-slate-200 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                  ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:border-purple-500/30 dark:bg-purple-500/10 dark:text-purple-300"
+                  : "border-stone-200 bg-stone-100 text-stone-600 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300"
               }`}
             >
               <Ticket className="h-4 w-4" />
             </span>
             {title}
           </h2>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-xs font-medium text-stone-500 dark:text-slate-400">
             {description}
           </p>
         </div>
-        <span className="inline-flex w-fit items-center rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+        <span className="inline-flex w-fit items-center rounded-xl border border-stone-200/80 bg-white/80 px-3 py-1.5 text-xs font-bold text-stone-700 shadow-sm backdrop-blur-md dark:border-purple-900/40 dark:bg-slate-900/80 dark:text-slate-300 font-mono">
           {result.totalCount} ticket(s)
         </span>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/80">
+      <div className="overflow-hidden rounded-3xl border border-stone-200/80 bg-white/80 shadow-xl backdrop-blur-2xl dark:border-purple-900/40 dark:bg-slate-900/80">
         {result.items.length === 0 ? (
           <div className="flex flex-col items-center px-6 py-14 text-center">
-            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-indigo-500/20 bg-indigo-500/10 text-indigo-500">
-              <Ticket className="h-7 w-7" />
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:border-purple-500/30 dark:bg-purple-500/20 dark:text-purple-300">
+              <Ticket className="h-6 w-6" />
             </div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">
+            <h3 className="text-sm font-bold text-stone-900 dark:text-white">
               No tickets found
             </h3>
-            <p className="mt-1 max-w-md text-xs text-slate-500 dark:text-slate-400">
+            <p className="mt-1 max-w-md text-xs font-medium text-stone-500 dark:text-slate-400">
               {emptyMessage}
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[1000px] border-collapse text-left">
-              <thead className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-400">
+              <thead className="border-b border-stone-100 bg-stone-50/80 text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 dark:border-slate-800 dark:bg-slate-800/50 dark:text-slate-400">
                 <tr>
                   <th className="px-5 py-3.5">Ticket #</th>
                   <th className="px-5 py-3.5">Title</th>
@@ -160,20 +160,20 @@ function MemberTicketList({
                   <th className="px-5 py-3.5 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-xs dark:divide-slate-800/60">
+              <tbody className="divide-y divide-stone-100 text-xs font-medium dark:divide-slate-800/60">
                 {result.items.map((ticket) => (
                   <tr
-                    className="group transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/40"
+                    className="group transition-colors hover:bg-stone-50/60 dark:hover:bg-slate-800/50"
                     key={ticket.id}
                   >
-                    <td className="px-5 py-4 font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                    <td className="px-5 py-4 font-mono font-bold text-emerald-700 dark:text-purple-300">
                       {ticket.ticketNumber}
                     </td>
-                    <td className="max-w-xs truncate px-5 py-4 font-semibold text-slate-900 dark:text-white">
+                    <td className="max-w-xs truncate px-5 py-4 font-bold text-stone-900 dark:text-white">
                       {ticket.ticketTitle}
                     </td>
                     <td className="px-5 py-4">
-                      <span className="inline-flex h-7 items-center whitespace-nowrap rounded-lg border border-slate-200 bg-slate-100 px-2.5 text-[11px] font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                      <span className="inline-flex h-7 items-center whitespace-nowrap rounded-lg border border-stone-200 bg-stone-100 px-2.5 text-[11px] font-bold text-stone-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
                         {getRelationship(
                           ticket.isCreatedByMember,
                           ticket.isAssignedToMember,
@@ -189,14 +189,14 @@ function MemberTicketList({
                     <td className="px-5 py-4">
                       <TicketStatusBadge status={ticket.statusName} />
                     </td>
-                    <td className="whitespace-nowrap px-5 py-4 font-medium text-slate-600 dark:text-slate-300">
+                    <td className="whitespace-nowrap px-5 py-4 font-semibold text-stone-600 dark:text-slate-300">
                       {ticket.assignedAt
                         ? formatDate(ticket.assignedAt)
                         : "Not assigned"}
                     </td>
                     <td className="px-5 py-4 text-right">
                       <Link
-                        className="inline-flex items-center gap-1 whitespace-nowrap font-bold text-indigo-600 transition-all hover:text-indigo-500 group-hover:translate-x-0.5 dark:text-violet-400 dark:hover:text-violet-300"
+                        className="inline-flex items-center gap-1 whitespace-nowrap text-xs font-bold text-emerald-700 transition-all hover:text-emerald-800 group-hover:translate-x-0.5 dark:text-purple-300 dark:hover:text-purple-200"
                         href={`/tickets/${ticket.id}`}
                       >
                         View Details
@@ -213,13 +213,13 @@ function MemberTicketList({
 
       {result.items.length > 0 && (
         <div className="flex flex-col items-center justify-between gap-4 pt-2 sm:flex-row">
-          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+          <p className="text-xs font-medium text-stone-500 dark:text-slate-400">
             Showing{" "}
-            <span className="font-bold text-slate-700 dark:text-slate-200">
+            <span className="font-bold text-stone-800 dark:text-slate-200">
               {result.items.length}
             </span>{" "}
             of{" "}
-            <span className="font-bold text-slate-700 dark:text-slate-200">
+            <span className="font-bold text-stone-800 dark:text-slate-200">
               {result.totalCount}
             </span>{" "}
             ticket(s)
@@ -490,15 +490,15 @@ export function TeamMemberDetailContainer({
   if (authLoading || !canViewPage) {
     return (
       <div className="flex min-h-80 items-center justify-center">
-        <span className="loading loading-spinner loading-lg text-indigo-500" />
+        <span className="loading loading-spinner loading-lg text-emerald-600 dark:text-purple-500" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto">
       <Link
-        className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition-all hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-300 dark:hover:border-violet-500 dark:hover:bg-violet-600 dark:hover:text-white"
+        className="inline-flex items-center gap-2 rounded-xl border border-stone-300/80 bg-stone-100 px-3.5 py-2 text-xs font-bold text-stone-800 shadow-sm transition-all hover:border-emerald-600/40 hover:bg-stone-200 dark:border-purple-900/40 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-purple-500/50 dark:hover:bg-slate-700"
         href={selfView ? "/tickets" : "/tickets/team-management"}
       >
         <ArrowLeft className="h-3.5 w-3.5" />
@@ -510,76 +510,76 @@ export function TeamMemberDetailContainer({
 
       {!detail && loading && (
         <div className="space-y-6">
-          <div className="h-44 w-full animate-pulse rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900" />
+          <div className="h-44 w-full animate-pulse rounded-3xl border border-stone-200/80 bg-white/80 dark:border-purple-900/40 dark:bg-slate-900/80" />
           <TicketStatsCards loading />
-          <div className="h-80 w-full animate-pulse rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900" />
+          <div className="h-80 w-full animate-pulse rounded-3xl border border-stone-200/80 bg-white/80 dark:border-purple-900/40 dark:bg-slate-900/80" />
         </div>
       )}
 
       {detail && (
         <>
-          <section className="animate-in fade-in slide-in-from-bottom-3 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm duration-500 dark:border-slate-800 dark:bg-slate-900/80">
-            <div className="h-1 bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500" />
+          <section className="animate-in fade-in slide-in-from-bottom-3 overflow-hidden rounded-3xl border border-stone-200/80 bg-white/80 shadow-xl backdrop-blur-2xl duration-500 dark:border-purple-900/40 dark:bg-slate-900/80">
+            <div className="h-1 bg-gradient-to-r from-emerald-600 via-teal-600 to-amber-600 dark:from-purple-600 dark:via-violet-600 dark:to-indigo-500" />
             <div className="p-6">
-              <div className="flex flex-col gap-4 border-b border-slate-100 pb-5 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-4 border-b border-stone-100 pb-5 dark:border-slate-800/80 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex min-w-0 items-center gap-4">
                   <Avatar name={detail.fullName} size="lg" />
                   <div className="min-w-0">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                    <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-800 dark:text-purple-300">
                       {selfView ? "My Work" : detail.teamName}
                     </p>
-                    <h1 className="mt-1 truncate text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                    <h1 className="mt-0.5 truncate text-2xl font-black tracking-tight text-stone-900 dark:text-white">
                       {detail.fullName}
                     </h1>
-                    <p className="mt-1 text-sm font-semibold text-slate-500 dark:text-slate-400">
+                    <p className="mt-1 text-xs font-bold text-stone-500 dark:text-slate-400">
                       {detail.title} · {detail.teamName}
                     </p>
                   </div>
                 </div>
-                <span className="inline-flex w-fit items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300">
+                <span className="inline-flex w-fit items-center gap-2 rounded-lg border border-emerald-600/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-800 dark:border-purple-500/30 dark:bg-purple-500/10 dark:text-purple-300">
                   <ShieldCheck className="h-4 w-4" />
                   {detail.systemRole}
                 </span>
               </div>
 
               <dl className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/40">
-                  <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <div className="rounded-2xl border border-stone-200/80 bg-stone-50/60 px-4 py-3 dark:border-purple-900/30 dark:bg-slate-950/40">
+                  <dt className="text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 dark:text-slate-500">
                     First Name
                   </dt>
-                  <dd className="mt-1 text-sm font-bold text-slate-900 dark:text-white">
+                  <dd className="mt-1 text-xs font-bold text-stone-900 dark:text-white">
                     {detail.firstName}
                   </dd>
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/40">
-                  <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <div className="rounded-2xl border border-stone-200/80 bg-stone-50/60 px-4 py-3 dark:border-purple-900/30 dark:bg-slate-950/40">
+                  <dt className="text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 dark:text-slate-500">
                     Last Name
                   </dt>
-                  <dd className="mt-1 text-sm font-bold text-slate-900 dark:text-white">
+                  <dd className="mt-1 text-xs font-bold text-stone-900 dark:text-white">
                     {detail.lastName}
                   </dd>
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/40">
-                  <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <div className="rounded-2xl border border-stone-200/80 bg-stone-50/60 px-4 py-3 dark:border-purple-900/30 dark:bg-slate-950/40">
+                  <dt className="text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 dark:text-slate-500">
                     Role
                   </dt>
-                  <dd className="mt-1 truncate text-sm font-bold text-slate-900 dark:text-white">
+                  <dd className="mt-1 truncate text-xs font-bold text-stone-900 dark:text-white">
                     {detail.roleInTeam}
                   </dd>
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/40">
-                  <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <div className="rounded-2xl border border-stone-200/80 bg-stone-50/60 px-4 py-3 dark:border-purple-900/30 dark:bg-slate-950/40">
+                  <dt className="text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 dark:text-slate-500">
                     Registered At
                   </dt>
-                  <dd className="mt-1 text-sm font-bold text-slate-900 dark:text-white">
+                  <dd className="mt-1 text-xs font-bold text-stone-900 dark:text-white">
                     {formatDate(detail.registeredAt)}
                   </dd>
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/40">
-                  <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <div className="rounded-2xl border border-stone-200/80 bg-stone-50/60 px-4 py-3 dark:border-purple-900/30 dark:bg-slate-950/40">
+                  <dt className="text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 dark:text-slate-500">
                     Team Start Date
                   </dt>
-                  <dd className="mt-1 text-sm font-bold text-slate-900 dark:text-white">
+                  <dd className="mt-1 text-xs font-bold text-stone-900 dark:text-white">
                     {formatDate(detail.joinedAt)}
                   </dd>
                 </div>
@@ -588,50 +588,50 @@ export function TeamMemberDetailContainer({
           </section>
 
           {!selfView && (
-            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+            <section className="overflow-hidden rounded-3xl border border-stone-200/80 bg-white/80 shadow-xl backdrop-blur-2xl dark:border-purple-900/40 dark:bg-slate-900/80">
               <div className="p-6">
-                <div className="flex flex-col gap-3 border-b border-slate-100 pb-5 dark:border-slate-800 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex flex-col gap-3 border-b border-stone-100 pb-5 dark:border-slate-800/80 sm:flex-row sm:items-start sm:justify-between">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-violet-200 bg-violet-50 text-violet-600 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-400">
-                      <CalendarDays className="h-5 w-5" />
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-600/20 bg-emerald-500/10 text-emerald-700 dark:border-purple-500/30 dark:bg-purple-500/10 dark:text-purple-300">
+                      <CalendarDays className="h-4 w-4" />
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+                      <h2 className="text-base font-extrabold text-stone-900 dark:text-white">
                         Work Schedule & Leave
                       </h2>
-                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                      <p className="text-[11px] text-stone-500 dark:text-slate-400">
                         Manage this team member&apos;s weekly shift and leave
                         periods.
                       </p>
                     </div>
                   </div>
-                  <span className="inline-flex w-fit items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                    <Clock3 className="h-3.5 w-3.5 text-violet-500" />
+                  <span className="inline-flex w-fit items-center gap-1.5 rounded-xl border border-stone-200/80 bg-stone-50 px-3 py-1.5 text-xs font-bold text-stone-700 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300 font-mono">
+                    <Clock3 className="h-3.5 w-3.5 text-amber-700 dark:text-purple-400" />
                     {detail.schedule.timeZoneId}
                   </span>
                 </div>
 
-                <div className="mt-5 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+                <div className="mt-5 overflow-hidden rounded-2xl border border-stone-200/80 dark:border-purple-900/30">
                   <div className="overflow-x-auto">
                     <table className="w-full min-w-[650px] border-collapse text-left">
-                      <thead className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-400">
+                      <thead className="border-b border-stone-100 bg-stone-50/80 text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 dark:border-slate-800 dark:bg-slate-800/50 dark:text-slate-400">
                         <tr>
                           <th className="px-5 py-3">Working Day</th>
-                          <th className="px-5 py-3">Start</th>
-                          <th className="px-5 py-3">End</th>
+                          <th className="px-5 py-3">Start Time</th>
+                          <th className="px-5 py-3">End Time</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 text-sm dark:divide-slate-800/60">
+                      <tbody className="divide-y divide-stone-100 text-xs font-medium dark:divide-slate-800/60">
                         {shiftRows.map((row) => (
                           <tr
-                            className="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/40"
+                            className="transition-colors hover:bg-stone-50/60 dark:hover:bg-slate-800/50"
                             key={row.dayOfWeek}
                           >
                             <td className="px-5 py-3">
-                              <label className="flex cursor-pointer items-center gap-3 font-semibold text-slate-800 dark:text-slate-200">
+                              <label className="flex cursor-pointer items-center gap-3 font-bold text-stone-800 dark:text-slate-200">
                                 <input
                                   checked={row.enabled}
-                                  className="checkbox checkbox-sm checkbox-primary"
+                                  className="checkbox checkbox-xs rounded-md border-stone-300 dark:border-slate-700"
                                   disabled={selfView}
                                   onChange={(event) =>
                                     updateShiftRow(row.dayOfWeek, {
@@ -645,7 +645,7 @@ export function TeamMemberDetailContainer({
                             </td>
                             <td className="px-5 py-3">
                               <input
-                                className="input input-bordered input-sm w-36 rounded-lg border-slate-200 bg-white text-slate-900 focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                                className="w-36 rounded-xl border border-stone-300/80 bg-white px-3 py-1.5 text-xs font-bold text-stone-800 shadow-inner focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-purple-900/40 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-purple-500 dark:focus:ring-purple-500/20 transition-all disabled:opacity-40"
                                 disabled={selfView || !row.enabled}
                                 onChange={(event) =>
                                   updateShiftRow(row.dayOfWeek, {
@@ -658,7 +658,7 @@ export function TeamMemberDetailContainer({
                             </td>
                             <td className="px-5 py-3">
                               <input
-                                className="input input-bordered input-sm w-36 rounded-lg border-slate-200 bg-white text-slate-900 focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                                className="w-36 rounded-xl border border-stone-300/80 bg-white px-3 py-1.5 text-xs font-bold text-stone-800 shadow-inner focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-purple-900/40 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-purple-500 dark:focus:ring-purple-500/20 transition-all disabled:opacity-40"
                                 disabled={selfView || !row.enabled}
                                 onChange={(event) =>
                                   updateShiftRow(row.dayOfWeek, {
@@ -679,16 +679,16 @@ export function TeamMemberDetailContainer({
                 {!selfView && (
                   <div className="mt-5 flex justify-end">
                     <button
-                      className="btn btn-outline btn-primary min-w-44 rounded-xl border-indigo-300 bg-indigo-50/70 font-bold text-indigo-700 shadow-sm transition-all hover:bg-indigo-600 hover:text-white dark:border-violet-500/40 dark:bg-violet-500/10 dark:text-violet-300 dark:hover:bg-violet-600 dark:hover:text-white"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-700 dark:from-purple-600 dark:to-indigo-600 hover:from-emerald-500 hover:to-teal-600 dark:hover:from-purple-500 dark:hover:to-indigo-500 shadow-md shadow-emerald-700/20 dark:shadow-purple-600/30 transition-all disabled:opacity-50"
                       disabled={scheduleSaving}
                       onClick={() => void handleSaveSchedule()}
                       type="button"
                     >
                       {scheduleSaving ? (
-                        <span className="loading loading-spinner loading-sm" />
+                        <span className="loading loading-spinner loading-xs" />
                       ) : (
                         <>
-                          <Save className="h-4 w-4" />
+                          <Save className="h-3.5 w-3.5" />
                           Save Shift Schedule
                         </>
                       )}
@@ -696,33 +696,33 @@ export function TeamMemberDetailContainer({
                   </div>
                 )}
 
-                <div className="mt-8 border-t border-slate-100 pt-6 dark:border-slate-800">
-                  <h3 className="flex items-center gap-2 text-base font-bold text-slate-900 dark:text-white">
-                    <CalendarDays className="h-4 w-4 text-amber-500" />
+                <div className="mt-8 border-t border-stone-100 pt-6 dark:border-slate-800/80">
+                  <h3 className="flex items-center gap-2 text-sm font-extrabold text-stone-900 dark:text-white">
+                    <CalendarDays className="h-4 w-4 text-amber-700 dark:text-purple-400" />
                     Leave Periods
                   </h3>
 
                   {!selfView && (
-                    <div className="mt-4 grid gap-4 rounded-xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-950/50 md:grid-cols-2 xl:grid-cols-4">
-                      <label className="space-y-1.5">
-                        <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    <div className="mt-4 grid gap-4 rounded-2xl border border-stone-200/80 bg-stone-50/60 p-4 dark:border-purple-900/30 dark:bg-slate-950/40 md:grid-cols-2 xl:grid-cols-4">
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-stone-700 dark:text-slate-300">
                           Start Date
-                        </span>
+                        </label>
                         <input
-                          className="input input-bordered w-full rounded-xl border-slate-200 bg-white text-slate-900 focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                          className="w-full rounded-xl border border-stone-300/80 bg-white px-3.5 py-2 text-xs font-medium text-stone-800 shadow-inner focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-purple-900/40 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-purple-500 dark:focus:ring-purple-500/20 transition-all"
                           onChange={(event) =>
                             setLeaveStartDate(event.target.value)
                           }
                           type="date"
                           value={leaveStartDate}
                         />
-                      </label>
-                      <label className="space-y-1.5">
-                        <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-stone-700 dark:text-slate-300">
                           End Date
-                        </span>
+                        </label>
                         <input
-                          className="input input-bordered w-full rounded-xl border-slate-200 bg-white text-slate-900 focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                          className="w-full rounded-xl border border-stone-300/80 bg-white px-3.5 py-2 text-xs font-medium text-stone-800 shadow-inner focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-purple-900/40 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-purple-500 dark:focus:ring-purple-500/20 transition-all"
                           min={leaveStartDate || undefined}
                           onChange={(event) =>
                             setLeaveEndDate(event.target.value)
@@ -730,13 +730,13 @@ export function TeamMemberDetailContainer({
                           type="date"
                           value={leaveEndDate}
                         />
-                      </label>
-                      <label className="space-y-1.5 md:col-span-2 xl:col-span-1">
-                        <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                      </div>
+                      <div className="space-y-1 md:col-span-2 xl:col-span-1">
+                        <label className="text-xs font-semibold text-stone-700 dark:text-slate-300">
                           Reason
-                        </span>
+                        </label>
                         <input
-                          className="input input-bordered w-full rounded-xl border-slate-200 bg-white text-slate-900 focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                          className="w-full rounded-xl border border-stone-300/80 bg-white px-3.5 py-2 text-xs font-medium text-stone-800 shadow-inner focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-purple-900/40 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-purple-500 dark:focus:ring-purple-500/20 transition-all"
                           maxLength={500}
                           onChange={(event) =>
                             setLeaveReason(event.target.value)
@@ -745,11 +745,11 @@ export function TeamMemberDetailContainer({
                           type="text"
                           value={leaveReason}
                         />
-                      </label>
+                      </div>
                       <div className="flex items-end gap-2">
                         {editingLeaveId && (
                           <button
-                            className="btn btn-outline rounded-xl border-slate-300 bg-white font-bold text-slate-700 shadow-sm dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-300 dark:hover:bg-violet-600 dark:hover:text-white"
+                            className="px-4 py-2 rounded-xl text-xs font-bold text-stone-700 dark:text-slate-300 border border-stone-300 bg-white dark:border-slate-700 dark:bg-slate-900 hover:bg-stone-100 dark:hover:bg-slate-800 transition-all"
                             disabled={leaveSaving}
                             onClick={cancelLeaveEdit}
                             type="button"
@@ -758,7 +758,7 @@ export function TeamMemberDetailContainer({
                           </button>
                         )}
                         <button
-                          className="btn btn-outline btn-primary w-full rounded-xl border-indigo-300 bg-indigo-50/70 font-bold text-indigo-700 shadow-sm hover:bg-indigo-600 hover:text-white dark:border-violet-500/40 dark:bg-violet-500/10 dark:text-violet-300 dark:hover:bg-violet-600 dark:hover:text-white"
+                          className="inline-flex w-full items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-700 dark:from-purple-600 dark:to-indigo-600 hover:from-emerald-500 hover:to-teal-600 dark:hover:from-purple-500 dark:hover:to-indigo-500 shadow-md shadow-emerald-700/20 dark:shadow-purple-600/30 transition-all disabled:opacity-40"
                           disabled={
                             leaveSaving ||
                             !leaveStartDate ||
@@ -769,15 +769,15 @@ export function TeamMemberDetailContainer({
                           type="button"
                         >
                           {leaveSaving ? (
-                            <span className="loading loading-spinner loading-sm" />
+                            <span className="loading loading-spinner loading-xs" />
                           ) : editingLeaveId ? (
                             <>
-                              <Save className="h-4 w-4" />
+                              <Save className="h-3.5 w-3.5" />
                               Save Leave
                             </>
                           ) : (
                             <>
-                              <CalendarDays className="h-4 w-4" />
+                              <CalendarDays className="h-3.5 w-3.5" />
                               Add Leave
                             </>
                           )}
@@ -786,15 +786,15 @@ export function TeamMemberDetailContainer({
                     </div>
                   )}
 
-                  <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+                  <div className="mt-4 overflow-hidden rounded-2xl border border-stone-200/80 dark:border-purple-900/30">
                     {detail.schedule.leaves.length === 0 ? (
-                      <p className="px-5 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                      <p className="px-5 py-8 text-center text-xs font-medium text-stone-400 dark:text-slate-500">
                         No leave period has been registered.
                       </p>
                     ) : (
                       <div className="overflow-x-auto">
                         <table className="w-full min-w-[700px] border-collapse text-left">
-                          <thead className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-400">
+                          <thead className="border-b border-stone-100 bg-stone-50/80 text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 dark:border-slate-800 dark:bg-slate-800/50 dark:text-slate-400">
                             <tr>
                               <th className="px-5 py-3">Date Range</th>
                               <th className="px-5 py-3">Reason</th>
@@ -804,35 +804,35 @@ export function TeamMemberDetailContainer({
                               )}
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                          <tbody className="divide-y divide-stone-100 text-xs font-medium dark:divide-slate-800/60">
                             {detail.schedule.leaves.map((leave) => (
                               <tr
-                                className="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/40"
+                                className="transition-colors hover:bg-stone-50/60 dark:hover:bg-slate-800/50"
                                 key={leave.id}
                               >
-                                <td className="whitespace-nowrap px-5 py-3.5 text-sm font-semibold text-slate-800 dark:text-slate-200">
+                                <td className="whitespace-nowrap px-5 py-3.5 font-bold text-stone-800 dark:text-slate-200 font-mono">
                                   {formatDateOnly(leave.startDate)} –{" "}
                                   {formatDateOnly(leave.endDate)}
                                 </td>
-                                <td className="px-5 py-3.5 text-sm text-slate-700 dark:text-slate-300">
+                                <td className="px-5 py-3.5 text-stone-700 dark:text-slate-300">
                                   {leave.reason}
                                 </td>
-                                <td className="px-5 py-3.5 text-sm text-slate-600 dark:text-slate-400">
+                                <td className="px-5 py-3.5 text-stone-600 dark:text-slate-400">
                                   {leave.createdByName}
                                 </td>
                                 {!selfView && (
                                   <td className="px-5 py-3.5 text-right">
                                     <div className="flex justify-end gap-2">
                                       <button
-                                        className="btn btn-outline btn-sm rounded-lg border-slate-300 bg-white text-slate-700 shadow-sm dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-300 dark:hover:bg-violet-600 dark:hover:text-white"
+                                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-stone-700 dark:text-slate-300 border border-stone-300 bg-white dark:border-slate-700 dark:bg-slate-800 hover:bg-stone-100 dark:hover:bg-slate-700 transition-all"
                                         onClick={() => handleEditLeave(leave)}
                                         type="button"
                                       >
-                                        <Edit3 className="h-3.5 w-3.5" />
+                                        <Edit3 className="h-3.5 w-3.5 text-emerald-600 dark:text-purple-400" />
                                         Edit
                                       </button>
                                       <button
-                                        className="btn btn-outline btn-error btn-sm rounded-lg bg-rose-50/70 font-semibold shadow-sm dark:bg-rose-500/10"
+                                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-rose-700 dark:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 transition-all"
                                         onClick={() =>
                                           void handleDeleteLeave(leave.id)
                                         }

@@ -17,14 +17,9 @@ import {
   Paperclip,
   Save,
 } from 'lucide-react';
-import { api } from '@/src/lib/api';
+import { lookupService } from '@/src/services/lookupService';
+import type { LookupItemDto } from '@/src/types/common';
 import type { TicketCreateDto, TicketDetailDto, TicketUpdateDto } from '@/src/types/ticket';
-
-interface LookupItem {
-  id: string;
-  name: string;
-  categoryId?: string;
-}
 
 interface TicketFormProps {
   error?: string;
@@ -32,20 +27,6 @@ interface TicketFormProps {
   initialTicket?: TicketDetailDto | null;
   onSubmit: (dto: TicketCreateDto | TicketUpdateDto) => Promise<void>;
 }
-
-const PRIORITY_OPTIONS = [
-  { id: "3a1d571f-732c-4618-b1e2-96f72544533d", name: "Critical" },
-  { id: "2141d95a-7069-4167-92d6-780fa2f7232e", name: "High" },
-  { id: "fa02063a-a289-43d7-a4c9-bfabd4b9c030", name: "Medium" },
-  { id: "8faaaa7c-2f82-4f28-a2e0-05e73c3669f6", name: "Low" },
-];
-
-const URGENCY_OPTIONS = [
-  { id: "8aef38f8-600d-4ff6-ba16-020048b7723c", name: "Low" },
-  { id: "f3d500c9-a18c-4de2-b4c5-878e638271db", name: "Normal" },
-  { id: "8fd27669-4526-4f30-b39a-6e100d73226d", name: "High" },
-  { id: "5d814d17-667b-4dc2-8ebe-f0f40007bee5", name: "Urgent" },
-];
 
 export function TicketForm({ error, loading, initialTicket, onSubmit }: TicketFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -61,10 +42,14 @@ export function TicketForm({ error, loading, initialTicket, onSubmit }: TicketFo
   const [impactLevelId, setImpactLevelId] = useState('');
   const [urgencyLevelId, setUrgencyLevelId] = useState('');
 
-  const [categories, setCategories] = useState<LookupItem[]>([]);
-  const [subcategories, setSubcategories] = useState<LookupItem[]>([]);
-  const [impactLevels, setImpactLevels] = useState<LookupItem[]>([]);
+  // Lookup State'leri
+  const [categories, setCategories] = useState<LookupItemDto[]>([]);
+  const [subcategories, setSubcategories] = useState<LookupItemDto[]>([]);
+  const [priorities, setPriorities] = useState<LookupItemDto[]>([]);
+  const [impactLevels, setImpactLevels] = useState<LookupItemDto[]>([]);
+  const [urgencyLevels, setUrgencyLevels] = useState<LookupItemDto[]>([]);
 
+  const [loadingSubcategories, setLoadingSubcategories] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -82,35 +67,51 @@ export function TicketForm({ error, loading, initialTicket, onSubmit }: TicketFo
     }
   }, [initialTicket]);
 
-  // Lookup Verilerini Çekme
+  // 1. Tüm Ana Lookups Verilerini Backend'den Çekme
   useEffect(() => {
     async function loadLookups() {
       try {
-        const [catRes, subRes, impactRes] = await Promise.allSettled([
-          api.get<LookupItem[]>('/categories').catch(() => api.get<LookupItem[]>('/ticket-categories')),
-          api.get<LookupItem[]>('/subcategories').catch(() => api.get<LookupItem[]>('/ticket-subcategories')),
-          api.get<LookupItem[]>('/impact-levels').catch(() => api.get<LookupItem[]>('/impactlevels')),
+        const [cats, prios, impacts, urgencies] = await Promise.all([
+          lookupService.getCategories(),
+          lookupService.getPriorities(),
+          lookupService.getImpactLevels(),
+          lookupService.getUrgencyLevels(),
         ]);
 
-        if (catRes.status === 'fulfilled' && catRes.value?.data) {
-          setCategories(catRes.value.data);
-        }
-        if (subRes.status === 'fulfilled' && subRes.value?.data) {
-          setSubcategories(subRes.value.data);
-        }
-        if (impactRes.status === 'fulfilled' && impactRes.value?.data) {
-          setImpactLevels(impactRes.value.data);
-        }
+        setCategories(cats || []);
+        setPriorities(prios || []);
+        setImpactLevels(impacts || []);
+        setUrgencyLevels(urgencies || []);
       } catch (err) {
-        console.error("Failed to fetch lookups", err);
+        console.error("Failed to load lookup data", err);
       }
     }
     void loadLookups();
   }, []);
 
-  const filteredSubcategories = categoryId
-    ? subcategories.filter((sub) => sub.categoryId === categoryId)
-    : subcategories;
+  // 2. Kategori Seçildiğinde Alt Kategorileri `lookupService` İle Çekme
+  useEffect(() => {
+    if (!categoryId) {
+      setSubcategories([]);
+      setSubcategoryId('');
+      return;
+    }
+
+    async function fetchSubcategories() {
+      setLoadingSubcategories(true);
+      try {
+        const subs = await lookupService.getSubcategories(categoryId);
+        setSubcategories(subs || []);
+      } catch (err) {
+        console.error("Failed to load subcategories for category:", categoryId, err);
+        setSubcategories([]);
+      } finally {
+        setLoadingSubcategories(false);
+      }
+    }
+
+    void fetchSubcategories();
+  }, [categoryId]);
 
   const handleFileDrop = (files: FileList | null) => {
     if (!files) return;
@@ -133,7 +134,7 @@ export function TicketForm({ error, loading, initialTicket, onSubmit }: TicketFo
         categoryId,
         subcategoryId: subcategoryId || undefined,
         priorityId,
-        impactLevelId: impactLevelId || priorityId,
+        impactLevelId,
         urgencyLevelId,
       };
       await onSubmit(updateDto);
@@ -145,7 +146,7 @@ export function TicketForm({ error, loading, initialTicket, onSubmit }: TicketFo
         categoryId,
         subcategoryId: subcategoryId || undefined,
         priorityId,
-        impactLevelId: impactLevelId || priorityId,
+        impactLevelId,
         urgencyLevelId,
         attachments: selectedFiles,
       };
@@ -236,7 +237,7 @@ export function TicketForm({ error, loading, initialTicket, onSubmit }: TicketFo
           >
             <option value="" className="bg-white dark:bg-slate-900">Select Category</option>
             {categories.map((cat) => (
-              <option key={cat.id} value={cat.id} className="bg-white dark:bg-slate-900">
+              <option key={cat.itemId} value={cat.itemId} className="bg-white dark:bg-slate-900">
                 {cat.name}
               </option>
             ))}
@@ -251,12 +252,20 @@ export function TicketForm({ error, loading, initialTicket, onSubmit }: TicketFo
           <select
             value={subcategoryId}
             onChange={(e) => setSubcategoryId(e.target.value)}
-            disabled={!categoryId || filteredSubcategories.length === 0}
+            disabled={!categoryId || loadingSubcategories || subcategories.length === 0}
             className="w-full rounded-xl border border-stone-300/80 dark:border-purple-800/40 bg-stone-50/60 dark:bg-slate-950/60 px-3 py-2.5 text-xs font-medium text-stone-800 dark:text-slate-100 focus:border-emerald-600 dark:focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-purple-500/20 transition-all cursor-pointer disabled:opacity-40"
           >
-            <option value="" className="bg-white dark:bg-slate-900">Select Subcategory</option>
-            {filteredSubcategories.map((sub) => (
-              <option key={sub.id} value={sub.id} className="bg-white dark:bg-slate-900">
+            <option value="" className="bg-white dark:bg-slate-900">
+              {!categoryId
+                ? "First select a category..."
+                : loadingSubcategories
+                ? "Loading subcategories..."
+                : subcategories.length === 0
+                ? "No subcategory available"
+                : "Select Subcategory"}
+            </option>
+            {subcategories.map((sub) => (
+              <option key={sub.itemId} value={sub.itemId} className="bg-white dark:bg-slate-900">
                 {sub.name}
               </option>
             ))}
@@ -275,8 +284,8 @@ export function TicketForm({ error, loading, initialTicket, onSubmit }: TicketFo
             className="w-full rounded-xl border border-stone-300/80 dark:border-purple-800/40 bg-stone-50/60 dark:bg-slate-950/60 px-3 py-2.5 text-xs font-medium text-stone-800 dark:text-slate-100 focus:border-emerald-600 dark:focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-purple-500/20 transition-all cursor-pointer"
           >
             <option value="" className="bg-white dark:bg-slate-900">Select Priority</option>
-            {PRIORITY_OPTIONS.map((item) => (
-              <option key={item.id} value={item.id} className="bg-white dark:bg-slate-900">
+            {priorities.map((item) => (
+              <option key={item.itemId} value={item.itemId} className="bg-white dark:bg-slate-900">
                 {item.name}
               </option>
             ))}
@@ -298,17 +307,11 @@ export function TicketForm({ error, loading, initialTicket, onSubmit }: TicketFo
             className="w-full rounded-xl border border-stone-300/80 dark:border-purple-800/40 bg-stone-50/60 dark:bg-slate-950/60 px-3 py-2.5 text-xs font-medium text-stone-800 dark:text-slate-100 focus:border-emerald-600 dark:focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-purple-500/20 transition-all cursor-pointer"
           >
             <option value="" className="bg-white dark:bg-slate-900">Select Impact</option>
-            {impactLevels.length > 0
-              ? impactLevels.map((item) => (
-                  <option key={item.id} value={item.id} className="bg-white dark:bg-slate-900">
-                    {item.name}
-                  </option>
-                ))
-              : PRIORITY_OPTIONS.map((item) => (
-                  <option key={item.id} value={item.id} className="bg-white dark:bg-slate-900">
-                    {item.name}
-                  </option>
-                ))}
+            {impactLevels.map((item) => (
+              <option key={item.itemId} value={item.itemId} className="bg-white dark:bg-slate-900">
+                {item.name}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -324,8 +327,8 @@ export function TicketForm({ error, loading, initialTicket, onSubmit }: TicketFo
             className="w-full rounded-xl border border-stone-300/80 dark:border-purple-800/40 bg-stone-50/60 dark:bg-slate-950/60 px-3 py-2.5 text-xs font-medium text-stone-800 dark:text-slate-100 focus:border-emerald-600 dark:focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-purple-500/20 transition-all cursor-pointer"
           >
             <option value="" className="bg-white dark:bg-slate-900">Select Urgency</option>
-            {URGENCY_OPTIONS.map((item) => (
-              <option key={item.id} value={item.id} className="bg-white dark:bg-slate-900">
+            {urgencyLevels.map((item) => (
+              <option key={item.itemId} value={item.itemId} className="bg-white dark:bg-slate-900">
                 {item.name}
               </option>
             ))}
