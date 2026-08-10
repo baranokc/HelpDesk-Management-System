@@ -326,11 +326,17 @@ public class SlaService : ISlaService
             cancellationToken);
     }
 
-    private Task<SlaRecordEntity?> GetRecordWithCalendarAsync(
+    private async Task<SlaRecordEntity?> GetRecordWithCalendarAsync(
         Guid ticketId,
         CancellationToken cancellationToken)
     {
-        return _context.SlaRecords
+        var trackedRecord = _context.SlaRecords.Local
+            .SingleOrDefault(record => record.TicketId == ticketId);
+
+        if (trackedRecord?.SlaCalendar is not null)
+            return trackedRecord;
+
+        return await _context.SlaRecords
             .AsSplitQuery()
             .Include(record => record.SlaCalendar)
                 .ThenInclude(calendar => calendar.WorkingPeriods)

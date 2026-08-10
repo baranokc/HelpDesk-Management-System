@@ -54,6 +54,7 @@ public class TicketCommentService : ITicketCommentService
             .Include(item => item.Role)
             .SingleOrDefaultAsync(x => x.Id == userId, cancellationToken)
             ?? throw new InvalidOperationException("Comment owner was not found.");
+
         var entity = new Entities.TicketComment
         {
             TicketId = ticketId,
@@ -102,6 +103,7 @@ public class TicketCommentService : ITicketCommentService
                 ?? throw new InvalidOperationException(
                     "The active Waiting for User status was not found.");
 
+            var oldStatusName = ticket.Status.Name;
             ticket.StatusId = waitingForUserStatus.Id;
             shouldPauseSla = true;
 
@@ -110,7 +112,7 @@ public class TicketCommentService : ITicketCommentService
                 TicketId = ticket.Id,
                 ActionType = Entities.TicketHistoryActionType.StatusChanged,
                 FieldName = "Status",
-                OldValue = ticket.Status.Name,
+                OldValue = oldStatusName,
                 NewValue = waitingForUserStatus.Name,
                 Description =
                     "Automatically changed after the assigned team member replied.",
@@ -134,6 +136,7 @@ public class TicketCommentService : ITicketCommentService
                 ?? throw new InvalidOperationException(
                     "The active In Progress status was not found.");
 
+            var oldStatusName = ticket.Status.Name;
             ticket.StatusId = inProgressStatus.Id;
             shouldResumeSla = true;
 
@@ -142,7 +145,7 @@ public class TicketCommentService : ITicketCommentService
                 TicketId = ticket.Id,
                 ActionType = Entities.TicketHistoryActionType.StatusChanged,
                 FieldName = "Status",
-                OldValue = ticket.Status.Name,
+                OldValue = oldStatusName,
                 NewValue = inProgressStatus.Name,
                 Description =
                     "Automatically changed after the ticket creator replied.",
@@ -185,13 +188,17 @@ public class TicketCommentService : ITicketCommentService
                 cancellationToken);
         }
 
+        // Tüm değişiklikler (Ticket.StatusId, Ticket.FirstResponseAt, Ticket.SlaDueAt, TicketComment, TicketHistory, SlaRecord)
+        // tek bir güvenli veritabanı işleminde kaydediliyor.
         await _db.SaveChangesAsync(cancellationToken);
+
         var attachments = await _attachmentService.AddCommentAttachmentsAsync(ticketId, entity.Id, dto.Attachments, userId, cancellationToken);
         await _notificationService.NotifyCommentAddedAsync(
             ticketId,
             userId,
             entity.IsInternal,
             cancellationToken);
+
         return new TicketCommentDto
         {
             Id = entity.Id,
