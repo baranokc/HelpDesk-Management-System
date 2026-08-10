@@ -75,7 +75,7 @@ export default function AdminLayout({
 
   if (loading || !user || user.role !== "Admin") {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-sky-50/70 dark:bg-slate-950 transition-colors">
         <LoadingSpinner label="Checking admin permissions..." />
       </div>
     );
@@ -92,7 +92,8 @@ export default function AdminLayout({
   ];
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-[calc(100vh-4rem)] gap-6 py-4 max-w-7xl mx-auto px-2 sm:px-4">
+    <div className="min-h-screen bg-sky-50/70 dark:bg-slate-950 transition-colors">
+      <div className="flex flex-col lg:flex-row min-h-screen gap-6 py-4 max-w-7xl mx-auto px-2 sm:px-4">
       {/* ANIMASYONLU SIDEBAR */}
       <motion.aside 
         initial={{ opacity: 0, x: -16 }}
@@ -173,6 +174,7 @@ export default function AdminLayout({
           </motion.div>
         </AnimatePresence>
       </main>
+      </div>
     </div>
   );
 }

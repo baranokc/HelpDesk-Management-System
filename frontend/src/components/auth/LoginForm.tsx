@@ -116,7 +116,7 @@ export function LoginForm() {
 
   if (authLoading || isAuthenticated) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-amber-50/30 dark:bg-slate-950 transition-colors">
+      <div className="flex min-h-screen items-center justify-center bg-sky-50/70 dark:bg-slate-950 transition-colors">
         <div className="flex flex-col items-center gap-3">
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-600 dark:border-purple-500 border-t-transparent" />
           <span className="text-xs font-semibold text-stone-500 dark:text-slate-400">
@@ -129,10 +129,11 @@ export function LoginForm() {
 
   return (
     <>
-      <div className="relative flex min-h-screen items-center justify-center bg-amber-50/30 dark:bg-slate-950 px-4 py-12 transition-colors overflow-hidden">
+      <div className="relative flex min-h-screen items-center justify-center bg-sky-50/70 dark:bg-slate-950 px-4 py-12 transition-colors overflow-hidden">
         {/* Glow Arka Plan Efektleri */}
-        <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-amber-500/10 dark:bg-purple-600/15 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-teal-500/10 dark:bg-indigo-600/15 blur-3xl pointer-events-none" />
+        <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-sky-400/20 dark:bg-purple-600/15 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-teal-400/20 dark:bg-indigo-600/15 blur-3xl pointer-events-none" />
+
 
         {/* Theme Toggle */}
         <div className="absolute top-5 right-5 z-20">
@@ -140,7 +141,7 @@ export function LoginForm() {
         </div>
 
         {/* Giriş Kartı */}
-        <div className="relative w-full max-w-md rounded-3xl border border-stone-200/80 dark:border-purple-900/40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl p-8 shadow-2xl transition-all">
+        <div className="relative w-full max-w-md rounded-3xl border border-sky-200/80 dark:border-purple-900/40 bg-white/85 dark:bg-slate-900/80 backdrop-blur-2xl p-8 shadow-2xl transition-all z-10">
           
           {/* LOGO & DİNAMİK WELCOME BAŞLIĞI */}
           <div className="text-center space-y-2">
