@@ -38,6 +38,8 @@ public sealed class TeamManagementController : ControllerBase
         [FromQuery] Guid? teamId,
         [FromQuery] int unassignedPageNumber = 1,
         [FromQuery] int unassignedPageSize = 10,
+        [FromQuery] string unassignedSortBy = "ticketNumber",
+        [FromQuery] string unassignedSortDirection = "desc",
         CancellationToken cancellationToken = default)
     {
         if (CurrentUserId == Guid.Empty)
@@ -50,6 +52,8 @@ public sealed class TeamManagementController : ControllerBase
                 teamId,
                 unassignedPageNumber,
                 unassignedPageSize,
+                unassignedSortBy,
+                unassignedSortDirection,
                 cancellationToken));
         }
         catch (UnauthorizedAccessException exception)
@@ -73,6 +77,10 @@ public sealed class TeamManagementController : ControllerBase
         [FromQuery] int activePageNumber = 1,
         [FromQuery] int inactivePageNumber = 1,
         [FromQuery] int pageSize = 25,
+        [FromQuery] string activeSortBy = "ticketNumber",
+        [FromQuery] string activeSortDirection = "desc",
+        [FromQuery] string inactiveSortBy = "ticketNumber",
+        [FromQuery] string inactiveSortDirection = "desc",
         CancellationToken cancellationToken = default)
     {
         if (CurrentUserId == Guid.Empty)
@@ -86,6 +94,10 @@ public sealed class TeamManagementController : ControllerBase
                 activePageNumber,
                 inactivePageNumber,
                 pageSize,
+                activeSortBy,
+                activeSortDirection,
+                inactiveSortBy,
+                inactiveSortDirection,
                 cancellationToken);
 
             return result is null
@@ -278,6 +290,10 @@ public sealed class TeamManagementController : ControllerBase
         [FromQuery] int activePageNumber = 1,
         [FromQuery] int inactivePageNumber = 1,
         [FromQuery] int pageSize = 25,
+        [FromQuery] string activeSortBy = "ticketNumber",
+        [FromQuery] string activeSortDirection = "desc",
+        [FromQuery] string inactiveSortBy = "ticketNumber",
+        [FromQuery] string inactiveSortDirection = "desc",
         CancellationToken cancellationToken = default)
     {
         if (CurrentUserId == Guid.Empty)
@@ -288,6 +304,10 @@ public sealed class TeamManagementController : ControllerBase
             activePageNumber,
             inactivePageNumber,
             pageSize,
+            activeSortBy,
+            activeSortDirection,
+            inactiveSortBy,
+            inactiveSortDirection,
             cancellationToken);
 
         return result is null
