@@ -435,44 +435,62 @@ public sealed class TeamManagementService : ITeamManagementService
         };
     }
 
-    public async Task<TeamMemberScheduleDto?> UpdateMemberScheduleAsync(
-        Guid leaderUserId,
-        Guid teamMemberId,
-        UpdateTeamMemberScheduleDto dto,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(dto);
-        ValidateShifts(dto.Shifts);
+public async Task<TeamMemberScheduleDto?> UpdateMemberScheduleAsync(
+    Guid leaderUserId,
+    Guid teamMemberId,
+    UpdateTeamMemberScheduleDto dto,
+    CancellationToken cancellationToken = default)
+{
+    ArgumentNullException.ThrowIfNull(dto);
+    ValidateShifts(dto.Shifts);
 
-        var member = await GetManagedMemberForUpdateAsync(
-            leaderUserId,
-            teamMemberId,
-            includeShifts: true,
-            cancellationToken: cancellationToken);
+    // Önceki isteklerden kalmış olabilecek takip edilen entity'leri temizle.
+    _db.ChangeTracker.Clear();
 
-        if (member is null)
-            return null;
+    var member = await GetManagedMemberForUpdateAsync(
+        leaderUserId,
+        teamMemberId,
+        includeShifts: false,
+        cancellationToken: cancellationToken);
 
-        _db.TeamMemberShifts.RemoveRange(member.Shifts);
+    if (member is null)
+        return null;
 
-        foreach (var shift in dto.Shifts.OrderBy(item => item.DayOfWeek))
+    await using var transaction =
+        await _db.Database.BeginTransactionAsync(cancellationToken);
+
+    // Silme işlemini ChangeTracker kullanmadan doğrudan veritabanında yapar.
+    // Kayıt zaten yoksa concurrency exception oluşmaz.
+    await _db.TeamMemberShifts
+        .Where(shift => shift.TeamMemberId == member.Id)
+        .ExecuteDeleteAsync(cancellationToken);
+
+    var replacementShifts = dto.Shifts
+        .OrderBy(shift => shift.DayOfWeek)
+        .Select(shift => new TeamMemberShift
         {
-            member.Shifts.Add(new TeamMemberShift
-            {
-                Id = Guid.NewGuid(),
-                TeamMemberId = member.Id,
-                DayOfWeek = shift.DayOfWeek,
-                StartTime = shift.StartTime,
-                EndTime = shift.EndTime
-            });
-        }
+            Id = Guid.NewGuid(),
+            TeamMemberId = member.Id,
+            DayOfWeek = shift.DayOfWeek,
+            StartTime = shift.StartTime,
+            EndTime = shift.EndTime
+        })
+        .ToList();
 
-        await _db.SaveChangesAsync(cancellationToken);
-
-        return await GetMemberScheduleAsync(
-            member.Id,
+    if (replacementShifts.Count > 0)
+    {
+        await _db.TeamMemberShifts.AddRangeAsync(
+            replacementShifts,
             cancellationToken);
     }
+
+    await _db.SaveChangesAsync(cancellationToken);
+    await transaction.CommitAsync(cancellationToken);
+
+    return await GetMemberScheduleAsync(
+        member.Id,
+        cancellationToken);
+}
 
     public async Task<TeamMemberLeaveDto?> AddMemberLeaveAsync(
         Guid leaderUserId,
