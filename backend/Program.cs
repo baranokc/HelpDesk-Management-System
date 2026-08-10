@@ -28,6 +28,7 @@ using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Http.Features;
 using backend.Services.SatisfactionSurvey;
 using backend.Services.Email;
+using backend.Services.UserRoles;
 using backend.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -120,6 +121,7 @@ builder.Services.AddScoped<ISlaService, SlaService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<ITeamChatService, TeamChatService>();
 builder.Services.AddScoped<ISatisfactionSurveyService, SatisfactionSurveyService>();
+builder.Services.AddScoped<IUserRoleService, UserRoleService>();
 builder.Services.AddHostedService<SlaNotificationWorker>();
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
@@ -275,6 +277,10 @@ using (var scope = app.Services.CreateScope())
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await context.Database.MigrateAsync();
     await DataSeeder.SeedAsync(context);
+
+    var userRoleService = scope.ServiceProvider
+        .GetRequiredService<IUserRoleService>();
+    await userRoleService.SynchronizeRoleMappingsAsync();
 }
 
 app.UseRouting();

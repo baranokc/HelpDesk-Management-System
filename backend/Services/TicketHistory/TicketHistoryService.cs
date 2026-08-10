@@ -37,7 +37,7 @@ public class TicketHistoryService : ITicketHistoryService
                     ? h.Description
                     : null,
                 ChangedById = h.ChangedById,
-                ChangedByName = h.ChangedBy.Name + " " + h.ChangedBy.LastName,
+                ChangedByName = h.ChangedBy.Name == null ? "System" :(h.ChangedBy.Name + " " + h.ChangedBy.LastName).Trim(),
                 ChangedAt = h.ChangedAt
             })
             .ToListAsync(cancellationToken);

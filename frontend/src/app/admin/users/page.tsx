@@ -6,6 +6,7 @@ import {
   Search, RotateCw, Trash2, Mail, UserX
 } from "lucide-react";
 import { api, getApiErrorMessage } from "@/src/lib/api";
+import { userService } from "@/src/services/userService";
 import { useAuth } from "@/src/context/AuthContext";
 import { Alert } from "@/src/components/ui/Alert";
 import { ConfirmModal } from "@/src/components/ui/ConfirmModal";
@@ -15,21 +16,29 @@ export interface UserDto {
   id: string;
   fullName: string;
   email: string;
-  role: any;
+  role: unknown;
   avatarUrl?: string | null;
   profilePictureUrl?: string | null;
 }
 
-const normalizeRole = (roleData: any): string => {
+const normalizeRole = (roleData: unknown): string => {
   if (!roleData) return "User";
-  let r = typeof roleData === 'object' ? (roleData.name || roleData.Name || "User") : String(roleData).trim();
+
+  let roleValue: string;
+  if (typeof roleData === "object") {
+    const roleRecord = roleData as Record<string, unknown>;
+    const roleName = roleRecord.name ?? roleRecord.Name;
+    roleValue = typeof roleName === "string" ? roleName.trim() : "User";
+  } else {
+    roleValue = String(roleData).trim();
+  }
   
-  const lowerR = r.toLowerCase();
+  const lowerR = roleValue.toLowerCase();
   if (lowerR === "0" || lowerR === "admin") return "Admin";
   if (lowerR === "1" || lowerR === "teamleader") return "TeamLeader";
   if (lowerR === "2" || lowerR === "supportagent") return "SupportAgent";
   if (lowerR === "3" || lowerR === "user") return "User";
-  return r;
+  return roleValue;
 };
 
 // Akıllı Profil Resmi Bileşeni (Light: Yeşil/Amber | Dark: Elektrik Mor/Eflatun)
@@ -100,7 +109,11 @@ export default function AdminUsersPage() {
   };
 
   useEffect(() => {
-    void fetchUsers();
+    const initialLoadTimer = window.setTimeout(() => {
+      void fetchUsers();
+    }, 0);
+
+    return () => window.clearTimeout(initialLoadTimer);
   }, []);
 
   const handleRoleChange = async (targetUser: UserDto, newRoleString: string) => {
@@ -112,7 +125,10 @@ export default function AdminUsersPage() {
     setSuccessMsg(null);
 
     try {
-      await api.put(`/admin/users/${targetUser.id}/role`, { role: newRoleString });
+      await userService.updateUserRole({
+        userId: targetUser.id,
+        newRole: newRoleString,
+      });
       setUsers((prev) =>
         prev.map((u) => (u.id === targetUser.id ? { ...u, role: newRoleString } : u))
       );
@@ -181,7 +197,7 @@ export default function AdminUsersPage() {
     });
   }, [users, searchTerm, roleFilter]);
 
-  const renderRoleBadge = (roleRaw: any) => {
+  const renderRoleBadge = (roleRaw: unknown) => {
     const role = normalizeRole(roleRaw);
     switch (role) {
       case "Admin":
