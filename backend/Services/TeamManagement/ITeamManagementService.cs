@@ -7,6 +7,8 @@ public interface ITeamManagementService
     Task<TeamManagementOverviewDto> GetOverviewAsync(
         Guid leaderUserId,
         Guid? teamId,
+        int unassignedPageNumber,
+        int unassignedPageSize,
         CancellationToken cancellationToken = default);
 
     Task<TeamMemberDetailDto?> GetMemberDetailAsync(

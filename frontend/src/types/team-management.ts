@@ -46,6 +46,18 @@ export interface TeamMemberSummaryDto {
   recentTickets: TeamMemberTicketDto[];
 }
 
+export interface UnassignedTeamTicketDto {
+  id: string;
+  ticketNumber: string;
+  ticketTitle: string;
+  categoryName: string;
+  statusName: string;
+  priorityName: string;
+  createdByName: string;
+  createdByAvatarUrl?: string | null;
+  createdAt: string;
+}
+
 export interface TeamManagementOverviewDto {
   teamId: string;
   teamName: string;
@@ -53,6 +65,7 @@ export interface TeamManagementOverviewDto {
   managedTeams: ManagedTeamDto[];
   stats: TeamTicketStatsDto;
   csat: CsatStatsDto;
+  unassignedTickets: PagedResultDto<UnassignedTeamTicketDto>;
   members: TeamMemberSummaryDto[];
 }
 

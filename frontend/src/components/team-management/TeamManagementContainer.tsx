@@ -17,10 +17,13 @@ import { Avatar } from "@/src/components/ui/Avatar";
 import { TicketPriorityBadge } from "@/src/components/tickets/TicketPriorityBadge";
 import { TicketStatsCards } from "@/src/components/tickets/TicketStatsCards";
 import { TicketStatusBadge } from "@/src/components/tickets/TicketStatusBadge";
+import { UnassignedTeamTickets } from "@/src/components/team-management/UnassignedTeamTickets";
 import { useAuth } from "@/src/context/AuthContext";
 import { getApiErrorMessage } from "@/src/lib/api";
 import { teamManagementService } from "@/src/services/teamManagementService";
 import type { TeamManagementOverviewDto } from "@/src/types/team-management";
+
+const UNASSIGNED_TICKETS_PAGE_SIZE = 10;
 
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat("tr-TR", {
@@ -54,6 +57,7 @@ export function TeamManagementContainer() {
   const [overview, setOverview] = useState<TeamManagementOverviewDto | null>(
     null,
   );
+  const [unassignedPageNumber, setUnassignedPageNumber] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -73,12 +77,16 @@ export function TeamManagementContainer() {
       setError(null);
 
       try {
-        const response =
-          await teamManagementService.getOverview(selectedTeamId);
+        const response = await teamManagementService.getOverview(
+          selectedTeamId,
+          unassignedPageNumber,
+          UNASSIGNED_TICKETS_PAGE_SIZE,
+        );
 
         if (!cancelled) {
           setOverview(response);
           setSelectedTeamId(response.teamId);
+          setUnassignedPageNumber(response.unassignedTickets.pageNumber);
         }
       } catch (requestError: unknown) {
         if (!cancelled) {
@@ -100,7 +108,33 @@ export function TeamManagementContainer() {
     return () => {
       cancelled = true;
     };
-  }, [authLoading, selectedTeamId, user?.role]);
+  }, [authLoading, selectedTeamId, unassignedPageNumber, user?.role]);
+
+  const refreshOverview = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await teamManagementService.getOverview(
+        overview?.teamId ?? selectedTeamId,
+        unassignedPageNumber,
+        UNASSIGNED_TICKETS_PAGE_SIZE,
+      );
+
+      setOverview(response);
+      setSelectedTeamId(response.teamId);
+      setUnassignedPageNumber(response.unassignedTickets.pageNumber);
+    } catch (requestError: unknown) {
+      setError(
+        getApiErrorMessage(
+          requestError,
+          "The ticket was assigned, but the management data could not be refreshed.",
+        ),
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (authLoading || user?.role !== "TeamLeader") {
     return <OverviewSkeleton />;
@@ -131,7 +165,10 @@ export function TeamManagementContainer() {
               <select
                 className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pr-10 text-sm font-semibold text-slate-900 shadow-sm outline-none transition-all hover:border-indigo-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-800 dark:bg-slate-900 dark:text-white dark:hover:border-indigo-700"
                 disabled={loading}
-                onChange={(event) => setSelectedTeamId(event.target.value)}
+                onChange={(event) => {
+                  setUnassignedPageNumber(1);
+                  setSelectedTeamId(event.target.value);
+                }}
                 value={selectedTeamId}
               >
                 {overview.managedTeams.map((team) => (
@@ -167,9 +204,18 @@ export function TeamManagementContainer() {
             />
           </div>
 
+          <UnassignedTeamTickets
+            loading={loading}
+            onAssigned={refreshOverview}
+            onPageChange={setUnassignedPageNumber}
+            teamId={overview.teamId}
+            teamName={overview.teamName}
+            tickets={overview.unassignedTickets}
+          />
+
           <section
             className="animate-in fade-in slide-in-from-bottom-4 space-y-4 duration-500"
-            style={{ animationDelay: "150ms" }}
+            style={{ animationDelay: "200ms" }}
           >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>

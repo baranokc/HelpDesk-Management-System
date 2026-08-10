@@ -21,6 +21,8 @@ public sealed class TeamManagementService : ITeamManagementService
     public async Task<TeamManagementOverviewDto> GetOverviewAsync(
         Guid leaderUserId,
         Guid? teamId,
+        int unassignedPageNumber,
+        int unassignedPageSize,
         CancellationToken cancellationToken = default)
     {
         var managedTeams = await GetManagedTeamsAsync(
@@ -59,6 +61,17 @@ public sealed class TeamManagementService : ITeamManagementService
 
         var stats = await GetStatsAsync(
             teamTicketQuery,
+            cancellationToken);
+
+        var unassignedTickets = await GetUnassignedTicketsPageAsync(
+            teamTicketQuery.Where(ticket =>
+                !ticket.AssignedToId.HasValue &&
+                !ticket.Status.IsClosed &&
+                ticket.Status.Name != "Resolved" &&
+                ticket.Status.Name != "Cancelled" &&
+                ticket.Status.Name != "Closed"),
+            unassignedPageNumber,
+            unassignedPageSize,
             cancellationToken);
 
         var csat = await GetCsatStatsAsync(
@@ -160,6 +173,7 @@ public sealed class TeamManagementService : ITeamManagementService
             ManagedTeams = managedTeams,
             Stats = stats,
             Csat = csat,
+            UnassignedTickets = unassignedTickets,
             Members = members
         };
     }
@@ -798,6 +812,53 @@ public sealed class TeamManagementService : ITeamManagementService
             .ToListAsync(cancellationToken);
 
         return new PagedResultDto<TeamMemberTicketDto>(
+            tickets,
+            normalizedPageNumber,
+            normalizedPageSize,
+            totalCount,
+            totalPages);
+    }
+
+    private static async Task<PagedResultDto<UnassignedTeamTicketDto>>
+        GetUnassignedTicketsPageAsync(
+            IQueryable<TicketEntity> query,
+            int pageNumber,
+            int pageSize,
+            CancellationToken cancellationToken)
+    {
+        var normalizedPageNumber = Math.Max(pageNumber, 1);
+        var normalizedPageSize = Math.Clamp(pageSize, 1, 50);
+        var totalCount = await query.CountAsync(cancellationToken);
+        var totalPages = totalCount == 0
+            ? 0
+            : (int)Math.Ceiling(totalCount / (double)normalizedPageSize);
+
+        if (totalPages > 0 && normalizedPageNumber > totalPages)
+            normalizedPageNumber = totalPages;
+
+        var tickets = await query
+            .OrderByDescending(ticket => ticket.TicketNumber)
+            .ThenByDescending(ticket => ticket.CreatedAt)
+            .Skip((normalizedPageNumber - 1) * normalizedPageSize)
+            .Take(normalizedPageSize)
+            .Select(ticket => new UnassignedTeamTicketDto
+            {
+                Id = ticket.Id,
+                TicketNumber = ticket.TicketNumber,
+                TicketTitle = ticket.TicketTitle,
+                CategoryName = ticket.Category.Name,
+                StatusName = ticket.Status.Name,
+                PriorityName = ticket.Priority.Name,
+                CreatedByName =
+                    ticket.CreatedBy.Name + " " + ticket.CreatedBy.LastName,
+                CreatedByAvatarUrl = ticket.CreatedBy.AvatarFileName == null
+                    ? null
+                    : "/uploads/avatars/" + ticket.CreatedBy.AvatarFileName,
+                CreatedAt = ticket.CreatedAt
+            })
+            .ToListAsync(cancellationToken);
+
+        return new PagedResultDto<UnassignedTeamTicketDto>(
             tickets,
             normalizedPageNumber,
             normalizedPageSize,
