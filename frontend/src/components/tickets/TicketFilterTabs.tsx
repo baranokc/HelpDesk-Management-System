@@ -276,7 +276,8 @@ export function TicketFilters({ value, onApply }: TicketFiltersProps) {
                 type="date"
                 value={value.createdFrom ?? ""}
                 onChange={(e) => handleValueChange("createdFrom", e.target.value)}
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/80 px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                onClick={(event) => event.currentTarget.showPicker?.()}
+                className="w-full cursor-pointer rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/80 px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
               />
             </div>
 
@@ -289,7 +290,8 @@ export function TicketFilters({ value, onApply }: TicketFiltersProps) {
                 type="date"
                 value={value.createdTo ?? ""}
                 onChange={(e) => handleValueChange("createdTo", e.target.value)}
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/80 px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                onClick={(event) => event.currentTarget.showPicker?.()}
+                className="w-full cursor-pointer rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/80 px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
               />
             </div>
 

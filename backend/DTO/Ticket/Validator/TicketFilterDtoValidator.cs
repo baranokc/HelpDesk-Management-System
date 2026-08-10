@@ -29,6 +29,6 @@ public class TicketFilterDtoValidator : AbstractValidator<TicketFilterDto>
             .WithMessage("Sorting can only be descending or ascending.");
         RuleFor(x => x)
             .Must(x => !x.CreatedFrom.HasValue || !x.CreatedTo.HasValue || x.CreatedFrom <= x.CreatedTo)
-            .WithMessage("Last date can't be earlier than first date.");
+            .WithMessage("End date can't be earlier than creation date.");
     }
 }
