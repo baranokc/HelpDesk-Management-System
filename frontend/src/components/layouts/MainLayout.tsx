@@ -22,77 +22,112 @@ import { Avatar } from "@/src/components/ui/Avatar";
 import { useAuth } from "@/src/context/AuthContext";
 import { getTicketViewLabel } from "@/src/lib/ticketPermissions";
 
-// 🕊️ Soldan Sağa Kesintisiz Süzülen Martı Silüeti
-function FlyingSeagull({
+// ☁️ Bembeyaz & Süzülen Estetik Vektörel Bulut Bileşeni
+function FloatingCloud({
   top,
   scale = 1,
-  duration = 20,
+  duration = 40,
   delay = 0,
+  variant = 1,
 }: {
   top: string;
   scale?: number;
   duration?: number;
   delay?: number;
+  variant?: 1 | 2 | 3 | 4;
 }) {
+  const renderCloudPath = () => {
+    switch (variant) {
+      case 1:
+        /* Yumuşak Pofuduk Bulut */
+        return (
+          <svg
+            width="160"
+            height="60"
+            viewBox="0 0 160 60"
+            fill="none"
+            className="text-white opacity-90 dark:opacity-100 dark:text-purple-400/25 transition-colors duration-300 drop-shadow-[0_4px_12px_rgba(186,230,253,0.6)] dark:drop-shadow-[0_0_12px_rgba(192,132,252,0.15)]"
+          >
+            <path
+              d="M 20 50 C 8 50, 2 38, 14 28 C 10 14, 30 6, 48 12 C 62 -2, 92 -2, 106 10 C 122 2, 144 10, 148 26 C 160 30, 158 50, 140 50 Z"
+              fill="currentColor"
+            />
+          </svg>
+        );
+      case 2:
+        /* Akıcı & İnce Atmosferik Bulut */
+        return (
+          <svg
+            width="180"
+            height="45"
+            viewBox="0 0 180 45"
+            fill="none"
+            className="text-white opacity-80 dark:opacity-100 dark:text-indigo-400/20 transition-colors duration-300 drop-shadow-[0_4px_10px_rgba(186,230,253,0.5)] dark:drop-shadow-[0_0_12px_rgba(129,140,248,0.15)]"
+          >
+            <path
+              d="M 15 38 C 5 38, 2 28, 12 22 C 10 10, 32 2, 52 8 C 68 -2, 98 -2, 112 8 C 128 0, 152 6, 158 18 C 172 20, 175 32, 160 38 Z"
+              fill="currentColor"
+            />
+          </svg>
+        );
+      case 3:
+        /* Tombul Şirin Gökyüzü Bulutu */
+        return (
+          <svg
+            width="140"
+            height="52"
+            viewBox="0 0 140 52"
+            fill="none"
+            className="text-white opacity-85 dark:opacity-100 dark:text-purple-300/25 transition-colors duration-300 drop-shadow-[0_4px_12px_rgba(186,230,253,0.55)] dark:drop-shadow-[0_0_12px_rgba(216,180,254,0.18)]"
+          >
+            <path
+              d="M 18 45 C 8 45, 4 32, 14 24 C 16 10, 36 4, 52 12 C 64 2, 86 2, 98 12 C 110 4, 130 10, 132 24 C 142 30, 140 45, 122 45 Z"
+              fill="currentColor"
+            />
+          </svg>
+        );
+      case 4:
+        /* İhtişamlı Ufuk Bulutu */
+        return (
+          <svg
+            width="210"
+            height="70"
+            viewBox="0 0 210 70"
+            fill="none"
+            className="text-white opacity-95 dark:opacity-100 dark:text-violet-400/20 transition-colors duration-300 drop-shadow-[0_6px_14px_rgba(186,230,253,0.65)] dark:drop-shadow-[0_0_14px_rgba(167,139,250,0.15)]"
+          >
+            <path
+              d="M 25 62 C 10 62, 4 48, 16 36 C 12 20, 36 8, 58 16 C 74 2, 108 -2, 130 12 C 152 2, 182 10, 188 30 C 206 36, 208 56, 188 62 Z"
+              fill="currentColor"
+            />
+          </svg>
+        );
+    }
+  };
+
   return (
     <motion.div
-      initial={{ x: "-15vw" }}
+      initial={{ x: "-22vw" }}
       animate={{
-        x: "115vw",
-        y: [0, -12, 6, 0],
+        x: "118vw",
+        y: [0, -6, 4, 0],
       }}
       transition={{
-        x: {
-          duration,
-          repeat: Infinity,
-          ease: "linear",
-          delay,
-        },
-        y: {
-          duration: 4,
-          repeat: Infinity,
-          ease: "easeInOut",
-          delay,
-        },
+        x: { duration, repeat: Infinity, ease: "linear", delay },
+        y: { duration: 8, repeat: Infinity, ease: "easeInOut", delay },
       }}
       style={{ top, scale }}
-      className="absolute left-0 pointer-events-none z-[1] opacity-75 dark:opacity-80"
+      className="absolute left-0 pointer-events-none z-0"
     >
-      <svg
-        width="44"
-        height="22"
-        viewBox="0 0 44 22"
-        fill="currentColor"
-        className="text-stone-800 dark:text-slate-100 drop-shadow-sm"
-      >
-        <motion.path
-          animate={{
-            d: [
-              /* Kanatlar Yukarıda */
-              "M 2 14 Q 11 1, 22 9 C 23 8, 24 8, 25 9 Q 36 1, 45 14 C 37 8, 28 9, 25 12 C 24 14, 23 14, 22 12 C 19 9, 10 8, 2 14 Z",
-              /* Kanatlar Çırpışta */
-              "M 2 4 Q 11 10, 22 9 C 23 8, 24 8, 25 9 Q 36 10, 45 4 C 37 10, 28 10, 25 12 C 24 13, 23 13, 22 12 C 19 10, 10 10, 2 4 Z",
-              /* Kanatlar Tekrar Yukarıda */
-              "M 2 14 Q 11 1, 22 9 C 23 8, 24 8, 25 9 Q 36 1, 45 14 C 37 8, 28 9, 25 12 C 24 14, 23 14, 22 12 C 19 9, 10 8, 2 14 Z",
-            ],
-          }}
-          transition={{
-            duration: 1.3,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay,
-          }}
-        />
-      </svg>
+      {renderCloudPath()}
     </motion.div>
   );
 }
 
-// 🏝️ Gece/Gündüz Aynı Detaylı Ada
+// 🏝️ Gece/Gündüz Detaylı Ada
 function SyncedIsland() {
   return (
     <motion.div
-      /* Dalgalarla eşzamanlı deniz salınımı */
       animate={{ x: [-18, 18, -18], y: [0, -6, 0] }}
       transition={{ duration: 6.5, repeat: Infinity, ease: "easeInOut" }}
       className="absolute bottom-10 md:bottom-12 left-[0.2%] md:left-[1%] pointer-events-none z-[2]"
@@ -104,26 +139,21 @@ function SyncedIsland() {
         fill="none"
         className="drop-shadow-2xl"
       >
-        {/* Su Altı Gölge Yansıması */}
         <ellipse cx="120" cy="90" rx="100" ry="12" className="fill-teal-600/20 dark:fill-indigo-950/40" />
 
-        {/* Dış Derin Kum Katmanı */}
         <path
           d="M 10 88 C 60 42, 160 38, 230 88 Z"
           className="fill-amber-600/85 dark:fill-indigo-950/90"
         />
-        {/* Orta Sıcak Altın Kum Katmanı */}
         <path
           d="M 20 88 C 70 48, 150 44, 215 88 Z"
           className="fill-amber-500 dark:fill-indigo-900/90"
         />
-        {/* Üst Parlak Kum Tepeciği */}
         <path
           d="M 35 88 C 80 54, 138 52, 195 88 Z"
           className="fill-yellow-200 dark:fill-indigo-800/80"
         />
 
-        {/* Palmiye Gövdesi */}
         <path
           d="M 160 68 C 152 45, 155 28, 172 12"
           className="stroke-amber-900 dark:stroke-slate-900"
@@ -137,19 +167,16 @@ function SyncedIsland() {
           strokeLinecap="round"
         />
 
-        {/* Gövde Boğum Çizgileri */}
         <path d="M 158 60 Q 161 58, 164 61" className="stroke-amber-950 dark:stroke-slate-950" strokeWidth="1.5" strokeLinecap="round" />
         <path d="M 156 50 Q 159 48, 162 51" className="stroke-amber-950 dark:stroke-slate-950" strokeWidth="1.5" strokeLinecap="round" />
         <path d="M 155 40 Q 158 38, 161 41" className="stroke-amber-950 dark:stroke-slate-950" strokeWidth="1.5" strokeLinecap="round" />
         <path d="M 158 30 Q 161 28, 164 31" className="stroke-amber-950 dark:stroke-slate-950" strokeWidth="1.5" strokeLinecap="round" />
         <path d="M 163 21 Q 166 19, 169 22" className="stroke-amber-950 dark:stroke-slate-950" strokeWidth="1.5" strokeLinecap="round" />
 
-        {/* Hindistan Cevizleri */}
         <circle cx="168" cy="16" r="4" className="fill-amber-950 dark:fill-slate-950" />
         <circle cx="174" cy="18" r="3.8" className="fill-amber-900 dark:fill-slate-900" />
         <circle cx="171" cy="21" r="3.5" className="fill-stone-900 dark:fill-black" />
 
-        {/* Zengin Katmanlı Palmiye Yaprakları */}
         <path d="M 172 12 C 170 -8, 185 -18, 192 -15 C 182 2, 175 8, 172 12 Z" className="fill-emerald-700 dark:fill-teal-900" />
         <path d="M 172 12 C 195 -2, 218 5, 228 16 C 208 15, 188 15, 172 12 Z" className="fill-emerald-600 dark:fill-emerald-950" />
         <path d="M 172 12 C 200 18, 222 30, 226 42 C 202 32, 185 24, 172 12 Z" className="fill-emerald-700 dark:fill-teal-900" />
@@ -161,15 +188,14 @@ function SyncedIsland() {
   );
 }
 
-// 🌊 Doğal Katmanlı Dalgalı Deniz
+// 🌊 Katmanlı Dalgalı Deniz
 function OceanWaves() {
   return (
     <div className="absolute bottom-0 left-0 right-0 h-32 md:h-44 pointer-events-none z-0 overflow-hidden">
-      {/* En Arka Derin Dalga */}
       <motion.div
         animate={{ x: [0, -30, 0], y: [0, 4, 0] }}
         transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute bottom-0 -left-[5%] -right-[5%] h-full text-sky-500/20 dark:text-indigo-950/60"
+        className="absolute bottom-0 -left-[5%] -right-[5%] h-full text-sky-400/25 dark:text-indigo-950/60"
       >
         <svg
           viewBox="0 0 1200 120"
@@ -180,11 +206,10 @@ function OceanWaves() {
         </svg>
       </motion.div>
 
-      {/* Orta Dalga */}
       <motion.div
         animate={{ x: [-25, 25, -25], y: [0, -5, 0] }}
         transition={{ duration: 6.5, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute bottom-0 -left-[5%] -right-[5%] h-28 md:h-40 text-blue-500/30 dark:text-purple-950/50"
+        className="absolute bottom-0 -left-[5%] -right-[5%] h-28 md:h-40 text-sky-500/35 dark:text-purple-950/50"
       >
         <svg
           viewBox="0 0 1200 120"
@@ -195,11 +220,10 @@ function OceanWaves() {
         </svg>
       </motion.div>
 
-      {/* En Ön Kıyı Dalgası */}
       <motion.div
         animate={{ x: [15, -20, 15], y: [0, 3, 0] }}
         transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute bottom-0 -left-[5%] -right-[5%] h-20 md:h-32 text-cyan-600/35 dark:text-sky-900/55 z-[3]"
+        className="absolute bottom-0 -left-[5%] -right-[5%] h-20 md:h-32 text-cyan-500/40 dark:text-sky-900/55 z-[3]"
       >
         <svg
           viewBox="0 0 1200 120"
@@ -213,18 +237,18 @@ function OceanWaves() {
   );
 }
 
-// ☀️ Light Güneş / 🌙 Dark Ay, Martılar, Ada & Deniz
+// ☀️ Güneş, 🌙 Ay, ☁️ Bembeyaz Bulutlar, 🏝️ Ada & 🌊 Deniz
 function BackgroundDecorations() {
   return (
     <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
       {/* ☀️ GÜNEŞ + IŞINLARI (Gündüz / Light Mode) */}
       <div className="absolute top-20 right-8 md:right-16 dark:hidden flex items-center justify-center pointer-events-none z-0">
-        <div className="absolute w-44 h-44 rounded-full bg-amber-400/25 blur-3xl animate-pulse" />
+        <div className="absolute w-44 h-44 rounded-full bg-amber-300/30 blur-3xl animate-pulse" />
 
         <motion.svg
           animate={{ rotate: 360 }}
           transition={{ duration: 45, repeat: Infinity, ease: "linear" }}
-          className="absolute w-36 h-36 text-amber-400/60"
+          className="absolute w-36 h-36 text-amber-400/70"
           viewBox="0 0 100 100"
         >
           <g stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -239,7 +263,7 @@ function BackgroundDecorations() {
           </g>
         </motion.svg>
 
-        <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-amber-300 via-amber-400 to-orange-400 shadow-[0_0_40px_rgba(251,191,36,0.5)] border border-amber-200/60" />
+        <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-amber-300 via-amber-400 to-orange-400 shadow-[0_0_45px_rgba(251,191,36,0.6)] border border-amber-200/70" />
       </div>
 
       {/* 🌙 AY (Gece / Dark Mode) */}
@@ -256,11 +280,11 @@ function BackgroundDecorations() {
         </motion.div>
       </div>
 
-      {/* 🕊️ Soldan Sağa Kesintisiz Uçan Martılar */}
-      <FlyingSeagull top="12%" duration={22} delay={0} scale={0.95} />
-      <FlyingSeagull top="22%" duration={18} delay={6} scale={0.75} />
-      <FlyingSeagull top="34%" duration={25} delay={12} scale={1.1} />
-      <FlyingSeagull top="48%" duration={20} delay={17} scale={0.8} />
+      {/* ☁️ Light Mode'da Bembeyaz Süzülen Bulutlar */}
+      <FloatingCloud variant={1} top="80px" duration={42} delay={0} scale={1} />
+      <FloatingCloud variant={2} top="150px" duration={36} delay={12} scale={0.85} />
+      <FloatingCloud variant={3} top="220px" duration={48} delay={5} scale={1.1} />
+      <FloatingCloud variant={4} top="310px" duration={54} delay={22} scale={1.25} />
 
       {/* 🏝️ Sol Tarafta Senkronize Ada */}
       <SyncedIsland />
@@ -364,7 +388,7 @@ export default function MainLayout({
 
   if (loading || !isAuthenticated) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-stone-100 dark:bg-slate-950 text-stone-800 dark:text-slate-100 transition-colors">
+      <div className="flex min-h-screen items-center justify-center bg-sky-50/70 dark:bg-slate-950 text-stone-800 dark:text-slate-100 transition-colors">
         <div className="flex flex-col items-center gap-3">
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-600 dark:border-purple-500 border-t-transparent"></div>
           <span className="text-xs font-semibold text-stone-500 dark:text-slate-400">
@@ -376,12 +400,12 @@ export default function MainLayout({
   }
 
   return (
-    <div className="relative min-h-screen bg-amber-50/30 dark:bg-slate-950 text-stone-800 dark:text-slate-100 flex flex-col transition-colors overflow-hidden">
+    <div className="relative min-h-screen bg-sky-50/70 dark:bg-slate-950 text-stone-800 dark:text-slate-100 flex flex-col transition-colors overflow-hidden">
       {/* 🌟 Arka Plan Dekoru */}
       <BackgroundDecorations />
 
       {/* Top Navbar */}
-      <header className="sticky top-0 z-50 border-b border-amber-900/10 dark:border-purple-900/30 bg-stone-100/80 dark:bg-slate-900/70 backdrop-blur-2xl transition-all">
+      <header className="sticky top-0 z-50 border-b border-sky-900/10 dark:border-purple-900/30 bg-sky-100/70 dark:bg-slate-900/70 backdrop-blur-2xl transition-all">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
           
           {/* Logo & Archipelago Alanı */}
@@ -434,7 +458,7 @@ export default function MainLayout({
           </div>
 
           {/* Navigasyon Linkleri */}
-          <nav className="hidden md:flex items-center gap-1 p-1.5 rounded-2xl border border-stone-300/60 dark:border-purple-900/40 bg-stone-200/60 dark:bg-slate-900/80 backdrop-blur-xl shadow-inner relative">
+          <nav className="hidden md:flex items-center gap-1 p-1.5 rounded-2xl border border-sky-200/60 dark:border-purple-900/40 bg-sky-200/40 dark:bg-slate-900/80 backdrop-blur-xl shadow-inner relative">
             {navItems.map((item) => {
               const Icon = item.icon;
               return (
@@ -473,7 +497,7 @@ export default function MainLayout({
               <div
                 tabIndex={0}
                 role="button"
-                className="flex items-center gap-2.5 rounded-2xl border border-stone-300/70 dark:border-purple-800/40 bg-stone-100/90 dark:bg-slate-900/90 p-1.5 pr-3.5 hover:border-emerald-600/40 dark:hover:border-purple-500/50 hover:bg-stone-200/50 dark:hover:bg-slate-800/80 transition-all cursor-pointer shadow-sm group"
+                className="flex items-center gap-2.5 rounded-2xl border border-sky-200/80 dark:border-purple-800/40 bg-white/80 dark:bg-slate-900/90 p-1.5 pr-3.5 hover:border-emerald-600/40 dark:hover:border-purple-500/50 hover:bg-white dark:hover:bg-slate-800/80 transition-all cursor-pointer shadow-sm group"
               >
                 <Avatar
                   avatarUrl={user?.avatarUrl}
