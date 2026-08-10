@@ -9,9 +9,7 @@ export const loginSchema = z.object({email: eMailSchema, password : z.string().m
 export const registerSchema = z.object({email: eMailSchema, 
                                         password : z.string().min(6, {error : "Password must be at least 6 characters long",}),
                                         name: z.string().trim().min(1, {error : "First name is required.",}),
-                                        lastName: z.string().trim().min(1, {error : "Last name is required.",}), 
-                                        departmentId: z.coerce.number().int({error : "Please select a valid department",})
-                                        .positive ({error : "Please select a valid department.",}), });
+                                        lastName: z.string().trim().min(1, {error : "Last name is required.",}), });
 
 export type LoginDto = z.output<typeof loginSchema>;
 export type UserCreateDto = z.output<typeof registerSchema>;

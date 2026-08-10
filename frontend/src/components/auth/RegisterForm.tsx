@@ -7,7 +7,6 @@ import {
   User,
   Mail,
   Lock,
-  Building2,
   ArrowRight,
   AlertCircle,
 } from "lucide-react";
@@ -20,13 +19,6 @@ import {
 import { registerSchema } from "@/src/schemas/authSchemas";
 import { authService } from "@/src/services/authService";
 
-const departments = [
-  { id: "1", name: "Software" },
-  { id: "2", name: "Human Resources" },
-  { id: "3", name: "Information Technologies (IT)" },
-  { id: "4", name: "Customer Services" },
-];
-
 export function RegisterForm() {
   const router = useRouter();
 
@@ -34,7 +26,6 @@ export function RegisterForm() {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [departmentId, setDepartmentId] = useState("1");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<FormErrors>({});
@@ -51,7 +42,6 @@ export function RegisterForm() {
       lastName,
       email,
       password,
-      departmentId,
     });
 
     if (!result.success) {
@@ -133,7 +123,7 @@ export function RegisterForm() {
           </div>
 
           <h2 className="text-2xl font-black tracking-tight bg-gradient-to-r from-amber-800 via-emerald-800 to-teal-900 dark:from-purple-300 dark:via-violet-200 dark:to-indigo-200 bg-clip-text text-transparent">
-            Create Archipelago Account
+            Create Island Account
           </h2>
 
           <p className="text-xs font-medium text-stone-500 dark:text-slate-400">
@@ -279,46 +269,6 @@ export function RegisterForm() {
             {validationErrors.password && (
               <p className="text-[11px] font-semibold text-rose-500">
                 {validationErrors.password}
-              </p>
-            )}
-          </div>
-
-          {/* DEPARTMENT SELECT */}
-          <div className="space-y-1.5">
-            <label className="flex items-center gap-1.5 text-xs font-bold text-stone-700 dark:text-slate-300" htmlFor="department">
-              <Building2 className="h-3.5 w-3.5 text-emerald-600 dark:text-purple-400" />
-              <span>Department</span>
-            </label>
-
-            <div className="relative">
-              <select
-                id="department"
-                value={departmentId}
-                onChange={(event) => {
-                  setDepartmentId(event.target.value);
-                  clearValidationError("departmentId");
-                }}
-                className={`w-full appearance-none rounded-xl border px-3.5 py-2.5 text-xs font-medium transition-all outline-none bg-stone-50/60 dark:bg-slate-950/60 text-stone-800 dark:text-slate-100 ${
-                  validationErrors.departmentId
-                    ? "border-rose-500 focus:ring-2 focus:ring-rose-500/20"
-                    : "border-stone-300/80 dark:border-purple-800/40 focus:border-emerald-600 dark:focus:border-purple-500 focus:ring-2 focus:ring-emerald-600/20 dark:focus:ring-purple-500/20"
-                }`}
-              >
-                {departments.map((department) => (
-                  <option
-                    key={department.id}
-                    value={department.id}
-                    className="bg-white dark:bg-slate-900 text-stone-800 dark:text-slate-100"
-                  >
-                    {department.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {validationErrors.departmentId && (
-              <p className="text-[11px] font-semibold text-rose-500">
-                {validationErrors.departmentId}
               </p>
             )}
           </div>

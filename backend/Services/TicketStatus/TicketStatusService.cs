@@ -145,7 +145,7 @@ public class TicketStatusService : ITicketStatusService
                 NewValue = h.NewValue,
                 Description = h.Description,
                 ChangedById = h.ChangedById,
-                ChangedByName = h.ChangedBy != null ? h.ChangedBy.Name : "Unknown",
+                ChangedByName = h.ChangedBy == null ? "System" : (h.ChangedBy.Name + " " + h.ChangedBy.LastName).Trim(),
                 ChangedAt = h.ChangedAt
             })
             .ToListAsync();

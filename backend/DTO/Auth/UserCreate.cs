@@ -14,6 +14,4 @@ public class UserCreate
     public string Name { get; set; } = string.Empty;
     [Required(ErrorMessage = "Last name is required")]
     public string LastName { get; set; } = string.Empty;
-    [Required(ErrorMessage = "Department ID is required")]
-    public int DepartmentId { get; set; }
 }

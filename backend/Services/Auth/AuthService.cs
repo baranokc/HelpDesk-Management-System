@@ -128,16 +128,6 @@ public class AuthService : IAuthService
         {
             return false;
         }
-        var departmentExists = await _context.Departments
-            .AnyAsync(department =>
-                department.Id == dto.DepartmentId &&
-                department.IsActive);
-
-        if (!departmentExists)
-        {
-            throw new ArgumentException(
-                "Selected department was not found or is inactive.");
-        }
         string passwordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
 
         var defaultRole = await _context.Roles
@@ -152,13 +142,26 @@ public class AuthService : IAuthService
             PasswordHash = passwordHash,
             Name = dto.Name,
             LastName = dto.LastName,
-            DepartmentId = dto.DepartmentId,
             RoleId = defaultRole.Id,
             CreatedAt = DateTime.UtcNow
         };
 
         await _context.Users.AddAsync(newUser);
         await _context.SaveChangesAsync();
+
+        try
+        {
+            await _emailService.SendRegistrationEmailAsync(
+                newUser.Email,
+                $"{newUser.Name} {newUser.LastName}".Trim());
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(
+                exception,
+                "Registration email could not be sent to {RecipientEmail}.",
+                newUser.Email);
+        }
 
         return true;
     }
@@ -194,7 +197,6 @@ public class AuthService : IAuthService
 
         await _context.PasswordResetTokens.AddAsync(passwordResetToken, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
-        await _emailService.SendRegistrationEmailAsync(user.Email, $"{user.Name} {user.LastName}", cancellationToken);
 
         var frontendBaseUrl = _configuration["Frontend:BaseUrl"]?.TrimEnd('/');
         if (string.IsNullOrWhiteSpace(frontendBaseUrl))
