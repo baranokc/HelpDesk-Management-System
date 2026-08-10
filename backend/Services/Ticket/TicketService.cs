@@ -58,6 +58,9 @@ public class TicketService : ITicketService
         if (filter.CategoryId.HasValue)
             query = query.Where(t => t.CategoryId == filter.CategoryId.Value);
 
+        if (filter.PriorityId.HasValue)
+            query = query.Where(t => t.PriorityId == filter.PriorityId.Value);
+
         if (filter.AssignedToId.HasValue)
             query = query.Where(t => t.AssignedToId == filter.AssignedToId.Value);
 
@@ -67,12 +70,8 @@ public class TicketService : ITicketService
         if (filter.UrgencyLevelId.HasValue)
             query = query.Where(t => t.UrgencyLevelId == filter.UrgencyLevelId.Value);
 
-        // 🚀 BİLEŞİK FİLTRELEME: Frontend'den gelen değer PriorityId veya ImpactLevelId ile eşleşirse getir
         if (filter.ImpactLevelId.HasValue)
-        {
-            var targetLevelId = filter.ImpactLevelId.Value;
-            query = query.Where(t => t.ImpactLevelId == targetLevelId || t.PriorityId == targetLevelId);
-        }
+            query = query.Where(t => t.ImpactLevelId == filter.ImpactLevelId.Value);
 
         if (filter.CreatedFrom.HasValue)
         {

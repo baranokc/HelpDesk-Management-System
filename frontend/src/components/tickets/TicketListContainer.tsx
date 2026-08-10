@@ -274,6 +274,7 @@ export function TicketListContainer() {
     filter.search ||
       filter.statusId ||
       filter.categoryId ||
+      filter.priorityId ||
       filter.assignedToId ||
       filter.createdById ||
       filter.urgencyLevelId ||
