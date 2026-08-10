@@ -854,9 +854,12 @@ export function TeamMemberDetailContainer({
                           Start Date
                         </label>
                         <input
-                          className="w-full rounded-xl border border-stone-300/80 bg-white px-3.5 py-2 text-xs font-medium text-stone-800 shadow-inner focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-purple-900/40 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-purple-500 dark:focus:ring-purple-500/20 transition-all"
+                          className="input input-bordered cursor-pointer bg-white dark:border-slate-700 dark:bg-slate-950"
                           onChange={(event) =>
                             setLeaveStartDate(event.target.value)
+                          }
+                          onClick={(event) =>
+                            event.currentTarget.showPicker?.()
                           }
                           type="date"
                           value={leaveStartDate}
@@ -867,10 +870,13 @@ export function TeamMemberDetailContainer({
                           End Date
                         </label>
                         <input
-                          className="w-full rounded-xl border border-stone-300/80 bg-white px-3.5 py-2 text-xs font-medium text-stone-800 shadow-inner focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-purple-900/40 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-purple-500 dark:focus:ring-purple-500/20 transition-all"
+                          className="input input-bordered cursor-pointer bg-white dark:border-slate-700 dark:bg-slate-950"
                           min={leaveStartDate || undefined}
                           onChange={(event) =>
                             setLeaveEndDate(event.target.value)
+                          }
+                          onClick={(event) =>
+                            event.currentTarget.showPicker?.()
                           }
                           type="date"
                           value={leaveEndDate}
