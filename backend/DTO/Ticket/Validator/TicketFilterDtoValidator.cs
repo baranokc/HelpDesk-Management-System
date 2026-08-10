@@ -1,5 +1,3 @@
-using System.Data;
-using System.IO.Compression;
 using FluentValidation;
 namespace backend.DTO.Ticket.Validator;
 
@@ -14,8 +12,23 @@ public class TicketFilterDtoValidator : AbstractValidator<TicketFilterDto>
         RuleFor(x => x.Search)
             .MaximumLength(200).When(x => x.Search is not null)
             .WithMessage("Arama metni en fazla 200 karakter olabilir");
+        RuleFor(x => x.SortBy)
+            .Must(sortBy => new[]
+            {
+                "ticketNumber",
+                "title",
+                "status",
+                "priority",
+                "createdBy"
+            }.Contains(sortBy, StringComparer.OrdinalIgnoreCase))
+            .WithMessage("Geçersiz sıralama alanı.");
+        RuleFor(x => x.SortDirection)
+            .Must(direction =>
+                string.Equals(direction, "asc", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(direction, "desc", StringComparison.OrdinalIgnoreCase))
+            .WithMessage("Sorting can only be descending or ascending.");
         RuleFor(x => x)
             .Must(x => !x.CreatedFrom.HasValue || !x.CreatedTo.HasValue || x.CreatedFrom <= x.CreatedTo)
-            .WithMessage("Bitiş tarihi başlangıç tarihinden önce olamaz.");
+            .WithMessage("Last date can't be earlier than first date.");
     }
 }

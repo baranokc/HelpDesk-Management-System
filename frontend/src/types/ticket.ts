@@ -26,6 +26,15 @@ export interface TicketPagedResultDto extends PagedResultDto<TicketListDto> {
   completedCount: number;
 }
 
+export type TicketSortField =
+  | "ticketNumber"
+  | "title"
+  | "status"
+  | "priority"
+  | "createdBy";
+
+export type TicketSortDirection = "asc" | "desc";
+
 export type TicketSlaStatus = "Pending" | "Met" | "Breached";
 
 export interface TicketSlaSummaryDto {
@@ -96,6 +105,8 @@ export interface TicketFilterDto {
   impactLevelId?: string | null;
   createdFrom?: string | null;
   createdTo?: string | null;
+  sortBy?: TicketSortField;
+  sortDirection?: TicketSortDirection;
   pageNumber?: number;
   pageSize?: number;
 }

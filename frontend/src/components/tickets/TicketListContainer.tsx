@@ -2,7 +2,13 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { ArrowRight, Ticket, SearchX } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowRight,
+  ArrowUp,
+  ArrowUpDown,
+  SearchX,
+} from "lucide-react";
 import { Alert } from "@/src/components/ui/Alert";
 import { Avatar } from "@/src/components/ui/Avatar";
 import { Pagination } from "@/src/components/ui/Pagination";
@@ -10,7 +16,13 @@ import { useAuth } from "@/src/context/AuthContext";
 import { getApiErrorMessage } from "@/src/lib/api";
 import { getTicketViewLabel } from "@/src/lib/ticketPermissions";
 import { ticketService } from "@/src/services/ticketService";
-import type { TicketListDto, TicketFilterDto, TicketPagedResultDto } from "@/src/types/ticket";
+import type {
+  TicketFilterDto,
+  TicketListDto,
+  TicketPagedResultDto,
+  TicketSortDirection,
+  TicketSortField,
+} from "@/src/types/ticket";
 import { TicketFilters } from "./TicketFilterTabs";
 import { TicketPriorityBadge } from "./TicketPriorityBadge";
 import { TicketStatusBadge } from "./TicketStatusBadge";
@@ -19,7 +31,67 @@ import { TicketStatsCards } from "./TicketStatsCards";
 const initialFilter: TicketFilterDto = {
   pageNumber: 1,
   pageSize: 25,
+  sortBy: "ticketNumber",
+  sortDirection: "desc",
 };
+
+const defaultSortDirections: Record<TicketSortField, TicketSortDirection> = {
+  ticketNumber: "desc",
+  title: "asc",
+  status: "asc",
+  priority: "desc",
+  createdBy: "asc",
+};
+
+interface SortableHeaderProps {
+  label: string;
+  field: TicketSortField;
+  activeField?: TicketSortField;
+  direction?: TicketSortDirection;
+  onSort: (field: TicketSortField) => void;
+}
+
+function SortableHeader({
+  label,
+  field,
+  activeField,
+  direction,
+  onSort,
+}: SortableHeaderProps) {
+  const isActive = activeField === field;
+  const Icon = !isActive
+    ? ArrowUpDown
+    : direction === "desc"
+      ? ArrowDown
+      : ArrowUp;
+
+  return (
+    <th scope="col" className="px-5 py-3.5">
+      <button
+        type="button"
+        onClick={() => onSort(field)}
+        className={`group/sort inline-flex items-center gap-1.5 rounded-md text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 ${
+          isActive
+            ? "text-emerald-700 dark:text-purple-300"
+            : "hover:text-stone-800 dark:hover:text-purple-200"
+        }`}
+        aria-label={`Sort by ${label}${
+          isActive ? `, currently ${direction === "desc" ? "descending" : "ascending"}` : ""
+        }`}
+      >
+        <span>{label}</span>
+        <Icon
+          aria-hidden="true"
+          className={`h-3.5 w-3.5 ${
+            isActive
+              ? "opacity-100"
+              : "opacity-45 transition-opacity group-hover/sort:opacity-100"
+          }`}
+        />
+      </button>
+    </th>
+  );
+}
 
 function createEmptyResult(filter: TicketFilterDto): TicketPagedResultDto {
   return {
@@ -180,6 +252,24 @@ export function TicketListContainer() {
     }));
   };
 
+  const changeSort = (sortBy: TicketSortField) => {
+    setFilter((current) => {
+      const sortDirection =
+        current.sortBy === sortBy
+          ? current.sortDirection === "asc"
+            ? "desc"
+            : "asc"
+          : defaultSortDirections[sortBy];
+
+      return {
+        ...current,
+        sortBy,
+        sortDirection,
+        pageNumber: 1,
+      };
+    });
+  };
+
   const hasActiveFilters = Boolean(
     filter.search ||
       filter.statusId ||
@@ -301,12 +391,42 @@ export function TicketListContainer() {
                 <table className="w-full min-w-[1000px] text-left border-collapse">
                   <thead className="bg-stone-100/80 dark:bg-slate-800/50 border-b border-stone-200/80 dark:border-slate-800 text-[11px] font-extrabold uppercase tracking-wider text-stone-500 dark:text-purple-300/60">
                     <tr>
-                      <th className="px-5 py-3.5">Ticket #</th>
-                      <th className="px-5 py-3.5">Title</th>
+                      <SortableHeader
+                        label="Ticket #"
+                        field="ticketNumber"
+                        activeField={filter.sortBy}
+                        direction={filter.sortDirection}
+                        onSort={changeSort}
+                      />
+                      <SortableHeader
+                        label="Title"
+                        field="title"
+                        activeField={filter.sortBy}
+                        direction={filter.sortDirection}
+                        onSort={changeSort}
+                      />
                       <th className="px-5 py-3.5">Category</th>
-                      <th className="px-5 py-3.5">Status</th>
-                      <th className="px-5 py-3.5">Priority</th>
-                      <th className="px-5 py-3.5">Created By</th>
+                      <SortableHeader
+                        label="Status"
+                        field="status"
+                        activeField={filter.sortBy}
+                        direction={filter.sortDirection}
+                        onSort={changeSort}
+                      />
+                      <SortableHeader
+                        label="Priority"
+                        field="priority"
+                        activeField={filter.sortBy}
+                        direction={filter.sortDirection}
+                        onSort={changeSort}
+                      />
+                      <SortableHeader
+                        label="Created By"
+                        field="createdBy"
+                        activeField={filter.sortBy}
+                        direction={filter.sortDirection}
+                        onSort={changeSort}
+                      />
                       <th className="px-5 py-3.5 text-right">Action</th>
                     </tr>
                   </thead>
