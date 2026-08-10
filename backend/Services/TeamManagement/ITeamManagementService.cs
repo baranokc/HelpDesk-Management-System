@@ -9,6 +9,8 @@ public interface ITeamManagementService
         Guid? teamId,
         int unassignedPageNumber,
         int unassignedPageSize,
+        string unassignedSortBy,
+        string unassignedSortDirection,
         CancellationToken cancellationToken = default);
 
     Task<TeamMemberDetailDto?> GetMemberDetailAsync(
@@ -17,6 +19,10 @@ public interface ITeamManagementService
         int activePageNumber,
         int inactivePageNumber,
         int pageSize,
+        string activeSortBy,
+        string activeSortDirection,
+        string inactiveSortBy,
+        string inactiveSortDirection,
         CancellationToken cancellationToken = default);
 
     Task<TeamMemberDetailDto?> GetOwnMemberDetailAsync(
@@ -24,6 +30,10 @@ public interface ITeamManagementService
         int activePageNumber,
         int inactivePageNumber,
         int pageSize,
+        string activeSortBy,
+        string activeSortDirection,
+        string inactiveSortBy,
+        string inactiveSortDirection,
         CancellationToken cancellationToken = default);
 
     Task<TeamMemberScheduleDto?> UpdateMemberScheduleAsync(

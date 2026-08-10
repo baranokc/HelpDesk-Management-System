@@ -7,12 +7,15 @@ import type {
   UpdateTeamMemberScheduleDto,
   CreateTeamMemberLeaveDto,
 } from "@/src/types/team-management";
+import type { TicketSortDirection, TicketSortField } from "@/src/types/ticket";
 
 export const teamManagementService = {
   getOverview: async (
     teamId?: string,
     unassignedPageNumber = 1,
     unassignedPageSize = 10,
+    unassignedSortBy: TicketSortField = "ticketNumber",
+    unassignedSortDirection: TicketSortDirection = "desc",
   ): Promise<TeamManagementOverviewDto> => {
     const response = await api.get<TeamManagementOverviewDto>(
       "/team-management",
@@ -21,6 +24,8 @@ export const teamManagementService = {
           teamId: teamId || undefined,
           unassignedPageNumber,
           unassignedPageSize,
+          unassignedSortBy,
+          unassignedSortDirection,
         },
       },
     );
@@ -33,6 +38,10 @@ export const teamManagementService = {
     activePageNumber = 1,
     inactivePageNumber = 1,
     pageSize = 25,
+    activeSortBy: TicketSortField = "ticketNumber",
+    activeSortDirection: TicketSortDirection = "desc",
+    inactiveSortBy: TicketSortField = "ticketNumber",
+    inactiveSortDirection: TicketSortDirection = "desc",
   ): Promise<TeamMemberDetailDto> => {
     const response = await api.get<TeamMemberDetailDto>(
       `/team-management/members/${teamMemberId}`,
@@ -41,6 +50,10 @@ export const teamManagementService = {
           activePageNumber,
           inactivePageNumber,
           pageSize,
+          activeSortBy,
+          activeSortDirection,
+          inactiveSortBy,
+          inactiveSortDirection,
         },
       },
     );
@@ -52,12 +65,20 @@ export const teamManagementService = {
     activePageNumber = 1,
     inactivePageNumber = 1,
     pageSize = 25,
+    activeSortBy: TicketSortField = "ticketNumber",
+    activeSortDirection: TicketSortDirection = "desc",
+    inactiveSortBy: TicketSortField = "ticketNumber",
+    inactiveSortDirection: TicketSortDirection = "desc",
   ): Promise<TeamMemberDetailDto> => {
     const response = await api.get<TeamMemberDetailDto>("/team-management/me", {
       params: {
         activePageNumber,
         inactivePageNumber,
         pageSize,
+        activeSortBy,
+        activeSortDirection,
+        inactiveSortBy,
+        inactiveSortDirection,
       },
     });
 
