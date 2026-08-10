@@ -13,6 +13,7 @@ using BCrypt.Net;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Logging;
 
 namespace backend.Services.Auth;
 
@@ -21,15 +22,18 @@ public class AuthService : IAuthService
     private readonly AppDbContext _context;
     private readonly IConfiguration _configuration;
     private readonly IEmailService _emailService;
+    private readonly ILogger<AuthService> _logger;
 
     public AuthService(
         AppDbContext context,
         IConfiguration configuration,
-        IEmailService emailService)
+        IEmailService emailService,
+        ILogger<AuthService> logger)
     {
         _context = context;
         _configuration = configuration;
         _emailService = emailService;
+        _logger = logger;
     }
     public async Task<LoginResponse?> LoginAsync(Login dto)
     {
@@ -190,6 +194,7 @@ public class AuthService : IAuthService
 
         await _context.PasswordResetTokens.AddAsync(passwordResetToken, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
+        await _emailService.SendRegistrationEmailAsync(user.Email, $"{user.Name} {user.LastName}", cancellationToken);
 
         var frontendBaseUrl = _configuration["Frontend:BaseUrl"]?.TrimEnd('/');
         if (string.IsNullOrWhiteSpace(frontendBaseUrl))
