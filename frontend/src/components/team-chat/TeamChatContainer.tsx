@@ -95,10 +95,10 @@ function TeamChatSkeleton() {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <div className="h-8 w-48 animate-pulse rounded-lg bg-slate-200 dark:bg-slate-800" />
-        <div className="h-4 w-96 max-w-full animate-pulse rounded bg-slate-200 dark:bg-slate-800" />
+        <div className="h-8 w-48 animate-pulse rounded-xl bg-stone-200 dark:bg-slate-800" />
+        <div className="h-4 w-96 max-w-full animate-pulse rounded-xl bg-stone-200 dark:bg-slate-800" />
       </div>
-      <div className="h-[68vh] min-h-[620px] animate-pulse rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900" />
+      <div className="h-[68vh] min-h-[620px] animate-pulse rounded-3xl border border-stone-200/80 bg-white/80 dark:border-purple-900/40 dark:bg-slate-900/80 backdrop-blur-2xl shadow-xl" />
     </div>
   );
 }
@@ -404,22 +404,23 @@ export function TeamChatContainer() {
 
   return (
     <div className="space-y-6">
+      {/* Üst Başlık ve Bağlantı Durumu */}
       <div className="animate-in fade-in slide-in-from-bottom-3 flex flex-col gap-3 duration-500 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-            <MessageCircle className="h-6 w-6 text-indigo-500 dark:text-violet-400" />
+          <h1 className="flex items-center gap-2.5 text-2xl font-black tracking-tight bg-gradient-to-r from-amber-800 via-emerald-800 to-teal-900 dark:from-purple-300 dark:via-violet-200 dark:to-indigo-200 bg-clip-text text-transparent">
+            <MessageCircle className="h-6 w-6 text-emerald-700 dark:text-purple-400" />
             Team Chat
           </h1>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-xs font-medium text-stone-500 dark:text-slate-400">
             Private conversations for teams and their leaders.
           </p>
         </div>
 
         <span
-          className={`inline-flex w-fit items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-bold ${
+          className={`inline-flex w-fit items-center gap-2 rounded-xl border px-3.5 py-1.5 text-xs font-bold shadow-sm ${
             connectionStatus === "connected"
-              ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300"
-              : "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"
+              ? "border-emerald-600/30 bg-emerald-500/10 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300"
+              : "border-amber-600/30 bg-amber-500/10 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-300"
           }`}
         >
           {connectionStatus === "connected" ? (
@@ -440,26 +441,27 @@ export function TeamChatContainer() {
       {error && <Alert variant="error">{error}</Alert>}
 
       {availableRoomCount === 0 ? (
-        <div className="flex min-h-96 flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white px-6 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
-          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-indigo-500/20 bg-indigo-500/10 text-indigo-500 dark:text-violet-400">
+        <div className="flex min-h-96 flex-col items-center justify-center rounded-3xl border border-stone-200/80 bg-white/80 px-6 text-center shadow-xl dark:border-purple-900/40 dark:bg-slate-900/80 backdrop-blur-2xl">
+          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-emerald-600/20 bg-emerald-500/10 text-emerald-700 dark:border-purple-500/30 dark:bg-purple-500/15 dark:text-purple-300 shadow-inner">
             <UsersRound className="h-7 w-7" />
           </div>
-          <h2 className="text-base font-bold text-slate-900 dark:text-white">
+          <h2 className="text-base font-bold text-stone-900 dark:text-white">
             No team chat available
           </h2>
-          <p className="mt-1 max-w-md text-xs text-slate-500 dark:text-slate-400">
+          <p className="mt-1 max-w-md text-xs font-medium text-stone-500 dark:text-slate-400">
             An active team membership is required before you can access team
             chat.
           </p>
         </div>
       ) : (
-        <div className="animate-in fade-in slide-in-from-bottom-4 grid min-h-[620px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm duration-500 dark:border-slate-800 dark:bg-slate-900/80 lg:h-[calc(100vh-13rem)] lg:max-h-[760px] lg:grid-cols-[260px_minmax(0,1fr)]">
-          <aside className="border-b border-slate-200 bg-slate-50/70 dark:border-slate-800 dark:bg-slate-950/30 lg:border-b-0 lg:border-r">
-            <div className="border-b border-slate-200 px-4 py-4 dark:border-slate-800">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+        <div className="animate-in fade-in slide-in-from-bottom-4 grid min-h-[620px] overflow-hidden rounded-3xl border border-stone-200/80 bg-white/80 shadow-xl duration-500 dark:border-purple-900/40 dark:bg-slate-900/80 backdrop-blur-2xl lg:h-[calc(100vh-13rem)] lg:max-h-[760px] lg:grid-cols-[280px_minmax(0,1fr)]">
+          {/* Sol Panel: Oda Listesi */}
+          <aside className="border-b border-stone-200/80 bg-stone-50/70 dark:border-purple-900/40 dark:bg-slate-950/40 lg:border-b-0 lg:border-r">
+            <div className="border-b border-stone-200/80 px-4 py-4 dark:border-purple-900/40">
+              <p className="text-[11px] font-extrabold uppercase tracking-wider text-stone-500 dark:text-purple-300/60">
                 Chat Rooms
               </p>
-              <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+              <p className="mt-1 text-xs font-medium text-stone-400 dark:text-slate-400">
                 {availableRoomCount} available room(s)
               </p>
             </div>
@@ -467,29 +469,29 @@ export function TeamChatContainer() {
             <div className="flex gap-2 overflow-x-auto p-3 lg:block lg:space-y-2 lg:overflow-visible">
               {isTeamLeader && (
                 <button
-                  className={`min-w-56 rounded-xl border p-3 text-left transition-all lg:w-full lg:min-w-0 ${
+                  className={`min-w-56 rounded-2xl border p-3.5 text-left transition-all lg:w-full lg:min-w-0 ${
                     isTeamLeaderRoom
-                      ? "border-violet-300 bg-violet-50 text-violet-950 shadow-sm dark:border-violet-400/50 dark:bg-violet-500/15 dark:text-white"
-                      : "border-violet-200/70 bg-violet-50/50 text-slate-700 hover:border-violet-300 hover:bg-violet-50 dark:border-violet-500/20 dark:bg-violet-500/5 dark:text-slate-300 dark:hover:border-violet-500/40 dark:hover:bg-violet-500/10"
+                      ? "border-emerald-600/40 bg-emerald-500/10 text-stone-900 shadow-sm dark:border-purple-500/50 dark:bg-purple-500/20 dark:text-white"
+                      : "border-stone-200/60 bg-white/70 text-stone-700 hover:border-emerald-600/30 hover:bg-stone-100/70 dark:border-purple-900/30 dark:bg-slate-900/40 dark:text-slate-300 dark:hover:border-purple-500/40 dark:hover:bg-purple-500/10"
                   }`}
                   onClick={() => setSelectedRoomId(TEAM_LEADER_ROOM_ID)}
                   type="button"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="flex items-center gap-1.5 truncate text-sm font-bold">
-                        <ShieldCheck className="h-4 w-4 shrink-0 text-violet-600 dark:text-violet-300" />
+                      <p className="flex items-center gap-1.5 truncate text-xs font-bold">
+                        <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-700 dark:text-purple-400" />
                         Team Leaders
                       </p>
-                      <p className="mt-1 truncate text-[11px] text-violet-600/80 dark:text-violet-300/80">
+                      <p className="mt-1 truncate text-[11px] font-medium text-stone-500 dark:text-purple-300/70">
                         Leadership Room
                       </p>
                     </div>
                     {isTeamLeaderRoom && (
-                      <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-violet-500 dark:bg-violet-300" />
+                      <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-emerald-600 dark:bg-purple-400 shadow-sm" />
                     )}
                   </div>
-                  <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-semibold text-violet-600 dark:text-violet-300">
+                  <span className="mt-2.5 inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-purple-300">
                     <ShieldCheck className="h-3 w-3" />
                     Team leaders only
                   </span>
@@ -501,10 +503,10 @@ export function TeamChatContainer() {
 
                 return (
                   <button
-                    className={`min-w-56 rounded-xl border p-3 text-left transition-all lg:w-full lg:min-w-0 ${
+                    className={`min-w-56 rounded-2xl border p-3.5 text-left transition-all lg:w-full lg:min-w-0 ${
                       isActive
-                        ? "border-indigo-300 bg-indigo-50 text-indigo-900 shadow-sm dark:border-violet-500/40 dark:bg-violet-500/10 dark:text-white"
-                        : "border-transparent bg-white/70 text-slate-700 hover:border-slate-200 hover:bg-white dark:bg-slate-900/40 dark:text-slate-300 dark:hover:border-violet-500/30 dark:hover:bg-violet-500/10"
+                        ? "border-emerald-600/40 bg-emerald-500/10 text-stone-900 shadow-sm dark:border-purple-500/50 dark:bg-purple-500/20 dark:text-white"
+                        : "border-stone-200/60 bg-white/70 text-stone-700 hover:border-emerald-600/30 hover:bg-stone-100/70 dark:border-purple-900/30 dark:bg-slate-900/40 dark:text-slate-300 dark:hover:border-purple-500/40 dark:hover:bg-purple-500/10"
                     }`}
                     key={room.teamId}
                     onClick={() => setSelectedRoomId(room.teamId)}
@@ -512,18 +514,18 @@ export function TeamChatContainer() {
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-bold">
+                        <p className="truncate text-xs font-bold">
                           {room.teamName}
                         </p>
-                        <p className="mt-1 truncate text-[11px] text-slate-500 dark:text-slate-400">
+                        <p className="mt-1 truncate text-[11px] font-medium text-stone-500 dark:text-slate-400">
                           {room.roleInTeam}
                         </p>
                       </div>
                       {isActive && (
-                        <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-indigo-500 dark:bg-violet-400" />
+                        <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-emerald-600 dark:bg-purple-400 shadow-sm" />
                       )}
                     </div>
-                    <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                    <span className="mt-2.5 inline-flex items-center gap-1 text-[10px] font-bold text-stone-500 dark:text-slate-400">
                       <UsersRound className="h-3 w-3" />
                       {room.activeMemberCount} active members
                     </span>
@@ -533,36 +535,37 @@ export function TeamChatContainer() {
             </div>
           </aside>
 
-          <section className="flex min-h-0 flex-col">
-            <header className="flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-4 dark:border-slate-800">
+          {/* Sağ Panel: Mesajlaşma Alanı */}
+          <section className="flex min-h-0 flex-col bg-transparent">
+            <header className="flex items-center justify-between gap-4 border-b border-stone-200/80 px-5 py-4 dark:border-purple-900/40 bg-white/40 dark:bg-slate-900/40">
               <div className="min-w-0">
-                <h2 className="truncate text-base font-bold text-slate-900 dark:text-white">
+                <h2 className="truncate text-sm font-bold text-stone-900 dark:text-white">
                   {activeRoomName}
                 </h2>
-                <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
+                <p className="mt-0.5 truncate text-xs font-medium text-stone-500 dark:text-slate-400">
                   {activeRoomDescription}
                 </p>
               </div>
               <span
-                className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[10px] font-bold ${
+                className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-1 text-[10px] font-extrabold shadow-sm ${
                   isTeamLeaderRoom
-                    ? "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-300"
-                    : "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                    ? "border-emerald-600/30 bg-emerald-500/10 text-emerald-800 dark:border-purple-500/30 dark:bg-purple-500/15 dark:text-purple-300"
+                    : "border-stone-200/80 bg-stone-100 text-stone-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
                 }`}
               >
-                <ShieldCheck className="h-3.5 w-3.5 text-indigo-500 dark:text-violet-400" />
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-700 dark:text-purple-400" />
                 {isTeamLeaderRoom ? "Leaders only" : "Team only"}
               </span>
             </header>
 
             <div
-              className="min-h-0 flex-1 overflow-y-auto bg-slate-50/40 px-4 py-5 dark:bg-slate-950/20 sm:px-6"
+              className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6"
               ref={messagesViewportRef}
             >
               {hasMore && (
                 <div className="mb-5 flex justify-center">
                   <button
-                    className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 shadow-sm transition-all hover:border-indigo-300 hover:text-indigo-700 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-300 dark:hover:bg-violet-600 dark:hover:text-white"
+                    className="inline-flex items-center gap-2 rounded-xl border border-stone-300/80 bg-white px-3.5 py-1.5 text-xs font-bold text-stone-700 shadow-sm transition-all hover:border-emerald-600 hover:text-emerald-800 dark:border-purple-500/30 dark:bg-purple-500/10 dark:text-purple-300 dark:hover:bg-purple-600 dark:hover:text-white cursor-pointer"
                     disabled={loadingOlder}
                     onClick={() => void handleLoadOlder()}
                     type="button"
@@ -579,17 +582,17 @@ export function TeamChatContainer() {
 
               {messagesLoading ? (
                 <div className="flex h-full min-h-64 items-center justify-center">
-                  <LoaderCircle className="h-7 w-7 animate-spin text-indigo-500 dark:text-violet-400" />
+                  <LoaderCircle className="h-7 w-7 animate-spin text-emerald-700 dark:text-purple-400" />
                 </div>
               ) : messages.length === 0 ? (
                 <div className="flex h-full min-h-64 flex-col items-center justify-center text-center">
-                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-indigo-500/20 bg-indigo-500/10 text-indigo-500 dark:text-violet-400">
+                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-600/20 bg-emerald-500/10 text-emerald-700 dark:border-purple-500/30 dark:bg-purple-500/15 dark:text-purple-300 shadow-inner">
                     <MessageCircle className="h-6 w-6" />
                   </div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  <h3 className="text-sm font-bold text-stone-900 dark:text-white">
                     Start the conversation
                   </h3>
-                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  <p className="mt-1 text-xs font-medium text-stone-500 dark:text-slate-400">
                     {isTeamLeaderRoom
                       ? "Messages posted here are visible only to active team leaders."
                       : "Messages posted here are visible only to this team."}
@@ -607,15 +610,25 @@ export function TeamChatContainer() {
                         message.createdAt,
                       );
 
+                    const roleLower = message.senderRole?.toLowerCase().trim() || "";
+                    const roleBadgeClass =
+                      roleLower.includes("admin") || roleLower === "0"
+                        ? "bg-amber-500/15 text-amber-800 dark:bg-pink-500/25 dark:text-pink-300 border border-amber-600/30 dark:border-pink-400/80"
+                        : roleLower.includes("teamleader") || roleLower === "1"
+                          ? "bg-red-500/15 text-red-800 dark:bg-yellow-400/20 dark:text-yellow-300 border border-red-600/30 dark:border-yellow-400/80"
+                          : roleLower.includes("supportagent") || roleLower === "2"
+                            ? "bg-teal-500/15 text-teal-800 dark:bg-blue-500/20 dark:text-blue-300 border border-teal-600/30 dark:border-blue-500/40"
+                            : "bg-stone-900/10 text-stone-900 dark:bg-slate-100/15 dark:text-slate-100 border border-stone-900/25 dark:border-slate-100/30";
+
                     return (
                       <div key={message.id}>
                         {showDateSeparator && (
                           <div className="mb-4 flex items-center gap-3">
-                            <span className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                            <span className="h-px flex-1 bg-stone-200 dark:bg-slate-800" />
+                            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 dark:text-slate-500">
                               {formatMessageDate(message.createdAt)}
                             </span>
-                            <span className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
+                            <span className="h-px flex-1 bg-stone-200 dark:bg-slate-800" />
                           </div>
                         )}
 
@@ -639,20 +652,20 @@ export function TeamChatContainer() {
                           >
                             {!isOwnMessage && (
                               <div className="mb-1 flex items-center gap-2 px-1">
-                                <span className="truncate text-[11px] font-bold text-slate-700 dark:text-slate-200">
+                                <span className="truncate text-xs font-bold text-stone-800 dark:text-slate-200">
                                   {message.senderName}
                                 </span>
-                                <span className="text-[9px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                                <span className={`text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md ${roleBadgeClass}`}>
                                   {message.senderRole}
                                 </span>
                               </div>
                             )}
 
                             <div
-                              className={`rounded-2xl px-3.5 py-2.5 text-left text-sm leading-relaxed shadow-sm ${
+                              className={`rounded-2xl px-4 py-3 text-left text-xs font-medium leading-relaxed shadow-sm ${
                                 isOwnMessage
-                                  ? "rounded-br-md bg-indigo-600 text-white dark:bg-violet-600"
-                                  : "rounded-bl-md border border-slate-200 bg-white text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                                  ? "rounded-br-md bg-gradient-to-r from-emerald-600 to-teal-700 text-white dark:from-purple-600 dark:to-indigo-600 shadow-md shadow-emerald-700/20 dark:shadow-purple-600/20"
+                                  : "rounded-bl-md border border-stone-200/80 bg-white text-stone-800 dark:border-slate-800 dark:bg-slate-800/80 dark:text-slate-100"
                               }`}
                             >
                               <p className="whitespace-pre-wrap break-words">
@@ -660,7 +673,7 @@ export function TeamChatContainer() {
                               </p>
                             </div>
                             <p
-                              className={`mt-1 px-1 text-[10px] text-slate-400 dark:text-slate-500 ${
+                              className={`mt-1 px-1 text-[10px] font-semibold text-stone-400 dark:text-slate-500 ${
                                 isOwnMessage ? "text-right" : "text-left"
                               }`}
                             >
@@ -676,10 +689,11 @@ export function TeamChatContainer() {
               <div ref={messagesEndRef} />
             </div>
 
-            <div className="border-t border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900/90">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-2 shadow-inner transition-all focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-500/15 dark:border-slate-700 dark:bg-slate-950/50 dark:focus-within:border-violet-500 dark:focus-within:ring-violet-500/15">
+            {/* Mesaj Yazma Alanı (Composer) */}
+            <div className="border-t border-stone-200/80 bg-white/60 p-4 dark:border-purple-900/40 dark:bg-slate-900/80 backdrop-blur-xl">
+              <div className="rounded-2xl border border-stone-300/80 bg-stone-50/80 p-2.5 shadow-inner transition-all focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-600/15 dark:border-purple-900/50 dark:bg-slate-950/60 dark:focus-within:border-purple-500 dark:focus-within:ring-purple-500/20">
                 <textarea
-                  className="max-h-32 min-h-12 w-full resize-none bg-transparent px-2 py-1.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-slate-100 dark:placeholder:text-slate-500"
+                  className="max-h-32 min-h-12 w-full resize-none bg-transparent px-2 py-1.5 text-xs font-medium text-stone-900 outline-none placeholder:text-stone-400 dark:text-slate-100 dark:placeholder:text-slate-500"
                   maxLength={MAXIMUM_MESSAGE_LENGTH}
                   onChange={(event) => setDraft(event.target.value)}
                   onKeyDown={handleComposerKeyDown}
@@ -688,8 +702,8 @@ export function TeamChatContainer() {
                   value={draft}
                 />
 
-                <div className="flex items-center justify-between gap-3 border-t border-slate-200/80 px-1 pt-2 dark:border-slate-800">
-                  <div className="flex items-center gap-2 text-[10px] text-slate-400 dark:text-slate-500">
+                <div className="flex items-center justify-between gap-3 border-t border-stone-200/80 px-1 pt-2 dark:border-slate-800">
+                  <div className="flex items-center gap-2 text-[10px] font-semibold text-stone-400 dark:text-slate-500">
                     <span>Enter to send</span>
                     <span>·</span>
                     <span>Shift + Enter for a new line</span>
@@ -701,7 +715,7 @@ export function TeamChatContainer() {
 
                   <button
                     aria-label="Send message"
-                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-indigo-500 bg-indigo-600 text-white shadow-sm transition-all hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40 dark:border-violet-500 dark:bg-violet-600 dark:hover:bg-violet-500"
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-md shadow-emerald-700/20 transition-all hover:scale-105 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100 dark:from-purple-600 dark:to-indigo-600 dark:shadow-purple-600/30 cursor-pointer"
                     disabled={!draft.trim() || sending}
                     onClick={() => void handleSend()}
                     type="button"

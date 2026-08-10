@@ -16,7 +16,8 @@ import { TicketPriorityBadge } from "./TicketPriorityBadge";
 import { TicketStatusBadge } from "./TicketStatusBadge";
 import { CsatSurveyCard } from "@/src/components/tickets/CsatSurveyCard";
 
-function DetailItem({
+// 🌟 Badge (Etiket) İçeren Detay Öğe Bileşeni
+function DetailBadgeItem({
   label,
   value,
   icon: Icon,
@@ -31,10 +32,58 @@ function DetailItem({
         {Icon && <Icon className="h-3.5 w-3.5 text-emerald-700 dark:text-purple-400" />}
         {label}
       </dt>
-      <dd className="text-xs font-semibold text-stone-900 dark:text-slate-100 font-mono text-right">
-        {value || "—"}
+      <dd className="text-right">
+        {value ? (
+          <span className="inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-bold text-stone-800 dark:text-slate-200 bg-stone-100 dark:bg-slate-800 border border-stone-200 dark:border-slate-700 shadow-sm">
+            {value}
+          </span>
+        ) : (
+          <span className="text-stone-400 font-mono text-xs">—</span>
+        )}
       </dd>
     </div>
+  );
+}
+
+// 🌟 Urgency Değerini Doğrudan Gösteren Şık Badge Bileşeni
+function UrgencyDetailBadge({ urgency }: { urgency?: string | null }) {
+  if (!urgency) {
+    return <span className="text-stone-400 font-mono text-xs">—</span>;
+  }
+
+  const u = urgency.trim().toLowerCase();
+  const isCritical = u.includes("critical") || u.includes("kritik") || u.includes("urgent");
+  const isHigh = u.includes("high") || u.includes("yüksek");
+  const isMedium = u.includes("medium") || u.includes("orta");
+  const isLow = u.includes("low") || u.includes("düşük");
+
+  let badgeStyle = "bg-stone-100 text-stone-700 border-stone-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700";
+  let dotStyle = "bg-stone-400 dark:bg-slate-500";
+
+  if (isCritical) {
+    badgeStyle = "bg-rose-500/15 text-rose-800 border-rose-600/40 animate-pulse shadow-sm dark:bg-rose-500/25 dark:text-rose-200 dark:border-rose-400/80 dark:shadow-[0_0_15px_rgba(244,63,94,0.45)] font-black";
+    dotStyle = "bg-rose-600 dark:bg-rose-400";
+  } else if (isHigh) {
+    badgeStyle = "bg-rose-500/15 text-rose-800 border-rose-600/30 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-400/50 font-bold";
+    dotStyle = "bg-rose-600 dark:bg-rose-400";
+  } else if (isMedium) {
+    badgeStyle = "bg-amber-500/15 text-amber-800 border-amber-600/30 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-400/50 font-bold";
+    dotStyle = "bg-amber-600 dark:bg-amber-400";
+  } else if (isLow) {
+    badgeStyle = "bg-emerald-500/15 text-emerald-800 border-emerald-600/30 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-400/50 font-semibold";
+    dotStyle = "bg-emerald-600 dark:bg-emerald-400";
+  }
+
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs border ${badgeStyle} shadow-sm`}>
+      <span className="relative flex h-1.5 w-1.5 shrink-0">
+        {isCritical && (
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75" />
+        )}
+        <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${dotStyle}`} />
+      </span>
+      <span className="truncate">{urgency}</span>
+    </span>
   );
 }
 
@@ -140,19 +189,30 @@ export function TicketMetadata({ ticket }: { ticket: TicketDetailDto }) {
           label="Created by"
           name={ticket.createdByName}
         />
-        <DetailItem icon={Users} label="Assigned team" value={ticket.teamName} />
+        <DetailBadgeItem icon={Users} label="Assigned team" value={ticket.teamName} />
         <PersonDetailItem
           avatarUrl={ticket.assignedToAvatarUrl}
           icon={User}
           label="Assigned to"
           name={ticket.assignedToName}
         />
-        <DetailItem icon={FolderTree} label="Category" value={ticket.categoryName} />
-        <DetailItem icon={Tag} label="Subcategory" value={ticket.subcategoryName} />
-        <DetailItem icon={Zap} label="Impact" value={ticket.impactLevelName} />
-        <DetailItem icon={AlertCircle} label="Urgency" value={ticket.urgencyLevelName} />
+        <DetailBadgeItem icon={FolderTree} label="Category" value={ticket.categoryName} />
+        <DetailBadgeItem icon={Tag} label="Subcategory" value={ticket.subcategoryName} />
+        <DetailBadgeItem icon={Zap} label="Impact" value={ticket.impactLevelName} />
+
+        {/* 🌟 Urgency alanı bağımsız badge ile düzgünce yerini aldı */}
+        <div className="flex items-center justify-between py-2.5 border-b border-stone-200/60 dark:border-slate-800/60 last:border-0 transition-colors">
+          <dt className="text-[11px] font-bold uppercase tracking-wider text-stone-500 dark:text-slate-400 flex items-center gap-1.5">
+            <AlertCircle className="h-3.5 w-3.5 text-emerald-700 dark:text-purple-400" />
+            Urgency
+          </dt>
+          <dd className="text-right">
+            <UrgencyDetailBadge urgency={ticket.urgencyLevelName} />
+          </dd>
+        </div>
+
         {ticket.resolvedAt && (
-          <DetailItem
+          <DetailBadgeItem
             icon={CheckCircle2}
             label="Resolved at"
             value={new Date(ticket.resolvedAt).toLocaleString("tr-TR")}
