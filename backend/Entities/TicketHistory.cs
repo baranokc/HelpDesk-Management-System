@@ -13,8 +13,8 @@ public class TicketHistory
     public string? OldValue { get; set; }
     public string? NewValue { get; set; }
 
-    public Guid ChangedById { get; set; }
-    public User ChangedBy { get; set; } = null!;
+    public Guid? ChangedById { get; set; }
+    public User? ChangedBy { get; set; }
 
     public DateTime ChangedAt { get; set; }
     public string? Description { get; set; }
