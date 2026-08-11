@@ -11,10 +11,11 @@ import {
 } from "react";
 import {
   HubConnectionBuilder,
+  HubConnectionState,
   LogLevel,
-  type HubConnection,
 } from "@microsoft/signalr";
 import { useAuth } from "@/src/context/AuthContext";
+import { resolveHubUrl } from "@/src/lib/apiUrl";
 import { authService } from "@/src/services/authService";
 import { notificationService } from "@/src/services/notificationService";
 import type { NotificationDto } from "@/src/types/notification";
@@ -34,13 +35,10 @@ const NotificationContext = createContext<
 >(undefined);
 
 function getNotificationHubUrl(): string {
-  const configuredHubUrl = process.env.NEXT_PUBLIC_SIGNALR_URL;
-  if (configuredHubUrl) return configuredHubUrl;
-
-  const apiUrl =
-    process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5269/api";
-
-  return `${apiUrl.replace(/\/api\/?$/, "")}/hubs/notifications`;
+  return resolveHubUrl(
+    process.env.NEXT_PUBLIC_SIGNALR_URL,
+    "/hubs/notifications",
+  );
 }
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
@@ -78,14 +76,14 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
     if (!isAuthenticated) return;
 
-    let connection: HubConnection | null = null;
     let disposed = false;
+    let retryTimer: number | undefined;
 
     const connect = async () => {
       setLoading(true);
       await refresh();
 
-      connection = new HubConnectionBuilder()
+      const connection = new HubConnectionBuilder()
         .withUrl(getNotificationHubUrl(), {
           accessTokenFactory: () => authService.getToken() ?? "",
           withCredentials: false,
@@ -114,24 +112,70 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       });
 
       connection.onreconnected(() => {
+        setError(null);
         void refresh();
       });
 
-      try {
-        await connection.start();
-      } catch {
-        if (!disposed)
+      let retryAttempt = 0;
+
+      const startConnection = async () => {
+        if (
+          disposed ||
+          connection.state !== HubConnectionState.Disconnected
+        ) {
+          return;
+        }
+
+        try {
+          await connection.start();
+          retryAttempt = 0;
+
+          if (!disposed) setError(null);
+        } catch {
+          if (disposed) return;
+
           setError(
             "Real-time notifications are temporarily unavailable. Saved notifications will still appear after refresh.",
           );
-      }
+
+          const delay = Math.min(1000 * 2 ** retryAttempt, 30_000);
+          retryAttempt += 1;
+          retryTimer = window.setTimeout(() => {
+            void startConnection();
+          }, delay);
+        }
+      };
+
+      connection.onclose(() => {
+        if (disposed) return;
+
+        const delay = Math.min(1000 * 2 ** retryAttempt, 30_000);
+        retryAttempt += 1;
+        retryTimer = window.setTimeout(() => {
+          void startConnection();
+        }, delay);
+      });
+
+      await startConnection();
+
+      return connection;
     };
 
-    void connect();
+    let activeConnection:
+      | Awaited<ReturnType<typeof connect>>
+      | undefined;
+    void connect().then((startedConnection) => {
+      activeConnection = startedConnection;
+
+      if (disposed && activeConnection) {
+        void activeConnection.stop();
+      }
+    });
 
     return () => {
       disposed = true;
-      if (connection) void connection.stop();
+      if (retryTimer !== undefined) window.clearTimeout(retryTimer);
+      if (activeConnection) void activeConnection.stop();
     };
   }, [authLoading, isAuthenticated, refresh, refreshSession]);
 

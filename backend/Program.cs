@@ -285,8 +285,6 @@ Directory.CreateDirectory(avatarDirectory);
 
 var app = builder.Build();
 
-app.UseCors("AllowNextJS");
-
 app.UseSwagger();
 app.UseSwaggerUI();
 
@@ -302,12 +300,12 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseRouting();
+app.UseCors("AllowNextJS");
 
 app.UseStaticFiles(new StaticFileOptions
 {
     OnPrepareResponse = ctx =>
     {
-        ctx.Context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
         ctx.Context.Response.Headers.Append("Cache-Control", "public,max-age=2592000");
     }
 });

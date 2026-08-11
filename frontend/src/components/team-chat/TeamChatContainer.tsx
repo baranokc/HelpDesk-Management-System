@@ -28,6 +28,7 @@ import { Alert } from "@/src/components/ui/Alert";
 import { Avatar } from "@/src/components/ui/Avatar";
 import { useAuth } from "@/src/context/AuthContext";
 import { getApiErrorMessage } from "@/src/lib/api";
+import { resolveHubUrl } from "@/src/lib/apiUrl";
 import { authService } from "@/src/services/authService";
 import { teamChatService } from "@/src/services/teamChatService";
 import type {
@@ -41,12 +42,10 @@ const MAXIMUM_MESSAGE_LENGTH = 2000;
 const TEAM_LEADER_ROOM_ID = "team-leaders";
 
 function getTeamChatHubUrl(): string {
-  const configuredHubUrl = process.env.NEXT_PUBLIC_TEAM_CHAT_SIGNALR_URL;
-  if (configuredHubUrl) return configuredHubUrl;
-
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5269/api";
-
-  return `${apiUrl.replace(/\/api\/?$/, "")}/hubs/team-chat`;
+  return resolveHubUrl(
+    process.env.NEXT_PUBLIC_TEAM_CHAT_SIGNALR_URL,
+    "/hubs/team-chat",
+  );
 }
 
 function mergeMessages(
@@ -240,9 +239,8 @@ export function TeamChatContainer() {
     if (authLoading || !canAccessChat || !authService.getToken()) return;
 
     let disposed = false;
-    let connection: HubConnection | null = null;
-
-    connection = new HubConnectionBuilder()
+    let retryTimer: number | undefined;
+    const connection: HubConnection = new HubConnectionBuilder()
       .withUrl(getTeamChatHubUrl(), {
         accessTokenFactory: () => authService.getToken() ?? "",
         withCredentials: false,
@@ -283,43 +281,62 @@ export function TeamChatContainer() {
     });
 
     connection.onreconnected(() => {
-      if (!disposed) setConnectionStatus("connected");
+      if (!disposed) {
+        setConnectionStatus("connected");
+        setError(null);
+      }
     });
+
+    let retryAttempt = 0;
+
+    const startConnection = async () => {
+      if (
+        disposed ||
+        connection.state !== HubConnectionState.Disconnected
+      ) {
+        return;
+      }
+
+      setConnectionStatus(retryAttempt === 0 ? "connecting" : "reconnecting");
+
+      try {
+        await connection.start();
+        retryAttempt = 0;
+
+        if (!disposed) {
+          setConnectionStatus("connected");
+          setError(null);
+        }
+      } catch {
+        if (disposed) return;
+
+        setConnectionStatus("offline");
+        const delay = Math.min(1000 * 2 ** retryAttempt, 30_000);
+        retryAttempt += 1;
+        retryTimer = window.setTimeout(() => {
+          void startConnection();
+        }, delay);
+      }
+    };
 
     connection.onclose(() => {
-      if (!disposed) setConnectionStatus("offline");
-    });
-
-    const startTimer = window.setTimeout(() => {
       if (disposed) return;
 
-      void connection
-        .start()
-        .then(async () => {
-          if (disposed) {
-            if (connection.state !== HubConnectionState.Disconnected) {
-              await connection.stop();
-            }
-            return;
-          }
+      setConnectionStatus("offline");
+      const delay = Math.min(1000 * 2 ** retryAttempt, 30_000);
+      retryAttempt += 1;
+      retryTimer = window.setTimeout(() => {
+        void startConnection();
+      }, delay);
+    });
 
-          setConnectionStatus("connected");
-        })
-        .catch(() => {
-          if (!disposed) {
-            setConnectionStatus("offline");
-          }
-        });
-    }, 0);
+    void startConnection();
 
     return () => {
       disposed = true;
-      window.clearTimeout(startTimer);
+      if (retryTimer !== undefined) window.clearTimeout(retryTimer);
 
-      if (
-        connection.state === HubConnectionState.Connected ||
-        connection.state === HubConnectionState.Reconnecting
-      ) {
+      if (connection.state !== HubConnectionState.Disconnected) {
         void connection.stop();
       }
     };

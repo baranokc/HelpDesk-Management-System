@@ -1,14 +1,9 @@
 import axios from 'axios';
 import { authService } from '../services/authService';
-
-const rawBaseUrl =
-    process.env.NEXT_PUBLIC_API_URL ||
-    'https://helpdesk-backend-an12.onrender.com/api';
-
-const baseURL = rawBaseUrl.replace(/\/+$/, '');
+import { API_BASE_URL } from './apiUrl';
 
 export const api = axios.create({
-    baseURL,
+    baseURL: API_BASE_URL,
     withCredentials: true,
 });
 
