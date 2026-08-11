@@ -76,11 +76,12 @@ function getCommentStyle(comment: TicketCommentDto) {
     rawRole.includes("agent")
   ) {
     return {
+      // 🌟 LIGHT MODE: Zümrüt (Teal) | DARK MODE: Leylak (Purple)
       bubbleClass:
-        "bg-blue-500/10 dark:bg-blue-950/30 border-blue-500/30 dark:border-blue-500/40 text-stone-900 dark:text-blue-200 rounded-3xl rounded-tl-md shadow-inner",
+        "bg-teal-500/10 dark:bg-purple-950/30 border-teal-500/30 dark:border-purple-500/40 text-stone-900 dark:text-purple-200 rounded-3xl rounded-tl-md shadow-inner",
       roleLabel: "Support Agent",
       badgeClass:
-        "bg-teal-500/15 text-teal-800 dark:bg-blue-500/20 dark:text-blue-300 border-teal-600/30 dark:border-blue-500/40",
+        "bg-teal-500/15 text-teal-800 border-teal-600/30 dark:bg-purple-500/25 dark:text-purple-300 dark:border-purple-400/70 dark:shadow-[0_0_12px_rgba(168,85,247,0.35)]",
       isInternal: false,
     };
   }

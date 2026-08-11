@@ -216,8 +216,9 @@ export default function AdminUsersPage() {
         );
       case "SupportAgent":
         return (
-          <span className="inline-flex items-center gap-1 rounded-lg bg-teal-500/15 text-teal-800 dark:bg-blue-500/20 dark:text-blue-300 border border-teal-600/30 dark:border-blue-500/40 px-2.5 py-1 text-xs font-bold">
-            <UserCheck className="h-3.5 w-3.5 text-teal-600 dark:text-blue-400" />
+          // 🌟 LIGHT MODE: Zümrüt (Teal) | DARK MODE: Leylak (Purple)
+          <span className="inline-flex items-center gap-1 rounded-lg bg-teal-500/15 text-teal-800 border-teal-600/30 dark:bg-purple-500/25 dark:text-purple-300 dark:border-purple-400/70 dark:shadow-[0_0_12px_rgba(168,85,247,0.35)] px-2.5 py-1 text-xs font-bold">
+            <UserCheck className="h-3.5 w-3.5 text-teal-600 dark:text-purple-400" />
             Support Agent
           </span>
         );
@@ -281,7 +282,8 @@ export default function AdminUsersPage() {
             <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 dark:text-slate-500">Support Staff</span>
             <div className="text-2xl font-black text-stone-900 dark:text-white mt-0.5">{stats.support}</div>
           </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-teal-500/10 dark:bg-blue-500/20 text-teal-800 dark:text-blue-300 border border-teal-500/20 dark:border-blue-500/30">
+          {/* 🌟 LIGHT MODE: Zümrüt (Teal) | DARK MODE: Leylak (Purple) */}
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-teal-500/10 text-teal-800 border-teal-500/20 dark:bg-purple-500/20 dark:text-purple-300 dark:border-purple-500/30">
             <UserCheck className="h-5 w-5" />
           </div>
         </div>
