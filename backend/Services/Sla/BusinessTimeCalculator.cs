@@ -4,7 +4,7 @@ namespace backend.Services.Sla;
 
 public sealed class BusinessTimeCalculator : IBusinessTimeCalculator
 {
-    private const int MaximumSearchDays = 36600;
+    private const int MaximumSearchDays = 3650; // 10 yıl arama limiti (CPU kilitlenmesini önler)
 
     public DateTimeOffset AddWorkingTime(
         DateTimeOffset startUtc,
@@ -33,7 +33,8 @@ public sealed class BusinessTimeCalculator : IBusinessTimeCalculator
              searchedDays < MaximumSearchDays;
              searchedDays++)
         {
-            foreach (var period in GetPeriods(calendar, date, timeZone))
+            var periods = GetPeriods(calendar, date, timeZone);
+            foreach (var period in periods)
             {
                 if (cursorUtc >= period.EndUtc)
                     continue;
@@ -51,11 +52,13 @@ public sealed class BusinessTimeCalculator : IBusinessTimeCalculator
             }
 
             date = date.AddDays(1);
-            cursorUtc = ToUtc(date, TimeOnly.MinValue, timeZone);
+            var nextDayStart = ToUtc(date, TimeOnly.MinValue, timeZone);
+            if (nextDayStart > cursorUtc)
+                cursorUtc = nextDayStart;
         }
 
         throw new InvalidOperationException(
-            "A working-time deadline could not be calculated from the configured calendar.");
+            $"A working-time deadline could not be calculated from the SLA calendar '{calendar.Name}'. No working time available within {MaximumSearchDays} days.");
     }
 
     public TimeSpan GetWorkingTime(
@@ -84,7 +87,8 @@ public sealed class BusinessTimeCalculator : IBusinessTimeCalculator
              date <= lastDate && searchedDays < MaximumSearchDays;
              searchedDays++, date = date.AddDays(1))
         {
-            foreach (var period in GetPeriods(calendar, date, timeZone))
+            var periods = GetPeriods(calendar, date, timeZone);
+            foreach (var period in periods)
             {
                 var overlapStart = start > period.StartUtc
                     ? start
@@ -113,27 +117,55 @@ public sealed class BusinessTimeCalculator : IBusinessTimeCalculator
         var localInstant = TimeZoneInfo.ConvertTime(instant, timeZone);
         var date = DateOnly.FromDateTime(localInstant.DateTime);
 
-        return GetPeriods(calendar, date, timeZone)
-            .Any(period =>
-                instant >= period.StartUtc &&
-                instant < period.EndUtc);
+        foreach (var period in GetPeriods(calendar, date, timeZone))
+        {
+            if (instant >= period.StartUtc && instant < period.EndUtc)
+                return true;
+        }
+
+        return false;
     }
 
-    private static IReadOnlyCollection<WorkingPeriodBoundary> GetPeriods(
+    // 🌟 DÜZELTME: ICollection indeks erişim hatası düzeltildi (foreach kullanıldı)
+    private static IReadOnlyList<WorkingPeriodBoundary> GetPeriods(
         SlaCalendar calendar,
         DateOnly date,
         TimeZoneInfo timeZone)
     {
-        if (calendar.Holidays.Any(holiday => holiday.Date == date))
+        var holidays = calendar.Holidays;
+        if (holidays is not null && holidays.Count > 0)
+        {
+            foreach (var holiday in holidays)
+            {
+                if (holiday.Date == date)
+                    return Array.Empty<WorkingPeriodBoundary>();
+            }
+        }
+
+        var workingPeriods = calendar.WorkingPeriods;
+        if (workingPeriods is null || workingPeriods.Count == 0)
             return Array.Empty<WorkingPeriodBoundary>();
 
-        return calendar.WorkingPeriods
-            .Where(period => period.DayOfWeek == date.DayOfWeek)
-            .OrderBy(period => period.StartTime)
-            .Select(period => new WorkingPeriodBoundary(
-                ToUtc(date, period.StartTime, timeZone),
-                ToUtc(date, period.EndTime, timeZone)))
-            .ToList();
+        List<WorkingPeriodBoundary>? matching = null;
+
+        foreach (var period in workingPeriods)
+        {
+            if (period.DayOfWeek == date.DayOfWeek)
+            {
+                matching ??= new List<WorkingPeriodBoundary>();
+                matching.Add(new WorkingPeriodBoundary(
+                    ToUtc(date, period.StartTime, timeZone),
+                    ToUtc(date, period.EndTime, timeZone)));
+            }
+        }
+
+        if (matching is null || matching.Count == 0)
+            return Array.Empty<WorkingPeriodBoundary>();
+
+        if (matching.Count > 1)
+            matching.Sort((a, b) => a.StartUtc.CompareTo(b.StartUtc));
+
+        return matching;
     }
 
     private static DateTimeOffset ToUtc(
@@ -167,40 +199,60 @@ public sealed class BusinessTimeCalculator : IBusinessTimeCalculator
             throw new InvalidOperationException(
                 $"SLA calendar '{calendar.Name}' has no time-zone identifier.");
 
+        var zoneId = calendar.TimeZoneId.Trim();
+
         try
         {
-            return TimeZoneInfo.FindSystemTimeZoneById(
-                calendar.TimeZoneId);
+            return TimeZoneInfo.FindSystemTimeZoneById(zoneId);
         }
-        catch (TimeZoneNotFoundException exception)
+        catch (Exception)
         {
-            throw new InvalidOperationException(
-                $"SLA calendar time zone '{calendar.TimeZoneId}' was not found.",
-                exception);
-        }
-        catch (InvalidTimeZoneException exception)
-        {
-            throw new InvalidOperationException(
-                $"SLA calendar time zone '{calendar.TimeZoneId}' is invalid.",
-                exception);
+            if (TimeZoneInfo.TryConvertWindowsIdToIanaId(zoneId, out var ianaId))
+            {
+                try
+                {
+                    return TimeZoneInfo.FindSystemTimeZoneById(ianaId);
+                }
+                catch
+                {
+                    // Fallback
+                }
+            }
+
+            if (TimeZoneInfo.TryConvertIanaIdToWindowsId(zoneId, out var winId))
+            {
+                try
+                {
+                    return TimeZoneInfo.FindSystemTimeZoneById(winId);
+                }
+                catch
+                {
+                    // Fallback
+                }
+            }
+
+            return TimeZoneInfo.Utc;
         }
     }
 
+    // 🌟 DÜZELTME: ICollection indeks erişim hatası düzeltildi
     private static void EnsureUsableCalendar(SlaCalendar calendar)
     {
         if (!calendar.IsActive)
             throw new InvalidOperationException(
                 $"SLA calendar '{calendar.Name}' is not active.");
 
-        if (calendar.WorkingPeriods.Count == 0)
+        if (calendar.WorkingPeriods is null || calendar.WorkingPeriods.Count == 0)
             throw new InvalidOperationException(
-                $"SLA calendar '{calendar.Name}' has no working periods.");
+                $"SLA calendar '{calendar.Name}' has no working periods loaded or defined.");
 
-        if (calendar.WorkingPeriods.Any(period =>
-                period.StartTime >= period.EndTime))
+        foreach (var period in calendar.WorkingPeriods)
         {
-            throw new InvalidOperationException(
-                $"SLA calendar '{calendar.Name}' contains an invalid working period.");
+            if (period.StartTime >= period.EndTime)
+            {
+                throw new InvalidOperationException(
+                    $"SLA calendar '{calendar.Name}' contains an invalid working period.");
+            }
         }
     }
 
