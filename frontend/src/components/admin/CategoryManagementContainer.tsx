@@ -195,10 +195,17 @@ export function CategoryManagementContainer() {
   const [submitting, setSubmitting] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
   const [modalSuccess, setModalSuccess] = useState<string | null>(null);
-  const [subcategoryDraft, setSubcategoryDraft] = useState<SubcategoryDraft | null>(null);
+  const [subcategoryDraft, setSubcategoryDraft] =
+    useState<SubcategoryDraft | null>(null);
   const [savingSubcategory, setSavingSubcategory] = useState(false);
-  const [deletingSubcategoryId, setDeletingSubcategoryId] = useState<string | null>(null);
-  const [subcategoryToDelete, setSubcategoryToDelete] = useState<SubcategoryDto | null>(null);
+  const [deletingSubcategoryId, setDeletingSubcategoryId] = useState<
+    string | null
+  >(null);
+  const [subcategoryToDelete, setSubcategoryToDelete] =
+    useState<SubcategoryDto | null>(null);
+  const [categoryToDelete, setCategoryToDelete] =
+    useState<CategoryDto | null>(null);
+  const [deletingCategory, setDeletingCategory] = useState(false);
 
   const applyLoadedData = (
     categoryData: CategoryDto[],
@@ -398,6 +405,7 @@ export function CategoryManagementContainer() {
     setEditingCategory(null);
     setFormData(emptyForm);
     setSubcategoryDraft(null);
+    setSubcategoryToDelete(null);
     setModalError(null);
     setModalSuccess(null);
     setIsModalOpen(true);
@@ -412,6 +420,7 @@ export function CategoryManagementContainer() {
       defaultTeamId: category.defaultTeamId,
     });
     setSubcategoryDraft(null);
+    setSubcategoryToDelete(null);
     setModalError(null);
     setModalSuccess(null);
     setIsModalOpen(true);
@@ -525,10 +534,15 @@ export function CategoryManagementContainer() {
   };
 
   const handleConfirmDeleteSubcategory = async () => {
-    if (!editingCategory || !subcategoryToDelete) return;
+    if (
+      !editingCategory ||
+      !subcategoryToDelete ||
+      deletingSubcategoryId
+    ) {
+      return;
+    }
 
     const subcategory = subcategoryToDelete;
-
     setDeletingSubcategoryId(subcategory.id);
     setModalError(null);
     setModalSuccess(null);
@@ -538,24 +552,21 @@ export function CategoryManagementContainer() {
         editingCategory.id,
         subcategory.id,
       );
-
       replaceCategory(updatedCategory);
-
       setSubcategoryDraft((current) =>
         current?.id === subcategory.id ? null : current,
       );
-
       setModalSuccess(`Subcategory "${subcategory.name}" was removed.`);
       setSubcategoryToDelete(null);
     } catch (requestError: unknown) {
       setModalError(
         getApiErrorMessage(requestError, "Failed to delete subcategory."),
       );
+      setSubcategoryToDelete(null);
     } finally {
       setDeletingSubcategoryId(null);
     }
   };
-
 
   const handleSaveRouting = async (category: CategoryDto) => {
     setRoutingCategoryId(category.id);
@@ -606,12 +617,18 @@ export function CategoryManagementContainer() {
     }
   };
 
-  const handleDelete = async (category: CategoryDto) => {
-    const confirmed = confirm(
-      `Delete "${category.name}"? Its subcategories will also be hidden. Existing tickets will keep their category history.`,
-    );
-    if (!confirmed) return;
+  const handleDelete = (category: CategoryDto) => {
+    setSubcategoryMenu(null);
+    setCategoryToDelete(category);
+    setError(null);
+    setSuccess(null);
+  };
 
+  const handleConfirmDelete = async () => {
+    if (!categoryToDelete || deletingCategory) return;
+
+    const category = categoryToDelete;
+    setDeletingCategory(true);
     setError(null);
     setSuccess(null);
 
@@ -624,8 +641,12 @@ export function CategoryManagementContainer() {
         current?.categoryId === category.id ? null : current,
       );
       setSuccess(`Category "${category.name}" was removed.`);
+      setCategoryToDelete(null);
     } catch (requestError: unknown) {
       setError(getApiErrorMessage(requestError, "Failed to delete category."));
+      setCategoryToDelete(null);
+    } finally {
+      setDeletingCategory(false);
     }
   };
 
@@ -834,7 +855,8 @@ export function CategoryManagementContainer() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => void handleDelete(category)}
+                            onClick={() => handleDelete(category)}
+                            disabled={deletingCategory}
                             className="btn btn-xs btn-ghost text-slate-600 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400"
                             title="Delete Category"
                           >
@@ -1158,12 +1180,9 @@ export function CategoryManagementContainer() {
                           >
                             <EditIcon />
                           </button>
-
                           <button
                             type="button"
-                            onClick={() =>
-                              handleDeleteSubcategory(subcategory)
-                            }
+                            onClick={() => handleDeleteSubcategory(subcategory)}
                             disabled={
                               savingSubcategory ||
                               Boolean(deletingSubcategoryId)
@@ -1213,7 +1232,7 @@ export function CategoryManagementContainer() {
           </div>
         </div>
       )}
-      
+
       <ConfirmModal
         open={Boolean(subcategoryToDelete)}
         title="Delete Subcategory"
@@ -1228,6 +1247,22 @@ export function CategoryManagementContainer() {
           }
         }}
         onConfirm={() => void handleConfirmDeleteSubcategory()}
+      />
+
+      <ConfirmModal
+        open={Boolean(categoryToDelete)}
+        title="Delete Category"
+        description={`Are you sure you want to delete "${categoryToDelete?.name ?? ""}"? Its subcategories will also be hidden. Existing tickets will keep their category history.`}
+        confirmText="Yes, Delete Category"
+        cancelText="Cancel"
+        variant="danger"
+        loading={deletingCategory}
+        onClose={() => {
+          if (!deletingCategory) {
+            setCategoryToDelete(null);
+          }
+        }}
+        onConfirm={() => void handleConfirmDelete()}
       />
     </div>
   );
