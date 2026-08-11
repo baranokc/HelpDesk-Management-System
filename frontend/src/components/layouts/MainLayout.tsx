@@ -307,7 +307,8 @@ const getRoleBadgeStyle = (role?: string): string => {
       return "bg-red-500/15 text-red-800 dark:bg-yellow-400/20 dark:text-yellow-300 border-red-600/30 dark:border-yellow-400/80 dark:shadow-[0_0_12px_rgba(250,204,21,0.35)]";
     case "supportagent":
     case "2":
-      return "bg-teal-500/15 text-teal-800 dark:bg-blue-500/20 dark:text-blue-300 border-teal-600/30 dark:border-blue-500/40";
+      // 🌟 LIGHT MODE: Zümrüt (Teal) | DARK MODE: Leylak (Purple)
+      return "bg-teal-500/15 text-teal-800 border-teal-600/30 dark:bg-purple-500/25 dark:text-purple-300 dark:border-purple-400/70 dark:shadow-[0_0_12px_rgba(168,85,247,0.35)]";
     default:
       return "bg-stone-900/10 text-stone-900 dark:bg-slate-100/15 dark:text-slate-100 border-stone-900/25 dark:border-slate-100/30";
   }
@@ -428,7 +429,7 @@ export default function MainLayout({
                   <path d="M2 20c4-2 9-2 13 0" strokeWidth="2" />
                   <path d="M11 20c0-4 1.5-7 4-10" strokeWidth="2" />
                   <path d="M15 10c-3-2-6-1-7 1" />
-                  <path d="M15 10c2-3 4-3 6-1" />
+                  <path d="M15 10c2-3-4-3 6-1" />
                   <path d="M15 10c0-3 2-5 4-5" />
                   <path d="M15 10c-2-3-4-3-5-5" />
                 </svg>
@@ -586,16 +587,17 @@ export default function MainLayout({
 
                 {user?.role === "SupportAgent" && (
                   <li>
+                    {/* 🌟 LIGHT MODE: Zümrüt (Teal) | DARK MODE: Leylak (Purple) */}
                     <Link
                       aria-current={isMyWorkPage ? "page" : undefined}
                       href="/tickets/my-work"
                       className={`flex items-center gap-2.5 rounded-xl py-2 px-3 text-xs font-semibold transition-all ${
                         isMyWorkPage
-                          ? "bg-teal-500/15 text-teal-800 dark:bg-blue-500/20 dark:text-blue-300 font-bold"
+                          ? "bg-teal-500/15 text-teal-800 dark:bg-purple-500/25 dark:text-purple-300 font-bold"
                           : "text-stone-700 dark:text-slate-300 hover:bg-stone-200/60 dark:hover:bg-slate-800/80"
                       }`}
                     >
-                      <Briefcase className="h-4 w-4 text-teal-600 dark:text-blue-400" />
+                      <Briefcase className="h-4 w-4 text-teal-600 dark:text-purple-400" />
                       <span>My Work</span>
                     </Link>
                   </li>
