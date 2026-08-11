@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Lock, MessageSquare, MoreHorizontal } from "lucide-react";
 import type { TicketAttachmentDto } from "@/src/types/ticket-attachment";
 import type { TicketCommentDto } from "@/src/types/ticket-comment";
@@ -7,6 +8,7 @@ import { Avatar } from "@/src/components/ui/Avatar";
 import { Dropdown } from "@/src/components/ui/Dropdown";
 import { EmptyState } from "@/src/components/ui/EmptyState";
 import { TicketAttachments } from "./TicketAttachments";
+import { AttachmentPreviewModal } from "./AttachmentPreviewModal";
 
 interface TicketCommentsProps {
   comments: TicketCommentDto[];
@@ -22,7 +24,6 @@ interface TicketCommentsProps {
 }
 
 function getCommentStyle(comment: TicketCommentDto) {
-  // 1. İç Not (Internal Comment) -> Amber / Sarı
   if (comment.isInternal) {
     return {
       bubbleClass:
@@ -47,7 +48,6 @@ function getCommentStyle(comment: TicketCommentDto) {
     .replace(/\s+/g, "")
     .trim();
 
-  // 2. ADMIN -> Amber / Neon Pink
   if (rawRole.includes("admin")) {
     return {
       bubbleClass:
@@ -59,7 +59,6 @@ function getCommentStyle(comment: TicketCommentDto) {
     };
   }
 
-  // 3. TEAM LEADER -> Kırmızı / Parlak Sarı
   if (rawRole.includes("teamleader") || rawRole.includes("leader")) {
     return {
       bubbleClass:
@@ -71,7 +70,6 @@ function getCommentStyle(comment: TicketCommentDto) {
     };
   }
 
-  // 4. SUPPORT AGENT -> Teal / Mavi
   if (
     rawRole.includes("supportagent") ||
     rawRole.includes("support") ||
@@ -87,7 +85,6 @@ function getCommentStyle(comment: TicketCommentDto) {
     };
   }
 
-  // 5. USER -> Nötr / Siyah-Beyaz (Stone / Slate)
   return {
     bubbleClass:
       "bg-white/90 dark:bg-slate-800/80 border-stone-200/80 dark:border-slate-700 text-stone-900 dark:text-slate-100 rounded-3xl rounded-tl-md shadow-inner",
@@ -110,6 +107,10 @@ export function TicketComments({
   onEditAttachmentDescription,
   onDeleteAttachment,
 }: TicketCommentsProps) {
+  // Global preview state
+  const [selectedPreviewAttachment, setSelectedPreviewAttachment] =
+    useState<TicketAttachmentDto | null>(null);
+
   if (comments.length === 0) {
     return (
       <EmptyState
@@ -120,117 +121,135 @@ export function TicketComments({
   }
 
   return (
-    <div className="space-y-6">
-      {comments.map((comment) => {
-        const attachments = comment.attachments ?? [];
-        const style = getCommentStyle(comment);
-        const showActions = canManage?.(comment) ?? false;
+    <>
+      <div className="space-y-6">
+        {comments.map((comment) => {
+          const attachments = comment.attachments ?? [];
+          const style = getCommentStyle(comment);
+          const showActions = canManage?.(comment) ?? false;
 
-        return (
-          <article
-            key={comment.id}
-            className="flex gap-4 items-start group animate-in fade-in slide-in-from-bottom-2 duration-300"
-          >
-            {/* AVATAR */}
-            <div className="shrink-0 mt-0.5">
-              <Avatar
-                avatarUrl={comment.createdByAvatarUrl}
-                name={comment.createdByName}
-                size="md"
-                className="shadow-md border border-stone-200 dark:border-purple-800/40"
-              />
-            </div>
+          return (
+            <article
+              key={comment.id}
+              className="flex gap-4 items-start group animate-in fade-in slide-in-from-bottom-2 duration-300"
+            >
+              {/* AVATAR */}
+              <div className="shrink-0 mt-0.5">
+                <Avatar
+                  avatarUrl={comment.createdByAvatarUrl}
+                  name={comment.createdByName}
+                  size="md"
+                  className="shadow-md border border-stone-200 dark:border-purple-800/40"
+                />
+              </div>
 
-            {/* MESAJ İÇERİĞİ VE BALONCUK */}
-            <div className="flex flex-col items-start min-w-0 max-w-[88%] sm:max-w-[78%] space-y-2">
-              {/* HEADER (Kullanıcı Adı, Rol, Zaman & Aksiyonlar) */}
-              <div className="flex items-center gap-2.5 flex-wrap px-1">
-                <span className="font-bold text-xs sm:text-sm text-stone-900 dark:text-white">
-                  {comment.createdByName}
-                </span>
-
-                {style.roleLabel && (
-                  <span
-                    className={`inline-flex items-center gap-1 text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md border ${style.badgeClass}`}
-                  >
-                    {style.isInternal && <Lock className="h-3 w-3 inline" />}
-                    {style.roleLabel}
+              {/* MESAJ İÇERİĞİ VE BALONCUK */}
+              <div className="flex flex-col items-start min-w-0 max-w-[88%] sm:max-w-[78%] space-y-2">
+                {/* HEADER */}
+                <div className="flex items-center gap-2.5 flex-wrap px-1">
+                  <span className="font-bold text-xs sm:text-sm text-stone-900 dark:text-white">
+                    {comment.createdByName}
                   </span>
-                )}
 
-                <time className="text-[10px] font-mono font-medium text-stone-400 dark:text-slate-400">
-                  {new Date(comment.createdAt).toLocaleString("tr-TR")}
-                  {comment.editedAt && " · edited"}
-                </time>
+                  {style.roleLabel && (
+                    <span
+                      className={`inline-flex items-center gap-1 text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md border ${style.badgeClass}`}
+                    >
+                      {style.isInternal && <Lock className="h-3 w-3 inline" />}
+                      {style.roleLabel}
+                    </span>
+                  )}
 
-                {showActions && (onEdit || onDelete) && (
-                  <Dropdown
-                    label={<MoreHorizontal className="h-4 w-4 text-stone-400 dark:text-slate-400 hover:text-stone-700 dark:hover:text-white transition-colors" />}
-                    items={[
-                      ...(onEdit
-                        ? [
-                            {
-                              id: "edit",
-                              label: "Edit comment",
-                              onSelect: () => onEdit(comment),
-                            },
-                          ]
-                        : []),
-                      ...(onDelete
-                        ? [
-                            {
-                              id: "delete",
-                              label: "Delete comment",
-                              danger: true,
-                              onSelect: () => onDelete(comment),
-                            },
-                          ]
-                        : []),
-                    ]}
-                  />
-                )}
-              </div>
+                  <time className="text-[10px] font-mono font-medium text-stone-400 dark:text-slate-400">
+                    {new Date(comment.createdAt).toLocaleString("tr-TR")}
+                    {comment.editedAt && " · edited"}
+                  </time>
 
-              {/* MESAJ BALONCUĞU */}
-              <div
-                className={`w-fit px-5 py-3.5 text-xs sm:text-sm font-medium border shadow-lg backdrop-blur-2xl transition-all ${style.bubbleClass}`}
-              >
-                {comment.comment && (
-                  <p className="whitespace-pre-wrap leading-relaxed break-words text-stone-900 dark:text-slate-100 font-medium">
-                    {comment.comment}
-                  </p>
-                )}
-
-                {/* EKLER */}
-                {attachments.length > 0 && (
-                  <div
-                    className={
-                      comment.comment
-                        ? "mt-3.5 border-t border-stone-200/60 dark:border-slate-700/60 pt-3.5"
-                        : ""
-                    }
-                  >
-                    <p className="mb-2.5 text-[10px] font-mono font-extrabold uppercase tracking-wider opacity-80 flex items-center gap-1.5 text-stone-500 dark:text-slate-400">
-                      <MessageSquare className="h-3 w-3" />
-                      <span>{attachments.length} attachment(s)</span>
-                    </p>
-
-                    <TicketAttachments
-                      attachments={attachments}
-                      canManage={canManageAttachment}
-                      downloadingAttachmentId={downloadingAttachmentId}
-                      onDelete={onDeleteAttachment}
-                      onDownload={onDownloadAttachment}
-                      onEditDescription={onEditAttachmentDescription}
-                      ticketId={ticketId}
+                  {showActions && (onEdit || onDelete) && (
+                    <Dropdown
+                      label={
+                        <MoreHorizontal className="h-4 w-4 text-stone-400 dark:text-slate-400 hover:text-stone-700 dark:hover:text-white transition-colors" />
+                      }
+                      items={[
+                        ...(onEdit
+                          ? [
+                              {
+                                id: "edit",
+                                label: "Edit comment",
+                                onSelect: () => onEdit(comment),
+                              },
+                            ]
+                          : []),
+                        ...(onDelete
+                          ? [
+                              {
+                                id: "delete",
+                                label: "Delete comment",
+                                danger: true,
+                                onSelect: () => onDelete(comment),
+                              },
+                            ]
+                          : []),
+                      ]}
                     />
-                  </div>
-                )}
+                  )}
+                </div>
+
+                {/* MESAJ BALONCUĞU */}
+                <div
+                  className={`w-fit px-5 py-3.5 text-xs sm:text-sm font-medium border shadow-lg backdrop-blur-2xl transition-all ${style.bubbleClass}`}
+                >
+                  {comment.comment && (
+                    <p className="whitespace-pre-wrap leading-relaxed break-words text-stone-900 dark:text-slate-100 font-medium">
+                      {comment.comment}
+                    </p>
+                  )}
+
+                  {/* EKLER */}
+                  {attachments.length > 0 && (
+                    <div
+                      className={
+                        comment.comment
+                          ? "mt-3.5 border-t border-stone-200/60 dark:border-slate-700/60 pt-3.5"
+                          : ""
+                      }
+                    >
+                      <p className="mb-2.5 text-[10px] font-mono font-extrabold uppercase tracking-wider opacity-80 flex items-center gap-1.5 text-stone-500 dark:text-slate-400">
+                        <MessageSquare className="h-3 w-3" />
+                        <span>{attachments.length} attachment(s)</span>
+                      </p>
+
+                      <TicketAttachments
+                        attachments={attachments}
+                        canManage={canManageAttachment}
+                        downloadingAttachmentId={downloadingAttachmentId}
+                        onDelete={onDeleteAttachment}
+                        onDownload={onDownloadAttachment}
+                        onEditDescription={onEditAttachmentDescription}
+                        onPreviewAttachment={(attachment) =>
+                          setSelectedPreviewAttachment(attachment)
+                        }
+                        ticketId={ticketId}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          </article>
-        );
-      })}
-    </div>
+            </article>
+          );
+        })}
+      </div>
+
+      {/* POPUP MODAL (Döngünün dışında render edilir) */}
+      {selectedPreviewAttachment && (
+        <AttachmentPreviewModal
+          attachment={selectedPreviewAttachment}
+          downloading={downloadingAttachmentId === selectedPreviewAttachment.id}
+          onClose={() => setSelectedPreviewAttachment(null)}
+          onDownload={onDownloadAttachment}
+          ticketId={ticketId}
+        />
+      )}
+    </>
   );
 }

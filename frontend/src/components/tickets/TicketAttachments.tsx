@@ -20,6 +20,8 @@ interface TicketAttachmentsProps {
   canManage?: (attachment: TicketAttachmentDto) => boolean;
   onDelete?: (attachment: TicketAttachmentDto) => void | Promise<void>;
   onEditDescription?: (attachment: TicketAttachmentDto) => void;
+  // 🌟 Dışarıdan tetiklenmek istenirse hata vermemesi için optional eklendi:
+  onPreviewAttachment?: (attachment: TicketAttachmentDto) => void;
 }
 
 export function TicketAttachments({
@@ -30,6 +32,7 @@ export function TicketAttachments({
   canManage,
   onDelete,
   onEditDescription,
+  onPreviewAttachment,
 }: TicketAttachmentsProps) {
   const [previewAttachment, setPreviewAttachment] =
     useState<TicketAttachmentDto | null>(null);
@@ -42,6 +45,14 @@ export function TicketAttachments({
       />
     );
   }
+
+  const handlePreview = (attachment: TicketAttachmentDto) => {
+    if (onPreviewAttachment) {
+      onPreviewAttachment(attachment);
+    } else {
+      setPreviewAttachment(attachment);
+    }
+  };
 
   return (
     <>
@@ -58,7 +69,7 @@ export function TicketAttachments({
               <button
                 aria-label={`Preview ${attachment.fileName}`}
                 className="group flex min-w-0 flex-1 items-center gap-2.5 text-left"
-                onClick={() => setPreviewAttachment(attachment)}
+                onClick={() => handlePreview(attachment)}
                 type="button"
               >
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 transition-colors group-hover:bg-white/15">
