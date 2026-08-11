@@ -29,8 +29,8 @@ public class SlaService : ISlaService
         if (trackedRecord is not null)
             return trackedRecord;
 
-        // 🌟 DÜZELTME: AsNoTracking kaldırıldı (EF Core nesneyi takip etmeli)
         var existingRecord = await _context.SlaRecords
+            .AsNoTracking()
             .SingleOrDefaultAsync(
                 record => record.TicketId == ticket.Id,
                 cancellationToken);
@@ -326,7 +326,6 @@ public class SlaService : ISlaService
             cancellationToken);
     }
 
-    // 🌟 DÜZELTME: Local tracking mekanizmasındaki eksik takvim yükleme hatası giderildi
     private async Task<SlaRecordEntity?> GetRecordWithCalendarAsync(
         Guid ticketId,
         CancellationToken cancellationToken)
@@ -334,33 +333,8 @@ public class SlaService : ISlaService
         var trackedRecord = _context.SlaRecords.Local
             .SingleOrDefault(record => record.TicketId == ticketId);
 
-        if (trackedRecord is not null)
-        {
-            // Eğer takvim yüklenmemişse açıkça yükle (Explicit Loading)
-            if (trackedRecord.SlaCalendar is null)
-            {
-                await _context.Entry(trackedRecord)
-                    .Reference(r => r.SlaCalendar)
-                    .LoadAsync(cancellationToken);
-
-                if (trackedRecord.SlaCalendar is not null)
-                {
-                    await _context.Entry(trackedRecord.SlaCalendar)
-                        .Collection(c => c.WorkingPeriods)
-                        .LoadAsync(cancellationToken);
-
-                    await _context.Entry(trackedRecord.SlaCalendar)
-                        .Collection(c => c.Holidays)
-                        .LoadAsync(cancellationToken);
-                }
-            }
-
-            await _context.Entry(trackedRecord)
-                .Collection(r => r.Pauses)
-                .LoadAsync(cancellationToken);
-
+        if (trackedRecord?.SlaCalendar is not null)
             return trackedRecord;
-        }
 
         return await _context.SlaRecords
             .AsSplitQuery()
