@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { faqService, type FaqItemDto } from "@/src/services/faqService";
 import { Card } from "@/src/components/ui/Card";
+import { ConfirmModal } from "@/src/components/ui/ConfirmModal";
 import { LoadingSpinner } from "@/src/components/ui/LoadingSpinner";
 import { api } from "@/src/lib/api";
 
@@ -49,13 +50,10 @@ export default function AdminFaqPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [faqToDelete, setFaqToDelete] = useState<{id: string; question: string;} | null>(null);
 
-  const [formData, setFormData] = useState({
-    question: "",
-    answer: "",
-    category: "",
-    isActive: true,
-  });
+  const [deletingFaq, setDeletingFaq] = useState(false);
+  const [formData, setFormData] = useState({question: "", answer: "", category: "", isActive: true,});
 
   const loadData = async () => {
     setLoading(true);
@@ -157,10 +155,26 @@ export default function AdminFaqPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this FAQ entry?")) {
-      await faqService.deleteFaq(id);
+  const handleDelete = (faq: { id: string; question: string }) => {
+    setFaqToDelete({
+      id: faq.id,
+      question: faq.question,
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!faqToDelete) return;
+
+    setDeletingFaq(true);
+
+    try {
+      await faqService.deleteFaq(faqToDelete.id);
+      setFaqToDelete(null);
       await loadData();
+    } catch (err) {
+      console.error("Delete failed", err);
+    } finally {
+      setDeletingFaq(false);
     }
   };
 
@@ -270,8 +284,10 @@ export default function AdminFaqPage() {
                           <EditIcon />
                         </button>
                         <button
-                          onClick={() => void handleDelete(f.id)}
-                          className="p-1.5 text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
+                          type="button"
+                          onClick={() => handleDelete(f)}
+                          disabled={deletingFaq}
+                          className="p-1.5 text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                           title="Delete"
                         >
                           <TrashIcon />
@@ -394,6 +410,21 @@ export default function AdminFaqPage() {
           </form>
         </div>
       )}
+      <ConfirmModal
+        open={Boolean(faqToDelete)}
+        title="Delete FAQ Entry"
+        description={`Are you sure you want to permanently delete "${faqToDelete?.question ?? ""}"?`}
+        confirmText="Yes, Delete FAQ"
+        cancelText="Cancel"
+        variant="danger"
+        loading={deletingFaq}
+        onClose={() => {
+          if (!deletingFaq) {
+            setFaqToDelete(null);
+          }
+        }}
+        onConfirm={() => void handleConfirmDelete()}
+      />
     </div>
   );
 }
