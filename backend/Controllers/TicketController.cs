@@ -119,7 +119,7 @@ public class TicketController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = $"{Roles.Admin},{Roles.SupportAgent},{Roles.User}")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.TeamLeader},{Roles.SupportAgent},{Roles.User}")]
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(TicketResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
