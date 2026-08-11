@@ -202,14 +202,14 @@ export default function AdminUsersPage() {
     switch (role) {
       case "Admin":
         return (
-          <span className="inline-flex items-center gap-1 rounded-lg bg-amber-500/15 text-amber-800 dark:bg-pink-500/25 dark:text-pink-300 border border-amber-600/30 dark:border-pink-400/80 dark:shadow-[0_0_12px_rgba(244,114,182,0.35)] px-2.5 py-1 text-xs font-bold">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 text-amber-800 dark:bg-pink-500/20 dark:text-pink-300 border border-amber-300 dark:border-pink-500/40 px-3 py-1 text-xs font-bold">
             <ShieldAlert className="h-3.5 w-3.5 text-amber-700 dark:text-pink-300" />
             Admin
           </span>
         );
       case "TeamLeader":
         return (
-          <span className="inline-flex items-center gap-1 rounded-lg bg-red-500/15 text-red-800 dark:bg-yellow-400/20 dark:text-yellow-300 border border-red-600/30 dark:border-yellow-400/80 dark:shadow-[0_0_12px_rgba(250,204,21,0.35)] px-2.5 py-1 text-xs font-bold">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-red-100 text-red-700 dark:bg-yellow-500/20 dark:text-yellow-300 border border-red-200 dark:border-yellow-500/40 px-3 py-1 text-xs font-bold">
             <ShieldCheck className="h-3.5 w-3.5 text-red-600 dark:text-yellow-400" />
             Team Leader
           </span>
@@ -217,15 +217,15 @@ export default function AdminUsersPage() {
       case "SupportAgent":
         return (
           // 🌟 LIGHT MODE: Zümrüt (Teal) | DARK MODE: Leylak (Purple)
-          <span className="inline-flex items-center gap-1 rounded-lg bg-teal-500/15 text-teal-800 border-teal-600/30 dark:bg-purple-500/25 dark:text-purple-300 dark:border-purple-400/70 dark:shadow-[0_0_12px_rgba(168,85,247,0.35)] px-2.5 py-1 text-xs font-bold">
-            <UserCheck className="h-3.5 w-3.5 text-teal-600 dark:text-purple-400" />
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200 dark:bg-purple-500/20 dark:text-purple-300 dark:border-purple-500/40 px-3 py-1 text-xs font-bold">
+            <UserCheck className="h-3.5 w-3.5 text-teal-700 dark:text-purple-400" />
             Support Agent
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1 rounded-lg bg-stone-900/10 text-stone-900 dark:bg-slate-100/15 dark:text-slate-100 border border-stone-900/25 dark:border-slate-100/30 px-2.5 py-1 text-xs font-semibold">
-            <Users className="h-3.5 w-3.5 text-stone-900 dark:text-slate-100" />
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-stone-200/70 text-stone-700 border border-stone-300 dark:bg-slate-700/50 dark:text-slate-300 dark:border-slate-600 px-3 py-1 text-xs font-bold">
+            <Users className="h-3.5 w-3.5 text-stone-600 dark:text-slate-300" />
             User
           </span>
         );
