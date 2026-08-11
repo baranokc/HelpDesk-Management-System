@@ -26,6 +26,7 @@ using Microsoft.IdentityModel.Tokens;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.Extensions.FileProviders;
 using backend.Services.SatisfactionSurvey;
 using backend.Services.Email;
 using backend.Services.UserRoles;
@@ -304,6 +305,8 @@ app.UseCors("AllowNextJS");
 
 app.UseStaticFiles(new StaticFileOptions
 {
+    FileProvider = new PhysicalFileProvider(avatarDirectory),
+    RequestPath = "/uploads/avatars",
     OnPrepareResponse = ctx =>
     {
         ctx.Context.Response.Headers.Append("Cache-Control", "public,max-age=2592000");
