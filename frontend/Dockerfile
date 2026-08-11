@@ -1,25 +1,35 @@
-# Multi-stage build for Next.js frontend
-FROM node:22-alpine AS builder
+# 1. Bağımlılık (Dependencies) Aşaması
+FROM node:20-alpine AS deps
 WORKDIR /app
-COPY package.json package-lock.json ./
+COPY package*.json ./
 RUN npm ci
+
+# 2. Derleme (Build) Aşaması
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+# Build anı değişkenleri
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 RUN npm run build
 
-FROM node:22-alpine AS runtime
+# 3. Çalıştırma (Runtime) Aşaması
+FROM node:20-alpine AS runner
 WORKDIR /app
+
 ENV NODE_ENV=production
+ENV PORT=3000
+# 🌟 KRİTİK: Render'ın konteyner içine erişebilmesi için 0.0.0.0 şarttır
+ENV HOSTNAME="0.0.0.0"
 
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
-
-COPY --from=builder /app/.next/static ./.next/static
+# Statik dosyaları ve standalone derleme çıktısını kopyalıyoruz
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/server ./.next/server
-COPY --from=builder /app/.next/standalone .
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 
 EXPOSE 3000
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})" || exit 1
 
 CMD ["node", "server.js"]
