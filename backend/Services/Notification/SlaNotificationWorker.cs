@@ -16,40 +16,50 @@ public sealed class SlaNotificationWorker : BackgroundService
     }
 
     protected override async Task ExecuteAsync(
-        CancellationToken stoppingToken)
+    CancellationToken stoppingToken)
+{
+    // 🌟 KRİTİK EKLENTİ: Web sunucusunun ve Migration/Seed adımlarının bitmesini bekle
+    try
     {
-        while (!stoppingToken.IsCancellationRequested)
+        await Task.Delay(TimeSpan.FromSeconds(15), stoppingToken);
+    }
+    catch (OperationCanceledException)
+    {
+        return;
+    }
+
+    while (!stoppingToken.IsCancellationRequested)
+    {
+        try
         {
-            try
-            {
-                using var scope = _scopeFactory.CreateScope();
-                var notificationService = scope.ServiceProvider
-                    .GetRequiredService<INotificationService>();
+            using var scope = _scopeFactory.CreateScope();
+            var notificationService = scope.ServiceProvider
+                .GetRequiredService<INotificationService>();
 
-                await notificationService.ProcessSlaAlertsAsync(
-                    stoppingToken);
-            }
-            catch (OperationCanceledException)
-                when (stoppingToken.IsCancellationRequested)
-            {
-                break;
-            }
-            catch (Exception exception)
-            {
-                _logger.LogError(
-                    exception,
-                    "An error occurred while processing SLA notifications.");
-            }
+            await notificationService.ProcessSlaAlertsAsync(
+                stoppingToken);
+        }
+        catch (OperationCanceledException)
+            when (stoppingToken.IsCancellationRequested)
+        {
+            break;
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(
+                exception,
+                "An error occurred while processing SLA notifications.");
+        }
 
-            try
-            {
-                await Task.Delay(PollingInterval, stoppingToken);
-            }
-            catch (OperationCanceledException)
-                when (stoppingToken.IsCancellationRequested)
-            {
-                break;
-            }
+        try
+        {
+            await Task.Delay(PollingInterval, stoppingToken);
+        }
+        catch (OperationCanceledException)
+            when (stoppingToken.IsCancellationRequested)
+        {
+            break;
         }
     }
+}
 }

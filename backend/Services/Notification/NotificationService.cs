@@ -345,6 +345,7 @@ public sealed class NotificationService : INotificationService
             cancellationToken);
     }
 
+    // 🌟 EN KRİTİK DÜZELTME: Takılmaları ve sorgu kilitlenmelerini engelleyen optimize edilmiş metot
     public async Task ProcessSlaAlertsAsync(
         CancellationToken cancellationToken = default)
     {
@@ -365,12 +366,12 @@ public sealed class NotificationService : INotificationService
 
         foreach (var calendar in calendars)
         {
-            if (!_businessTimeCalculator.IsWorkingTime(
-                    nowOffset,
-                    calendar))
-            {
+            // 🌟 Güvenlik Kontrolü: Çalışma saati girilmeyen takvimleri atla (CPU Sonsuz Döngüsünü Önler)
+            if (calendar.WorkingPeriods is null || calendar.WorkingPeriods.Count == 0)
                 continue;
-            }
+
+            if (!_businessTimeCalculator.IsWorkingTime(nowOffset, calendar))
+                continue;
 
             var warningCutoff = _businessTimeCalculator.AddWorkingTime(
                     nowOffset,
@@ -386,8 +387,7 @@ public sealed class NotificationService : INotificationService
                     !record.Ticket.IsDeleted &&
                     !record.Ticket.Status.IsClosed &&
                     record.ResolutionAt == null &&
-                    ((record.FirstResponseAt == null &&
-                      record.FirstResponseDueAt <= warningCutoff) ||
+                    ((record.FirstResponseAt == null && record.FirstResponseDueAt <= warningCutoff) ||
                      record.ResolutionDueAt <= warningCutoff))
                 .Select(record => new SlaAlertCandidate
                 {
