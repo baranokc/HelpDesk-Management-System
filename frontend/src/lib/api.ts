@@ -1,34 +1,40 @@
 import axios from 'axios';
 import { authService } from '../services/authService';
 
+const rawBaseUrl =
+    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5432/api';
+const baseURL = rawBaseUrl.replace(/\/+$/, '');
+
 export const api = axios.create({
-    // 🌟 5269 olan varsayılan port 8080 yapıldı:
-    baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api',
+    baseURL,
     withCredentials: true,
 });
 
-api.interceptors.request.use((config) => { 
+api.interceptors.request.use(
+    (config) => {
         const token = authService.getToken();
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
-    return config;
-},
-    (error) => { 
-        return Promise.reject(error);
-    }
+        return config;
+    },
+    (error) => Promise.reject(error),
 );
+
 api.interceptors.response.use(
-    (response)=> response,
+    (response) => response,
     (error) => {
-        if (error.response && error.response.status == 401) {
+        if (error.response?.status === 401) {
             authService.logout();
-            if(typeof window != 'undefined' && !window.location.pathname.includes('/login')){
+            if (
+                typeof window !== 'undefined' &&
+                !window.location.pathname.includes('/login')
+            ) {
                 window.location.href = '/login';
+            }
         }
-    }
-    return Promise.reject(error);
-}
+        return Promise.reject(error);
+    },
 );
 
 function isRecord(value: unknown): value is Record<string, unknown> {
