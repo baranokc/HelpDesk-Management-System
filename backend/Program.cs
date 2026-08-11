@@ -33,6 +33,7 @@ using backend.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// 🌟 CORS Ayarı: Tüm Origin'lere (NextJS dahil) tam izin veriyoruz
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowNextJS", policy =>
@@ -266,11 +267,12 @@ Directory.CreateDirectory(avatarDirectory);
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// 🌟 DÜZELTME 1: CORS Middleware, UseRouting()'den ÖNCE olmalıdır!
+app.UseCors("AllowNextJS");
+
+// 🌟 DÜZELTME 2: Docker ortamında da Swagger her zaman açık olsun (Test kolaylığı için)
+app.UseSwagger();
+app.UseSwaggerUI();
 
 using (var scope = app.Services.CreateScope())
 {
@@ -285,10 +287,7 @@ using (var scope = app.Services.CreateScope())
 
 app.UseRouting();
 
-// 1. CORS Middleware'i en başta çalıştırılır
-app.UseCors("AllowNextJS");
-
-// 2. Statik dosyalar için anonim erişim ve CORS izinleri ayarlanır
+// Statik dosyalar
 app.UseStaticFiles(new StaticFileOptions
 {
     OnPrepareResponse = ctx =>
@@ -298,7 +297,6 @@ app.UseStaticFiles(new StaticFileOptions
     }
 });
 
-// 3. Kimlik doğrulaması statik dosyalardan SONRA çalışır
 app.UseAuthentication();
 app.UseAuthorization();
 

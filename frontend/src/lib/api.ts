@@ -2,7 +2,8 @@ import axios from 'axios';
 import { authService } from '../services/authService';
 
 export const api = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5269/api',
+    // 🌟 5269 olan varsayılan port 8080 yapıldı:
+    baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api',
     withCredentials: true,
 });
 

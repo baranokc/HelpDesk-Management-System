@@ -11,7 +11,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -29,6 +29,8 @@ services:
       JwtSettings__Secret: ${JWT_SECRET}
       JwtSettings__Issuer: ${JWT_ISSUER}
       JwtSettings__Audience: ${JWT_AUDIENCE}
+      # 🌟 YENİ EKLENDİ: Frontend'in backend'e istek atabilmesi için CORS izni
+      Cors__AllowedOrigins: "http://localhost:3000"
     ports:
       - "8080:8080"
       - "8443:8443"
@@ -43,28 +45,14 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8080/api
     container_name: helpdesk-frontend
     environment:
-      NODE_ENV: ${NODE_ENV}
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: http://localhost:8080/api
     ports:
       - "3000:3000"
-    depends_on:
-      - backend
-    networks:
-      - helpdesk-network
-    restart: unless-stopped
-
-  help-desk:
-    build:
-      context: ./help-desk
-      dockerfile: Dockerfile
-    container_name: helpdesk-app
-    environment:
-      NODE_ENV: ${NODE_ENV}
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
-    ports:
-      - "3001:3001"
     depends_on:
       - backend
     networks:
