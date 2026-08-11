@@ -277,15 +277,22 @@ export function CategoryManagementContainer() {
     if (!subcategoryMenu) return;
 
     const closeMenu = () => setSubcategoryMenu(null);
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target;
-      if (!(target instanceof Node)) return;
-      if (subcategoryMenuRef.current?.contains(target)) return;
 
-      if (
-        target instanceof Element &&
-        target.closest('[data-subcategory-menu-trigger="true"]')
-      ) {
+    const handlePointerDown = (event: PointerEvent) => {
+      const eventPath = event.composedPath();
+      const menuElement = subcategoryMenuRef.current;
+
+      if (menuElement && eventPath.includes(menuElement)) {
+        return;
+      }
+
+      const clickedTrigger = eventPath.some(
+        (element) =>
+          element instanceof Element &&
+          element.closest('[data-subcategory-menu-trigger="true"]'),
+      );
+
+      if (clickedTrigger) {
         return;
       }
 
@@ -294,12 +301,10 @@ export function CategoryManagementContainer() {
 
     document.addEventListener("pointerdown", handlePointerDown);
     window.addEventListener("resize", closeMenu);
-    window.addEventListener("scroll", closeMenu, true);
 
     return () => {
       document.removeEventListener("pointerdown", handlePointerDown);
       window.removeEventListener("resize", closeMenu);
-      window.removeEventListener("scroll", closeMenu, true);
     };
   }, [subcategoryMenu]);
 
@@ -847,6 +852,8 @@ export function CategoryManagementContainer() {
             id={`subcategories-${menuCategory.id}`}
             role="menu"
             aria-label={`${menuCategory.name} subcategories`}
+            onPointerDown={(event) => event.stopPropagation()}
+            onWheel={(event) => event.stopPropagation()}
             style={{
               left: subcategoryMenu.left,
               top: subcategoryMenu.top,
