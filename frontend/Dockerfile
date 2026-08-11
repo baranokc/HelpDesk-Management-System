@@ -1,14 +1,14 @@
-# 1. Build Aşaması
+# 1. SDK / Build Aşaması
 FROM mcr.microsoft.com/dotnet/sdk:10.0-preview AS build
 WORKDIR /src
 
-# Tüm kaynak kodları çalışma dizinine kopyalıyoruz
+# Projedeki tüm kaynak kodları kopyalıyoruz
 COPY . .
 
-# Eğer build root'tan atılırsa backend klasörüne geç, yoksa mevcut dizinde kal
-RUN if [ -d "backend" ]; then cd backend; fi && dotnet restore && dotnet publish -c Release -o /app/out
+# Doğrudan restore ve publish işlemlerini yürütüyoruz
+RUN dotnet publish -c Release -o /app/out
 
-# 2. Runtime Aşaması
+# 2. ASP.NET Runtime Aşaması
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-preview AS runtime
 WORKDIR /app
 COPY --from=build /app/out .
