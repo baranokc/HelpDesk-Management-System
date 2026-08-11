@@ -13,17 +13,20 @@ public class TicketCommentService : ITicketCommentService
     private readonly ITicketAttachmentService _attachmentService;
     private readonly INotificationService _notificationService;
     private readonly ISlaService _slaService;
+    private readonly ILogger<TicketCommentService> _logger;
 
     public TicketCommentService(
         AppDbContext db,
         ITicketAttachmentService attachmentService,
         INotificationService notificationService,
-        ISlaService slaService)
+        ISlaService slaService,
+        ILogger<TicketCommentService> logger)
     {
         _db = db;
         _attachmentService = attachmentService;
         _notificationService = notificationService;
         _slaService = slaService;
+        _logger = logger;
     }
 
     public async Task<IReadOnlyCollection<TicketCommentDto>> GetCommentsAsync(Guid ticketId, bool includeInternal, CancellationToken cancellationToken = default) =>
@@ -99,26 +102,33 @@ public class TicketCommentService : ITicketCommentService
                     status =>
                         status.Name == "Waiting for User" &&
                         status.IsActive,
-                    cancellationToken)
-                ?? throw new InvalidOperationException(
-                    "The active Waiting for User status was not found.");
+                    cancellationToken);
 
-            var oldStatusName = ticket.Status.Name;
-            ticket.StatusId = waitingForUserStatus.Id;
-            shouldPauseSla = true;
-
-            _db.TicketHistories.Add(new Entities.TicketHistory
+            if (waitingForUserStatus is not null)
             {
-                TicketId = ticket.Id,
-                ActionType = Entities.TicketHistoryActionType.StatusChanged,
-                FieldName = "Status",
-                OldValue = oldStatusName,
-                NewValue = waitingForUserStatus.Name,
-                Description =
-                    "Automatically changed after the assigned team member replied.",
-                ChangedById = userId,
-                ChangedAt = entity.CreatedAt
-            });
+                var oldStatusName = ticket.Status.Name;
+                ticket.StatusId = waitingForUserStatus.Id;
+                shouldPauseSla = true;
+
+                _db.TicketHistories.Add(new Entities.TicketHistory
+                {
+                    TicketId = ticket.Id,
+                    ActionType = Entities.TicketHistoryActionType.StatusChanged,
+                    FieldName = "Status",
+                    OldValue = oldStatusName,
+                    NewValue = waitingForUserStatus.Name,
+                    Description =
+                        "Automatically changed after the assigned team member replied.",
+                    ChangedById = userId,
+                    ChangedAt = entity.CreatedAt
+                });
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "Ticket {TicketId} comment will be saved without an automatic status change because the active Waiting for User status was not found.",
+                    ticket.Id);
+            }
         }
         else if (isTicketCreator &&
                  !entity.IsInternal &&
@@ -132,26 +142,33 @@ public class TicketCommentService : ITicketCommentService
                     status =>
                         status.Name == "In Progress" &&
                         status.IsActive,
-                    cancellationToken)
-                ?? throw new InvalidOperationException(
-                    "The active In Progress status was not found.");
+                    cancellationToken);
 
-            var oldStatusName = ticket.Status.Name;
-            ticket.StatusId = inProgressStatus.Id;
-            shouldResumeSla = true;
-
-            _db.TicketHistories.Add(new Entities.TicketHistory
+            if (inProgressStatus is not null)
             {
-                TicketId = ticket.Id,
-                ActionType = Entities.TicketHistoryActionType.StatusChanged,
-                FieldName = "Status",
-                OldValue = oldStatusName,
-                NewValue = inProgressStatus.Name,
-                Description =
-                    "Automatically changed after the ticket creator replied.",
-                ChangedById = userId,
-                ChangedAt = entity.CreatedAt
-            });
+                var oldStatusName = ticket.Status.Name;
+                ticket.StatusId = inProgressStatus.Id;
+                shouldResumeSla = true;
+
+                _db.TicketHistories.Add(new Entities.TicketHistory
+                {
+                    TicketId = ticket.Id,
+                    ActionType = Entities.TicketHistoryActionType.StatusChanged,
+                    FieldName = "Status",
+                    OldValue = oldStatusName,
+                    NewValue = inProgressStatus.Name,
+                    Description =
+                        "Automatically changed after the ticket creator replied.",
+                    ChangedById = userId,
+                    ChangedAt = entity.CreatedAt
+                });
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "Ticket {TicketId} comment will be saved without an automatic status change because the active In Progress status was not found.",
+                    ticket.Id);
+            }
         }
 
         var isPublicStaffResponse =
@@ -171,7 +188,13 @@ public class TicketCommentService : ITicketCommentService
             DateTime.SpecifyKind(entity.CreatedAt, DateTimeKind.Utc),
             TimeSpan.Zero);
 
-        if (shouldPauseSla)
+        var hasUsableSlaRecord =
+            (shouldPauseSla || shouldResumeSla) &&
+            await HasUsableSlaRecordAsync(
+                ticket.Id,
+                cancellationToken);
+
+        if (shouldPauseSla && hasUsableSlaRecord)
         {
             await _slaService.PauseAsync(
                 ticket,
@@ -180,12 +203,19 @@ public class TicketCommentService : ITicketCommentService
                 slaEventAt,
                 cancellationToken);
         }
-        else if (shouldResumeSla)
+        else if (shouldResumeSla && hasUsableSlaRecord)
         {
             await _slaService.ResumeAsync(
                 ticket,
                 slaEventAt,
                 cancellationToken);
+        }
+        else if ((shouldPauseSla || shouldResumeSla) &&
+                 !hasUsableSlaRecord)
+        {
+            _logger.LogInformation(
+                "SLA pause/resume was skipped for ticket {TicketId} because no active SLA record with working periods is configured.",
+                ticket.Id);
         }
 
         // Tüm değişiklikler (Ticket.StatusId, Ticket.FirstResponseAt, Ticket.SlaDueAt, TicketComment, TicketHistory, SlaRecord)
@@ -193,11 +223,21 @@ public class TicketCommentService : ITicketCommentService
         await _db.SaveChangesAsync(cancellationToken);
 
         var attachments = await _attachmentService.AddCommentAttachmentsAsync(ticketId, entity.Id, dto.Attachments, userId, cancellationToken);
-        await _notificationService.NotifyCommentAddedAsync(
-            ticketId,
-            userId,
-            entity.IsInternal,
-            cancellationToken);
+        try
+        {
+            await _notificationService.NotifyCommentAddedAsync(
+                ticketId,
+                userId,
+                entity.IsInternal,
+                cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(
+                exception,
+                "Comment {CommentId} was saved, but its notification could not be created.",
+                entity.Id);
+        }
 
         return new TicketCommentDto
         {
@@ -245,6 +285,22 @@ public class TicketCommentService : ITicketCommentService
     }
 
     private IQueryable<Entities.TicketComment> Query(bool includeInternal) => _db.TicketComments.AsNoTracking().Where(x => includeInternal || !x.IsInternal);
+
+    private Task<bool> HasUsableSlaRecordAsync(
+        Guid ticketId,
+        CancellationToken cancellationToken)
+    {
+        return _db.SlaRecords
+            .AsNoTracking()
+            .AnyAsync(
+                record =>
+                    record.TicketId == ticketId &&
+                    record.FirstResponseDueAt != default &&
+                    record.ResolutionDueAt != default &&
+                    record.SlaCalendar.IsActive &&
+                    record.SlaCalendar.WorkingPeriods.Any(),
+                cancellationToken);
+    }
 
     private static readonly System.Linq.Expressions.Expression<Func<Entities.TicketComment, TicketCommentDto>> MapExpression = x => new TicketCommentDto
     {
