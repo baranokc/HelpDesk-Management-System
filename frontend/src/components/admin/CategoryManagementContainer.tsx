@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Alert } from "@/src/components/ui/Alert";
 import { Card } from "@/src/components/ui/Card";
+import { ConfirmModal } from "@/src/components/ui/ConfirmModal";
 import { LoadingSpinner } from "@/src/components/ui/LoadingSpinner";
 import { getApiErrorMessage } from "@/src/lib/api";
 import { categoryService } from "@/src/services/categoryService";
@@ -194,12 +195,10 @@ export function CategoryManagementContainer() {
   const [submitting, setSubmitting] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
   const [modalSuccess, setModalSuccess] = useState<string | null>(null);
-  const [subcategoryDraft, setSubcategoryDraft] =
-    useState<SubcategoryDraft | null>(null);
+  const [subcategoryDraft, setSubcategoryDraft] = useState<SubcategoryDraft | null>(null);
   const [savingSubcategory, setSavingSubcategory] = useState(false);
-  const [deletingSubcategoryId, setDeletingSubcategoryId] = useState<
-    string | null
-  >(null);
+  const [deletingSubcategoryId, setDeletingSubcategoryId] = useState<string | null>(null);
+  const [subcategoryToDelete, setSubcategoryToDelete] = useState<SubcategoryDto | null>(null);
 
   const applyLoadedData = (
     categoryData: CategoryDto[],
@@ -389,6 +388,7 @@ export function CategoryManagementContainer() {
     setIsModalOpen(false);
     setEditingCategory(null);
     setSubcategoryDraft(null);
+    setSubcategoryToDelete(null);
     setModalError(null);
     setModalSuccess(null);
   };
@@ -518,13 +518,16 @@ export function CategoryManagementContainer() {
     }
   };
 
-  const handleDeleteSubcategory = async (subcategory: SubcategoryDto) => {
-    if (!editingCategory) return;
+  const handleDeleteSubcategory = (subcategory: SubcategoryDto) => {
+    setSubcategoryToDelete(subcategory);
+    setModalError(null);
+    setModalSuccess(null);
+  };
 
-    const confirmed = confirm(
-      `Delete "${subcategory.name}"? Existing tickets will keep their subcategory history, but it will no longer be selectable.`,
-    );
-    if (!confirmed) return;
+  const handleConfirmDeleteSubcategory = async () => {
+    if (!editingCategory || !subcategoryToDelete) return;
+
+    const subcategory = subcategoryToDelete;
 
     setDeletingSubcategoryId(subcategory.id);
     setModalError(null);
@@ -535,11 +538,15 @@ export function CategoryManagementContainer() {
         editingCategory.id,
         subcategory.id,
       );
+
       replaceCategory(updatedCategory);
+
       setSubcategoryDraft((current) =>
         current?.id === subcategory.id ? null : current,
       );
+
       setModalSuccess(`Subcategory "${subcategory.name}" was removed.`);
+      setSubcategoryToDelete(null);
     } catch (requestError: unknown) {
       setModalError(
         getApiErrorMessage(requestError, "Failed to delete subcategory."),
@@ -548,6 +555,7 @@ export function CategoryManagementContainer() {
       setDeletingSubcategoryId(null);
     }
   };
+
 
   const handleSaveRouting = async (category: CategoryDto) => {
     setRoutingCategoryId(category.id);
@@ -1150,10 +1158,11 @@ export function CategoryManagementContainer() {
                           >
                             <EditIcon />
                           </button>
+
                           <button
                             type="button"
                             onClick={() =>
-                              void handleDeleteSubcategory(subcategory)
+                              handleDeleteSubcategory(subcategory)
                             }
                             disabled={
                               savingSubcategory ||
@@ -1204,6 +1213,22 @@ export function CategoryManagementContainer() {
           </div>
         </div>
       )}
+      
+      <ConfirmModal
+        open={Boolean(subcategoryToDelete)}
+        title="Delete Subcategory"
+        description={`Are you sure you want to delete "${subcategoryToDelete?.name ?? ""}"? Existing tickets will keep their subcategory history, but it will no longer be selectable.`}
+        confirmText="Yes, Delete Subcategory"
+        cancelText="Cancel"
+        variant="danger"
+        loading={Boolean(deletingSubcategoryId)}
+        onClose={() => {
+          if (!deletingSubcategoryId) {
+            setSubcategoryToDelete(null);
+          }
+        }}
+        onConfirm={() => void handleConfirmDeleteSubcategory()}
+      />
     </div>
   );
 }

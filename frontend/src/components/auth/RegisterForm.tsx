@@ -93,129 +93,187 @@ export function RegisterForm() {
       <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-sky-400/20 dark:bg-purple-600/15 blur-3xl pointer-events-none" />
       <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-teal-400/20 dark:bg-indigo-600/15 blur-3xl pointer-events-none" />
 
-      {/* 🏝️ Arka Planda Yüzen Net Okunabilir Fake Yorumlar / Testimoniallar */}
+      {/* Arka Planda Dağınık Yüzen Yorumlar */}
       <motion.div
-        animate={{ y: [0, -15, 0], opacity: [0.4, 0.75, 0.4] }}
-        transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-20 left-[6%] hidden xl:block text-xs font-mono font-bold text-sky-800/70 dark:text-purple-300/60 pointer-events-none select-none drop-shadow-sm"
+        animate={{ y: [0, 8, 0], opacity: [0.65, 0.95, 0.65] }}
+        transition={{
+          duration: 8.2,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 0.7,
+        }}
+        className="pointer-events-none absolute left-[4%] top-[4%] z-[1] hidden max-w-[260px] select-none text-xs font-mono font-extrabold leading-relaxed text-indigo-700 drop-shadow-sm dark:text-indigo-300 xl:block"
+      >
+        - Archipelago makes support feel effortless 🌺
+      </motion.div>
+
+      <motion.div
+        animate={{ y: [0, -10, 0], opacity: [0.65, 0.95, 0.65] }}
+        transition={{ duration: 7.5, repeat: Infinity, ease: "easeInOut" }}
+        style={{ left: "calc(50% - 130px)" }}
+        className="pointer-events-none absolute top-[8%] z-[1] hidden w-[260px] select-none text-center text-xs font-mono font-extrabold leading-relaxed text-sky-700 drop-shadow-sm dark:text-purple-300 xl:block"
       >
         - Archipelago saved my life 🏝️
       </motion.div>
 
       <motion.div
-        animate={{ y: [0, 15, 0], opacity: [0.35, 0.7, 0.35] }}
-        transition={{ duration: 9, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-        className="absolute bottom-24 left-[8%] hidden xl:block text-xs font-mono font-bold text-teal-800/70 dark:text-indigo-300/60 pointer-events-none select-none drop-shadow-sm"
-      >
-        - Best HelpDesk website out there ⚡
-      </motion.div>
-
-      <motion.div
-        animate={{ y: [0, -12, 0], opacity: [0.4, 0.75, 0.4] }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-        className="absolute top-28 right-[8%] hidden xl:block text-xs font-mono font-bold text-emerald-800/70 dark:text-violet-300/60 pointer-events-none select-none drop-shadow-sm"
-      >
-        - 10/10 ticket management 🚀
-      </motion.div>
-
-      <motion.div
-        animate={{ y: [0, 14, 0], opacity: [0.35, 0.7, 0.35] }}
-        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
-        className="absolute bottom-32 right-[10%] hidden xl:block text-xs font-mono font-bold text-cyan-800/70 dark:text-purple-400/60 pointer-events-none select-none drop-shadow-sm"
-      >
-        - Smooth sailing on this island ✨
-      </motion.div>
-
-      <motion.div
-        animate={{ y: [0, -10, 0], opacity: [0.35, 0.7, 0.35] }}
-        transition={{ duration: 8.5, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
-        className="absolute top-[48%] left-[4%] hidden xl:block text-xs font-mono font-bold text-sky-900/60 dark:text-indigo-400/60 pointer-events-none select-none drop-shadow-sm"
-      >
-        - Finally, support tickets are actually fun ⛵
-      </motion.div>
-
-      <motion.div
-        animate={{ y: [0, 12, 0], opacity: [0.35, 0.7, 0.35] }}
-        transition={{ duration: 9.5, repeat: Infinity, ease: "easeInOut", delay: 2.2 }}
-        className="absolute top-[52%] right-[5%] hidden xl:block text-xs font-mono font-bold text-teal-900/60 dark:text-purple-300/60 pointer-events-none select-none drop-shadow-sm"
-      >
-        - Cleanest UI I&apos;ve ever used 💎
-      </motion.div>
-
-      <motion.div
-        animate={{ y: [0, -13, 0], opacity: [0.35, 0.7, 0.35] }}
+        animate={{
+          x: [0, -12, 0],
+          opacity: [0.65, 0.95, 0.65],
+        }}
         transition={{
-          duration: 8.8,
+          duration: 8.4,
           repeat: Infinity,
           ease: "easeInOut",
-          delay: 0.5,
+          delay: 0.6,
         }}
-        className="absolute top-[30%] left-[2%] hidden xl:block text-xs font-mono font-bold text-cyan-900/60 dark:text-cyan-300/60 pointer-events-none select-none drop-shadow-sm"
+        className="pointer-events-none absolute left-[2%] top-[21%] z-[1] hidden max-w-[260px] select-none text-xs font-mono font-extrabold leading-relaxed text-teal-700 drop-shadow-sm dark:text-indigo-300 xl:block"
       >
         - My tickets finally found their harbor ⚓
       </motion.div>
 
       <motion.div
-        animate={{ y: [0, 11, 0], opacity: [0.4, 0.75, 0.4] }}
+        animate={{ y: [0, -9, 0], opacity: [0.65, 0.95, 0.65] }}
         transition={{
-          duration: 9.2,
+          duration: 7.8,
           repeat: Infinity,
           ease: "easeInOut",
-          delay: 1.3,
+          delay: 1.2,
         }}
-        className="absolute top-[34%] right-[3%] hidden xl:block text-xs font-mono font-bold text-teal-900/60 dark:text-teal-300/60 pointer-events-none select-none drop-shadow-sm"
+        className="pointer-events-none absolute left-[8%] top-[37%] z-[1] hidden max-w-[260px] select-none text-xs font-mono font-extrabold leading-relaxed text-cyan-700 drop-shadow-sm dark:text-sky-300 xl:block"
+      >
+        - Finally, support tickets are actually fun ⛵
+      </motion.div>
+
+      <motion.div
+        animate={{
+          x: [0, -12, 0],
+          opacity: [0.65, 0.95, 0.65],
+        }}
+        transition={{
+          duration: 9.1,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 1.8,
+        }}
+        className="pointer-events-none absolute left-[4%] top-[55%] z-[1] hidden max-w-[260px] select-none text-xs font-mono font-extrabold leading-relaxed text-emerald-700 drop-shadow-sm dark:text-teal-300 xl:block"
       >
         - Support without the stormy seas 🌊
       </motion.div>
 
       <motion.div
-        animate={{ y: [0, -9, 0], opacity: [0.35, 0.65, 0.35] }}
+        animate={{ y: [0, -11, 0], opacity: [0.65, 0.95, 0.65] }}
         transition={{
-          duration: 7.8,
+          duration: 8.7,
           repeat: Infinity,
           ease: "easeInOut",
-          delay: 1.8,
+          delay: 0.9,
         }}
-        className="absolute top-[66%] left-[3%] hidden xl:block text-xs font-mono font-bold text-emerald-900/60 dark:text-emerald-300/60 pointer-events-none select-none drop-shadow-sm"
+        className="pointer-events-none absolute left-[9%] top-[72%] z-[1] hidden max-w-[260px] select-none text-xs font-mono font-extrabold leading-relaxed text-blue-700 drop-shadow-sm dark:text-cyan-300 xl:block"
       >
         - Every issue reaches the right shore 🧭
       </motion.div>
 
       <motion.div
-        animate={{ y: [0, 13, 0], opacity: [0.35, 0.7, 0.35] }}
+        animate={{
+          x: [0, -12, 0],
+          opacity: [0.65, 0.95, 0.65],
+        }}
         transition={{
-          duration: 10.2,
+          duration: 9.6,
           repeat: Infinity,
           ease: "easeInOut",
-          delay: 0.9,
+          delay: 2.1,
         }}
-        className="absolute top-[70%] right-[4%] hidden xl:block text-xs font-mono font-bold text-sky-900/60 dark:text-sky-300/60 pointer-events-none select-none drop-shadow-sm"
-      >
-        - Fast, simple, and beautifully organized 🌴
-      </motion.div>
-
-      <motion.div
-        animate={{ y: [0, -12, 0], opacity: [0.4, 0.72, 0.4] }}
-        transition={{
-          duration: 9.7,
-          repeat: Infinity,
-          ease: "easeInOut",
-          delay: 2.5,
-        }}
-        className="absolute bottom-[7%] left-[20%] hidden xl:block text-xs font-mono font-bold text-indigo-900/60 dark:text-indigo-300/60 pointer-events-none select-none drop-shadow-sm"
+        className="pointer-events-none absolute bottom-[8%] left-[3%] z-[1] hidden max-w-[260px] select-none text-xs font-mono font-extrabold leading-relaxed text-violet-700 drop-shadow-sm dark:text-violet-300 xl:block"
       >
         - The perfect compass for our support team 🗺️
       </motion.div>
 
       <motion.div
-        animate={{ y: [0, 10, 0], opacity: [0.35, 0.68, 0.35] }}
+        animate={{ y: [0, 10, 0], opacity: [0.65, 0.95, 0.65] }}
         transition={{
-          duration: 8.3,
+          duration: 8,
           repeat: Infinity,
           ease: "easeInOut",
-          delay: 1.6,
+          delay: 0.4,
         }}
-        className="absolute top-[8%] right-[25%] hidden xl:block text-xs font-mono font-bold text-violet-900/60 dark:text-violet-300/60 pointer-events-none select-none drop-shadow-sm"
+        className="pointer-events-none absolute right-[5%] top-[15%] z-[1] hidden max-w-[260px] select-none text-right text-xs font-mono font-extrabold leading-relaxed text-emerald-700 drop-shadow-sm dark:text-violet-300 xl:block"
+      >
+        - 10/10 ticket management 🚀
+      </motion.div>
+
+      <motion.div
+        animate={{
+          x: [0, 12, 0],
+          opacity: [0.65, 0.95, 0.65],
+        }}
+        transition={{
+          duration: 9.3,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 1,
+        }}
+        className="pointer-events-none absolute right-[9%] top-[30%] z-[1] hidden max-w-[260px] select-none text-right text-xs font-mono font-extrabold leading-relaxed text-amber-700 drop-shadow-sm dark:text-amber-300 xl:block"
+      >
+        - Best HelpDesk website out there ⚡
+      </motion.div>
+
+      <motion.div
+        animate={{ y: [0, 11, 0], opacity: [0.65, 0.95, 0.65] }}
+        transition={{
+          duration: 8.8,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 1.5,
+        }}
+        className="pointer-events-none absolute right-[2%] top-[47%] z-[1] hidden max-w-[260px] select-none text-right text-xs font-mono font-extrabold leading-relaxed text-teal-700 drop-shadow-sm dark:text-purple-300 xl:block"
+      >
+        - Smooth sailing on this island ✨
+      </motion.div>
+
+      <motion.div
+        animate={{
+          x: [0, 12, 0],
+          opacity: [0.65, 0.95, 0.65],
+        }}
+        transition={{
+          duration: 9.8,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 2,
+        }}
+        className="pointer-events-none absolute right-[7%] top-[63%] z-[1] hidden max-w-[260px] select-none text-right text-xs font-mono font-extrabold leading-relaxed text-indigo-700 drop-shadow-sm dark:text-indigo-300 xl:block"
+      >
+        - Cleanest UI I&apos;ve ever used 💎
+      </motion.div>
+
+      <motion.div
+        animate={{ y: [0, 10, 0], opacity: [0.65, 0.95, 0.65] }}
+        transition={{
+          duration: 8.5,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 0.8,
+        }}
+        className="pointer-events-none absolute right-[4%] top-[81%] z-[1] hidden max-w-[260px] select-none text-right text-xs font-mono font-extrabold leading-relaxed text-cyan-700 drop-shadow-sm dark:text-cyan-300 xl:block"
+      >
+        - Fast, simple, and beautifully organized 🌴
+      </motion.div>
+
+      <motion.div
+        animate={{
+          x: [0, 12, 0],
+          opacity: [0.65, 0.95, 0.65],
+        }}
+        transition={{
+          duration: 9.4,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 1.7,
+        }}
+        style={{ left: "calc(50% - 160px)" }}
+        className="pointer-events-none absolute bottom-[2%] z-[1] hidden w-[320px] select-none text-center text-xs font-mono font-extrabold leading-relaxed text-purple-700 drop-shadow-sm dark:text-pink-300 xl:block"
       >
         - HelpDesk management has never felt this smooth 🐚
       </motion.div>
