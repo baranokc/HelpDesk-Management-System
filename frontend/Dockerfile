@@ -1,34 +1,19 @@
-# 1. Multi-stage build for Next.js frontend
-FROM node:22-alpine AS builder
-WORKDIR /app
+# 1. Build Aşaması
+FROM mcr.microsoft.com/dotnet/sdk:10.0-preview AS build
+WORKDIR /src
 
-# Build anında backend API adresini almak için ARG tanımlıyoruz
-ARG NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-
-COPY package.json package-lock.json ./
-RUN npm ci
+# Tüm kaynak kodları çalışma dizinine kopyalıyoruz
 COPY . .
-RUN npm run build
 
-# 2. Runtime stage
-FROM node:22-alpine AS runtime
+# Eğer build root'tan atılırsa backend klasörüne geç, yoksa mevcut dizinde kal
+RUN if [ -d "backend" ]; then cd backend; fi && dotnet restore && dotnet publish -c Release -o /app/out
+
+# 2. Runtime Aşaması
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-preview AS runtime
 WORKDIR /app
-ENV NODE_ENV=production
-ENV HOSTNAME="0.0.0.0"
-ENV PORT=3000
+COPY --from=build /app/out .
 
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+ENV ASPNETCORE_URLS=http://+:8080
+EXPOSE 8080
 
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/server ./.next/server
-COPY --from=builder /app/.next/standalone .
-
-EXPOSE 3000
-
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})" || exit 1
-
-CMD ["node", "server.js"]
+ENTRYPOINT ["dotnet", "backend.dll"]
