@@ -69,11 +69,19 @@ public class TicketCommentService : ITicketCommentService
 
         _db.TicketComments.Add(entity);
 
-        var isAssignedTeamMember =
-            ticket.AssignedToId.HasValue &&
-            ticket.AssignedToId.Value == userId;
+        // The comment is the primary operation. Persist it before optional
+        // workflow work so an SLA/status configuration problem cannot prevent
+        // the user response from being recorded.
+        await _db.SaveChangesAsync(cancellationToken);
 
-        var isTicketCreator = ticket.CreatedById == userId;
+        try
+        {
+
+            var isAssignedTeamMember =
+                ticket.AssignedToId.HasValue &&
+                ticket.AssignedToId.Value == userId;
+
+            var isTicketCreator = ticket.CreatedById == userId;
 
         var keepsCurrentStatus =
             ticket.Status.Name.Equals(
@@ -218,9 +226,22 @@ public class TicketCommentService : ITicketCommentService
                 ticket.Id);
         }
 
-        // Tüm değişiklikler (Ticket.StatusId, Ticket.FirstResponseAt, Ticket.SlaDueAt, TicketComment, TicketHistory, SlaRecord)
-        // tek bir güvenli veritabanı işleminde kaydediliyor.
-        await _db.SaveChangesAsync(cancellationToken);
+            // Workflow changes remain atomic with each other, but are no longer
+            // allowed to roll back or block the already persisted comment.
+            await _db.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(
+                exception,
+                "Comment {CommentId} was saved, but ticket status/SLA automation failed for ticket {TicketId}.",
+                entity.Id,
+                ticket.Id);
+
+            // Discard failed tracked workflow changes before attachments and
+            // notifications use the same scoped DbContext.
+            _db.ChangeTracker.Clear();
+        }
 
         var attachments = await _attachmentService.AddCommentAttachmentsAsync(ticketId, entity.Id, dto.Attachments, userId, cancellationToken);
         try

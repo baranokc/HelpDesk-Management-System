@@ -89,14 +89,7 @@ public class TicketCommentController : ControllerBase
 
         return item is null
             ? NotFound()
-            : CreatedAtAction(
-                nameof(GetById),
-                new
-                {
-                    ticketId,
-                    commentId = item.Id
-                },
-                item);
+            : StatusCode(StatusCodes.Status201Created, item);
     }
     
     [HttpPut("{commentId:guid}")]
