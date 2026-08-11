@@ -348,11 +348,12 @@ export default function AdminUsersPage() {
             <table className="w-full text-left text-sm table-fixed min-w-[700px]">
               <thead className="bg-stone-50/80 dark:bg-slate-800/50 text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 dark:text-slate-400 border-b border-stone-100 dark:border-slate-800">
                 <tr>
-                  <th className="px-5 py-3.5 w-2/6">User</th>
-                  <th className="px-5 py-3.5 w-2/6">Email</th>
-                  <th className="px-5 py-3.5 w-1/6">Current Role</th>
-                  <th className="px-5 py-3.5 w-2/6">Change Role</th>
-                  <th className="px-4 py-3.5 w-16 text-right">Actions</th>
+                  {/* 🌟 DÜZELTME: Sütun genişlikleri yüzdelik olarak yeniden hesaplandı */}
+                  <th className="px-5 py-3.5 w-[30%]">User</th>
+                  <th className="px-5 py-3.5 w-[30%]">Email</th>
+                  <th className="px-5 py-3.5 w-[16%]">Current Role</th>
+                  <th className="pl-8 pr-5 py-3.5 w-[20%]">Change Role</th>
+                  <th className="px-4 py-3.5 w-auto text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100 dark:divide-slate-800/60 font-medium">
@@ -389,7 +390,8 @@ export default function AdminUsersPage() {
 
                       <td className="px-5 py-3.5 whitespace-nowrap">{renderRoleBadge(u.role)}</td>
 
-                      <td className="px-5 py-3.5">
+                      {/* 🌟 DÜZELTME: Sütunun sol tarafına ekstra boşluk (padding-left) eklendi */}
+                      <td className="pl-8 pr-5 py-3.5">
                         <select
                           value={currentNormRole}
                           disabled={isSelf || isUpdating}
