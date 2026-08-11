@@ -216,7 +216,6 @@ export default function AdminUsersPage() {
         );
       case "SupportAgent":
         return (
-          // 🌟 LIGHT MODE: Zümrüt (Teal) | DARK MODE: Leylak (Purple)
           <span className="inline-flex items-center gap-1.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200 dark:bg-purple-500/20 dark:text-purple-300 dark:border-purple-500/40 px-3 py-1 text-xs font-bold">
             <UserCheck className="h-3.5 w-3.5 text-teal-700 dark:text-purple-400" />
             Support Agent
@@ -282,7 +281,6 @@ export default function AdminUsersPage() {
             <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 dark:text-slate-500">Support Staff</span>
             <div className="text-2xl font-black text-stone-900 dark:text-white mt-0.5">{stats.support}</div>
           </div>
-          {/* 🌟 LIGHT MODE: Zümrüt (Teal) | DARK MODE: Leylak (Purple) */}
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-teal-500/10 text-teal-800 border-teal-500/20 dark:bg-purple-500/20 dark:text-purple-300 dark:border-purple-500/30">
             <UserCheck className="h-5 w-5" />
           </div>
@@ -348,12 +346,12 @@ export default function AdminUsersPage() {
             <table className="w-full text-left text-sm table-fixed min-w-[700px]">
               <thead className="bg-stone-50/80 dark:bg-slate-800/50 text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 dark:text-slate-400 border-b border-stone-100 dark:border-slate-800">
                 <tr>
-                  {/* 🌟 DÜZELTME: Sütun genişlikleri yüzdelik olarak yeniden hesaplandı */}
+                  {/* 🌟 YENİ ORANLAR: Çöp kovasını yakınlaştırmak için Actions yazısı silindi ve sola çekildi */}
                   <th className="px-5 py-3.5 w-[30%]">User</th>
-                  <th className="px-5 py-3.5 w-[30%]">Email</th>
-                  <th className="px-5 py-3.5 w-[16%]">Current Role</th>
-                  <th className="pl-8 pr-5 py-3.5 w-[20%]">Change Role</th>
-                  <th className="px-4 py-3.5 w-auto text-right">Actions</th>
+                  <th className="px-5 py-3.5 w-[28%]">Email</th>
+                  <th className="px-5 py-3.5 w-[18%]">Current Role</th>
+                  <th className="pl-6 pr-2 py-3.5 w-[18%]">Change Role</th>
+                  <th className="pr-5 pl-2 py-3.5 w-[6%] text-center"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100 dark:divide-slate-800/60 font-medium">
@@ -390,8 +388,8 @@ export default function AdminUsersPage() {
 
                       <td className="px-5 py-3.5 whitespace-nowrap">{renderRoleBadge(u.role)}</td>
 
-                      {/* 🌟 DÜZELTME: Sütunun sol tarafına ekstra boşluk (padding-left) eklendi */}
-                      <td className="pl-8 pr-5 py-3.5">
+                      {/* 🌟 DEĞİŞİKLİK: Select kutusunun padding ayarları daraltıldı */}
+                      <td className="pl-6 pr-2 py-3.5">
                         <select
                           value={currentNormRole}
                           disabled={isSelf || isUpdating}
@@ -407,7 +405,8 @@ export default function AdminUsersPage() {
                         </select>
                       </td>
 
-                      <td className="px-4 py-3.5 text-right whitespace-nowrap">
+                      {/* 🌟 DEĞİŞİKLİK: Çöp kovası sola hizalanarak (text-center/left) Change Role'a yanaştırıldı */}
+                      <td className="pr-5 pl-2 py-3.5 text-center whitespace-nowrap">
                         <button
                           onClick={() => setUserToDelete(u)}
                           disabled={isSelf || isUpdating}
