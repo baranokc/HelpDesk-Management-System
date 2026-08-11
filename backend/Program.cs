@@ -67,8 +67,26 @@ else
     builder.Services.AddScoped<IEmailService, DisabledEmailService>();
 }
 
+// 🌟 PostgreSQL URL Parsing (Render ve Canlı Ortam Dönüştürücüsü)
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+if (!string.IsNullOrEmpty(connectionString) &&
+    (connectionString.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) ||
+     connectionString.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase)))
+{
+    var databaseUri = new Uri(connectionString);
+    var userInfo = databaseUri.UserInfo.Split(':', 2);
+    var username = userInfo.Length > 0 ? Uri.UnescapeDataString(userInfo[0]) : "";
+    var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : "";
+    var port = databaseUri.Port > 0 ? databaseUri.Port : 5432;
+    var databaseName = databaseUri.AbsolutePath.TrimStart('/');
+
+    connectionString = $"Server={databaseUri.Host};Port={port};Database={databaseName};User Id={username};Password={password};Ssl Mode=Require;Trust Server Certificate=true;";
+}
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(connectionString));
+
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
@@ -267,10 +285,8 @@ Directory.CreateDirectory(avatarDirectory);
 
 var app = builder.Build();
 
-// 🌟 DÜZELTME 1: CORS Middleware, UseRouting()'den ÖNCE olmalıdır!
 app.UseCors("AllowNextJS");
 
-// 🌟 DÜZELTME 2: Docker ortamında da Swagger her zaman açık olsun (Test kolaylığı için)
 app.UseSwagger();
 app.UseSwaggerUI();
 
@@ -287,7 +303,6 @@ using (var scope = app.Services.CreateScope())
 
 app.UseRouting();
 
-// Statik dosyalar
 app.UseStaticFiles(new StaticFileOptions
 {
     OnPrepareResponse = ctx =>
