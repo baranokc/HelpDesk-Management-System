@@ -2,8 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { 
+  RotateCw, Plus, Search, Pencil, Trash2, 
+  Route, X, ChevronDown, Layers 
+} from "lucide-react";
 import { Alert } from "@/src/components/ui/Alert";
-import { Card } from "@/src/components/ui/Card";
 import { ConfirmModal } from "@/src/components/ui/ConfirmModal";
 import { LoadingSpinner } from "@/src/components/ui/LoadingSpinner";
 import { getApiErrorMessage } from "@/src/lib/api";
@@ -16,134 +19,6 @@ import type {
   SubcategoryUpsertDto,
 } from "@/src/types/category";
 import type { TeamDto } from "@/src/types/team";
-
-const RefreshIcon = () => (
-  <svg
-    className="h-4 w-4"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-    />
-  </svg>
-);
-
-const PlusIcon = () => (
-  <svg
-    className="h-4 w-4"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M12 4v16m8-8H4"
-    />
-  </svg>
-);
-
-const SearchIcon = () => (
-  <svg
-    className="h-4 w-4 text-slate-400"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-    />
-  </svg>
-);
-
-const EditIcon = () => (
-  <svg
-    className="h-4 w-4"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-    />
-  </svg>
-);
-
-const TrashIcon = () => (
-  <svg
-    className="h-4 w-4"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-    />
-  </svg>
-);
-
-const RouteIcon = () => (
-  <svg
-    className="h-4 w-4"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M13 7h6m0 0v6m0-6L9 17l-4-4"
-    />
-  </svg>
-);
-
-const CloseIcon = () => (
-  <svg
-    className="h-5 w-5"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M6 18L18 6M6 6l12 12"
-    />
-  </svg>
-);
-
-const ChevronDownIcon = ({ open }: { open: boolean }) => (
-  <svg
-    className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`}
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M19 9l-7 7-7-7"
-    />
-  </svg>
-);
 
 const emptyForm: CategoryUpsertDto = {
   name: "",
@@ -443,7 +318,7 @@ export function CategoryManagementContainer() {
     }));
   };
 
-  const handleSubmit = async (event: React.SubmitEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!formData.name.trim()) return;
 
@@ -488,7 +363,7 @@ export function CategoryManagementContainer() {
   };
 
   const handleSubcategorySubmit = async (
-    event: React.SubmitEvent<HTMLFormElement>,
+    event: React.FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault();
     if (!editingCategory || !subcategoryDraft?.name.trim()) return;
@@ -651,46 +526,50 @@ export function CategoryManagementContainer() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <div className="space-y-6 max-w-full overflow-hidden">
+      {/* ÜST BİLGİ VE AKSİYONLAR */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+          <h1 className="text-2xl font-black tracking-tight text-stone-900 dark:text-white">
             Category Management
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-xs font-medium text-stone-500 dark:text-slate-400">
             Create ticket categories, manage their subcategories and control
             automatic team routing.
           </p>
         </div>
 
+        {/* 🌟 YÜKSEKLİKLERİ VE BOYUTLARI DÜZELTİLEN BUTONLAR (h-9) */}
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => void loadData()}
-            className="btn btn-sm btn-ghost flex items-center gap-2 border border-slate-300 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+            disabled={loading}
+            className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-stone-300/80 dark:border-purple-900/40 bg-stone-100 dark:bg-slate-800 px-3.5 text-xs font-bold text-stone-800 dark:text-slate-200 shadow-sm transition-all hover:bg-stone-200 dark:hover:bg-slate-700 cursor-pointer disabled:opacity-50"
           >
-            <RefreshIcon />
+            <RotateCw className={`h-3.5 w-3.5 ${loading ? "animate-spin text-emerald-600 dark:text-pink-400" : ""}`} />
             <span>Refresh</span>
           </button>
           <button
             type="button"
             onClick={openCreateModal}
-            className="btn btn-sm btn-primary flex items-center gap-2 text-white"
+            className="inline-flex h-9 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 dark:from-purple-600 dark:to-indigo-600 px-4 text-xs font-bold text-white shadow-md shadow-emerald-700/20 dark:shadow-purple-600/30 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
           >
-            <PlusIcon />
+            <Plus className="h-4 w-4" />
             <span>New Category</span>
           </button>
         </div>
       </div>
 
-      <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-200">
+      {/* BİLGİ BANNERİ */}
+      <div className="rounded-3xl border border-blue-200/80 dark:border-blue-900/40 bg-blue-50/80 dark:bg-blue-950/30 p-4 shadow-lg backdrop-blur-2xl text-blue-900 dark:text-blue-200">
         <div className="flex items-start gap-3">
-          <span className="mt-0.5">
-            <RouteIcon />
-          </span>
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+            <Route className="h-4 w-4" />
+          </div>
           <div>
-            <p className="font-semibold">Automatic ticket routing</p>
-            <p className="mt-1 text-xs opacity-80">
+            <p className="font-bold text-xs sm:text-sm">Automatic ticket routing</p>
+            <p className="mt-0.5 text-xs font-medium opacity-80 leading-relaxed">
               A category assigned to a team is shown in the ticket form, and
               every new ticket in that category is routed to that team.
               Unassigned categories stay hidden from the ticket form until a
@@ -700,23 +579,22 @@ export function CategoryManagementContainer() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:flex-row sm:items-center sm:justify-between">
+      {/* ARAMA VE METRİKLER */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-white/80 dark:bg-slate-900/80 p-4 rounded-3xl border border-stone-200/80 dark:border-purple-900/40 shadow-xl backdrop-blur-2xl">
         <div className="relative w-full sm:w-96">
           <input
             type="text"
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             placeholder="Search by category, subcategory, description or team..."
-            className="input input-sm input-bordered w-full border-slate-300 bg-slate-50 pl-8 text-xs text-slate-900 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+            className="w-full rounded-xl bg-stone-50 dark:bg-slate-800/80 border border-stone-300/80 dark:border-slate-700 text-stone-900 dark:text-white placeholder-stone-400 dark:placeholder-slate-500 text-xs pl-9 pr-3 py-2 font-medium focus:outline-none focus:border-emerald-600 dark:focus:border-purple-500"
           />
-          <span className="absolute left-2.5 top-2.5">
-            <SearchIcon />
-          </span>
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-stone-400 dark:text-slate-500" />
         </div>
 
-        <div className="flex gap-4 text-xs text-slate-500 dark:text-slate-400">
+        <div className="flex gap-4 text-xs font-semibold text-stone-500 dark:text-slate-400 self-end sm:self-auto">
           <span>
-            Total: <b>{categories.length}</b>
+            Total: <b className="text-stone-800 dark:text-slate-200">{categories.length}</b>
           </span>
           <span className="text-emerald-600 dark:text-emerald-400">
             Routed: <b>{routedCount}</b>
@@ -730,30 +608,33 @@ export function CategoryManagementContainer() {
       {error && <Alert variant="error">{error}</Alert>}
       {success && <Alert variant="success">{success}</Alert>}
 
-      <Card className="overflow-hidden border border-slate-200 bg-white p-0 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      {/* ANA TABLO */}
+      <div className="rounded-3xl border border-stone-200/80 dark:border-purple-900/40 bg-white/80 dark:bg-slate-900/80 overflow-hidden shadow-xl backdrop-blur-2xl">
         {loading ? (
-          <div className="p-8">
+          <div className="p-12 flex justify-center">
             <LoadingSpinner label="Loading categories and routing settings..." />
           </div>
         ) : filteredCategories.length === 0 ? (
-          <div className="p-8 text-center text-sm text-slate-500 dark:text-slate-400">
+          <div className="p-12 text-center text-sm font-semibold text-stone-500 dark:text-slate-400">
             {categories.length === 0
               ? "No active categories exist yet."
               : "No categories match your search."}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="table w-full">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-600 dark:bg-slate-800/50 dark:text-slate-400">
+          <div className="w-full overflow-x-auto">
+            {/* 🌟 MİNİMUM GENİŞLİK 920px YAPILDI VE SÜTUN ORANLARI YENİDEN DÜZENLENDİ */}
+            <table className="w-full text-left text-sm table-fixed min-w-[920px]">
+              <thead className="bg-stone-50/80 dark:bg-slate-800/50 text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 dark:text-slate-400 border-b border-stone-100 dark:border-slate-800">
                 <tr>
-                  <th>Category</th>
-                  <th>Description</th>
-                  <th>Subcategories</th>
-                  <th className="min-w-80">Automatic Team Routing</th>
-                  <th className="text-right">Actions</th>
+                  <th className="px-5 py-3.5 w-[20%]">Category</th>
+                  <th className="px-4 py-3.5 w-[20%]">Description</th>
+                  <th className="px-4 py-3.5 w-[12%]">Subcategories</th>
+                  {/* ROUTING SÜTUNUNA %36 ALAN VERİLEREK UNASSIGN BUTONU SIKIŞMAKTAN KURTARILDI */}
+                  <th className="px-4 py-3.5 w-[36%]">Automatic Team Routing</th>
+                  <th className="pr-6 pl-2 py-3.5 w-[12%] text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-sm dark:divide-slate-800">
+              <tbody className="divide-y divide-stone-100 dark:divide-slate-800/60 font-medium">
                 {filteredCategories.map((category) => {
                   const selectedTeamId = routeSelections[category.id] ?? "";
                   const routeChanged =
@@ -765,26 +646,26 @@ export function CategoryManagementContainer() {
                   return (
                     <tr
                       key={category.id}
-                      className="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/30"
+                      className="hover:bg-stone-50/60 dark:hover:bg-slate-800/50 transition-colors"
                     >
-                      <td>
-                        <div className="font-semibold text-slate-900 dark:text-white">
+                      <td className="px-5 py-4">
+                        <div className="font-bold text-stone-900 dark:text-white truncate">
                           {category.name}
                         </div>
                         <span
-                          className={`mt-1 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold ${
+                          className={`mt-1 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold tracking-wider border ${
                             category.defaultTeamId
-                              ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
-                              : "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
+                              ? "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/40"
+                              : "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/40"
                           }`}
                         >
                           {category.defaultTeamId ? "ROUTED" : "UNASSIGNED"}
                         </span>
                       </td>
-                      <td className="max-w-sm text-slate-500 dark:text-slate-400">
+                      <td className="px-4 py-4 text-xs font-medium text-stone-500 dark:text-slate-400 truncate">
                         {category.description || "-"}
                       </td>
-                      <td>
+                      <td className="px-4 py-4 whitespace-nowrap">
                         <button
                           type="button"
                           data-subcategory-menu-trigger="true"
@@ -796,14 +677,15 @@ export function CategoryManagementContainer() {
                           }
                           aria-expanded={subcategoriesOpen}
                           aria-controls={`subcategories-${category.id}`}
-                          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-100 px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-blue-800 dark:hover:bg-blue-950/50 dark:hover:text-blue-300"
+                          className="inline-flex items-center gap-2 rounded-full border border-stone-200 dark:border-slate-700 bg-stone-100 dark:bg-slate-800 px-3 py-1 text-xs font-bold text-stone-700 dark:text-slate-300 hover:border-emerald-500 hover:text-emerald-700 dark:hover:border-purple-500 dark:hover:text-purple-300 transition-colors cursor-pointer"
                         >
                           <span>{category.subcategoryCount}</span>
-                          <ChevronDownIcon open={subcategoriesOpen} />
+                          <ChevronDown className={`h-3.5 w-3.5 transition-transform ${subcategoriesOpen ? "rotate-180" : ""}`} />
                         </button>
                       </td>
-                      <td>
-                        <div className="flex min-w-80 items-center gap-2">
+                      <td className="px-4 py-4">
+                        {/* 🌟 BUTONLARIN DARALMASINI VEYA SAĞA TAŞMASINI ENGELLEYEN YAPI (shrink-0) */}
+                        <div className="flex items-center gap-1.5 min-w-0">
                           <select
                             aria-label={`Default team for ${category.name}`}
                             value={selectedTeamId}
@@ -814,7 +696,7 @@ export function CategoryManagementContainer() {
                               }))
                             }
                             disabled={routing}
-                            className="select select-sm select-bordered min-w-44 flex-1 border-slate-300 bg-slate-50 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                            className="min-w-0 flex-1 truncate rounded-xl border border-stone-300/80 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-stone-800 dark:text-slate-200 px-2.5 py-1.5 focus:outline-none focus:border-emerald-600 dark:focus:border-purple-500 disabled:opacity-50 cursor-pointer"
                           >
                             <option value="">No team assigned</option>
                             {teams.map((team) => (
@@ -827,7 +709,7 @@ export function CategoryManagementContainer() {
                             type="button"
                             onClick={() => void handleSaveRouting(category)}
                             disabled={!routeChanged || routing}
-                            className="btn btn-xs btn-primary text-white"
+                            className="shrink-0 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 dark:from-purple-600 dark:to-indigo-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-40 disabled:hover:scale-100"
                           >
                             {routing ? "Saving..." : "Save"}
                           </button>
@@ -836,31 +718,31 @@ export function CategoryManagementContainer() {
                               type="button"
                               onClick={() => void handleUnassign(category)}
                               disabled={routing}
-                              className="btn btn-xs btn-ghost border border-slate-300 text-slate-600 dark:border-slate-700 dark:text-slate-300"
+                              className="shrink-0 rounded-xl border border-stone-200 dark:border-slate-700 px-2.5 py-1.5 text-xs font-bold text-stone-600 dark:text-slate-300 hover:bg-stone-100 dark:hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-40"
                             >
                               Unassign
                             </button>
                           )}
                         </div>
                       </td>
-                      <td className="text-right">
-                        <div className="flex justify-end gap-1">
+                      <td className="pr-6 pl-2 py-4 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1">
                           <button
                             type="button"
                             onClick={() => openEditModal(category)}
-                            className="btn btn-xs btn-ghost text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
+                            className="inline-flex items-center justify-center h-8 w-8 rounded-xl text-stone-400 hover:text-emerald-600 dark:hover:text-purple-400 hover:bg-stone-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                             title="Edit Category"
                           >
-                            <EditIcon />
+                            <Pencil className="h-4 w-4" />
                           </button>
                           <button
                             type="button"
                             onClick={() => handleDelete(category)}
                             disabled={deletingCategory}
-                            className="btn btn-xs btn-ghost text-slate-600 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400"
+                            className="inline-flex items-center justify-center h-8 w-8 rounded-xl text-stone-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer disabled:opacity-30"
                             title="Delete Category"
                           >
-                            <TrashIcon />
+                            <Trash2 className="h-4 w-4" />
                           </button>
                         </div>
                       </td>
@@ -871,8 +753,9 @@ export function CategoryManagementContainer() {
             </table>
           </div>
         )}
-      </Card>
+      </div>
 
+      {/* SUBCATEGORY SÜZÜLEN PORTAL MENÜSÜ */}
       {subcategoryMenu &&
         menuCategory &&
         typeof document !== "undefined" &&
@@ -891,19 +774,20 @@ export function CategoryManagementContainer() {
               width: subcategoryMenu.width,
               maxHeight: subcategoryMenu.maxHeight,
             }}
-            className="fixed z-[60] overscroll-contain overflow-y-auto rounded-xl border border-slate-200 bg-white p-2 shadow-2xl ring-1 ring-slate-900/5 dark:border-slate-700 dark:bg-slate-900 dark:ring-white/10"
+            className="fixed z-[60] overscroll-contain overflow-y-auto rounded-2xl border border-stone-200/80 dark:border-purple-900/40 bg-white/95 dark:bg-slate-900/95 p-3 shadow-2xl backdrop-blur-2xl ring-1 ring-black/5 dark:ring-white/10 animate-in fade-in duration-150"
           >
-            <div className="mb-1 border-b border-slate-100 px-2 py-2 dark:border-slate-800">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+            <div className="mb-2 border-b border-stone-100 dark:border-slate-800 pb-2 px-1">
+              <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 dark:text-purple-300/50">
                 {menuCategory.name}
               </p>
-              <p className="mt-0.5 text-xs font-semibold text-slate-800 dark:text-slate-200">
+              <p className="text-xs font-black text-stone-900 dark:text-white mt-0.5 flex items-center gap-1.5">
+                <Layers className="h-3.5 w-3.5 text-emerald-600 dark:text-purple-400" />
                 Subcategories
               </p>
             </div>
 
             {menuCategory.subcategories.length === 0 ? (
-              <p className="px-2 py-3 text-xs text-slate-500 dark:text-slate-400">
+              <p className="px-1 py-2 text-xs font-medium text-stone-400 dark:text-slate-400">
                 No subcategories yet. Use Edit Category to add one.
               </p>
             ) : (
@@ -912,13 +796,13 @@ export function CategoryManagementContainer() {
                   <li
                     key={subcategory.id}
                     role="menuitem"
-                    className="rounded-lg px-2.5 py-2 hover:bg-slate-50 dark:hover:bg-slate-800"
+                    className="rounded-xl px-2.5 py-2 hover:bg-stone-100/70 dark:hover:bg-slate-800/80 transition-colors"
                   >
-                    <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                    <p className="text-xs font-bold text-stone-800 dark:text-slate-200">
                       {subcategory.name}
                     </p>
                     {subcategory.description && (
-                      <p className="mt-0.5 line-clamp-2 text-[11px] text-slate-500 dark:text-slate-400">
+                      <p className="mt-0.5 line-clamp-2 text-[11px] font-medium text-stone-500 dark:text-slate-400">
                         {subcategory.description}
                       </p>
                     )}
@@ -930,34 +814,37 @@ export function CategoryManagementContainer() {
           document.body,
         )}
 
+      {/* KATEGORİ EKLE / DÜZENLE MODALI */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
-          <div className="relative max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-xl dark:border-slate-800 dark:bg-slate-900">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/60 dark:bg-slate-950/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
+          <div className="relative max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-stone-200/80 dark:border-purple-900/40 bg-white dark:bg-slate-900 p-6 shadow-2xl transition-all">
             <button
               type="button"
               onClick={closeModal}
-              className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              className="absolute right-5 top-5 inline-flex h-8 w-8 items-center justify-center rounded-xl text-stone-400 hover:text-stone-700 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               aria-label="Close category dialog"
             >
-              <CloseIcon />
+              <X className="h-5 w-5" />
             </button>
 
-            <h3 className="mb-1 text-lg font-bold text-slate-900 dark:text-white">
-              {editingCategory ? "Edit Category" : "Create New Category"}
-            </h3>
-            <p className="mb-6 text-xs text-slate-500 dark:text-slate-400">
-              {editingCategory
-                ? "Update the category settings and manage the subcategories shown in ticket forms."
-                : "Choose a default team to make this category immediately available for new tickets."}
-            </p>
+            <div>
+              <h3 className="text-lg font-black tracking-tight text-stone-900 dark:text-white">
+                {editingCategory ? "Edit Category" : "Create New Category"}
+              </h3>
+              <p className="text-xs font-medium text-stone-400 dark:text-slate-400 mt-1">
+                {editingCategory
+                  ? "Update the category settings and manage the subcategories shown in ticket forms."
+                  : "Choose a default team to make this category immediately available for new tickets."}
+              </p>
+            </div>
 
             {modalError && (
-              <div className="mb-4">
+              <div className="mt-4">
                 <Alert variant="error">{modalError}</Alert>
               </div>
             )}
             {modalSuccess && (
-              <div className="mb-4">
+              <div className="mt-4">
                 <Alert variant="success">{modalSuccess}</Alert>
               </div>
             )}
@@ -965,11 +852,11 @@ export function CategoryManagementContainer() {
             <form
               id="category-management-form"
               onSubmit={(event) => void handleSubmit(event)}
-              className="space-y-4"
+              className="space-y-4 mt-5"
             >
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-700 dark:text-slate-300">
+                  <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 dark:text-slate-400 block mb-1">
                     Category Name *
                   </label>
                   <input
@@ -984,12 +871,12 @@ export function CategoryManagementContainer() {
                       }))
                     }
                     placeholder="e.g. Security, Billing, Infrastructure"
-                    className="input input-sm input-bordered w-full border-slate-300 bg-slate-50 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    className="w-full rounded-xl border border-stone-300/80 dark:border-slate-700 bg-stone-50 dark:bg-slate-800/80 text-xs font-medium text-stone-900 dark:text-white placeholder-stone-400 dark:placeholder-slate-500 px-3 py-2.5 focus:outline-none focus:border-emerald-600 dark:focus:border-purple-500"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-700 dark:text-slate-300">
+                  <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 dark:text-slate-400 block mb-1">
                     Default Support Team
                   </label>
                   <select
@@ -1000,7 +887,7 @@ export function CategoryManagementContainer() {
                         defaultTeamId: event.target.value || null,
                       }))
                     }
-                    className="select select-sm select-bordered w-full border-slate-300 bg-slate-50 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    className="w-full rounded-xl border border-stone-300/80 dark:border-slate-700 bg-stone-50 dark:bg-slate-800/80 text-xs font-bold text-stone-900 dark:text-white px-3 py-2.5 focus:outline-none focus:border-emerald-600 dark:focus:border-purple-500 cursor-pointer"
                   >
                     <option value="">No team assigned yet</option>
                     {teams.map((team) => (
@@ -1013,7 +900,7 @@ export function CategoryManagementContainer() {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-700 dark:text-slate-300">
+                <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 dark:text-slate-400 block mb-1">
                   Description
                 </label>
                 <textarea
@@ -1027,23 +914,24 @@ export function CategoryManagementContainer() {
                     }))
                   }
                   placeholder="Describe the kinds of requests included in this category..."
-                  className="textarea textarea-bordered w-full border-slate-300 bg-slate-50 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  className="w-full rounded-xl border border-stone-300/80 dark:border-slate-700 bg-stone-50 dark:bg-slate-800/80 text-xs font-medium text-stone-900 dark:text-white placeholder-stone-400 dark:placeholder-slate-500 p-3 focus:outline-none focus:border-emerald-600 dark:focus:border-purple-500 resize-none"
                 />
-                <p className="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                <p className="mt-1.5 text-[11px] font-medium text-stone-400 dark:text-slate-400">
                   Without a team, the category is saved for admin configuration
                   but hidden from the ticket form.
                 </p>
               </div>
             </form>
 
+            {/* SUBCATEGORY DÜZENLEME SEKSİYONU */}
             {editingCategory && (
-              <section className="mt-6 rounded-xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-700 dark:bg-slate-800/40">
+              <section className="mt-6 rounded-2xl border border-stone-200/80 dark:border-slate-800 bg-stone-50/60 dark:bg-slate-800/40 p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
+                    <h4 className="text-sm font-bold text-stone-900 dark:text-white">
                       Subcategories
                     </h4>
-                    <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                    <p className="mt-0.5 text-[11px] font-medium text-stone-400 dark:text-slate-400">
                       Changes in this section are saved immediately.
                     </p>
                   </div>
@@ -1055,9 +943,9 @@ export function CategoryManagementContainer() {
                       setModalSuccess(null);
                     }}
                     disabled={Boolean(subcategoryDraft)}
-                    className="btn btn-xs btn-ghost flex items-center gap-1 border border-slate-300 text-slate-700 dark:border-slate-600 dark:text-slate-200"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-stone-300/80 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-bold text-stone-700 dark:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-700 transition-colors cursor-pointer disabled:opacity-40"
                   >
-                    <PlusIcon />
+                    <Plus className="h-3.5 w-3.5" />
                     Add Subcategory
                   </button>
                 </div>
@@ -1065,16 +953,16 @@ export function CategoryManagementContainer() {
                 {subcategoryDraft && (
                   <form
                     onSubmit={(event) => void handleSubcategorySubmit(event)}
-                    className="mt-4 rounded-xl border border-blue-200 bg-white p-4 dark:border-blue-900 dark:bg-slate-900"
+                    className="mt-4 rounded-2xl border border-emerald-200 dark:border-purple-900/60 bg-white dark:bg-slate-900 p-4 shadow-md space-y-3"
                   >
-                    <p className="mb-3 text-xs font-semibold text-slate-800 dark:text-slate-200">
+                    <p className="text-xs font-bold text-stone-900 dark:text-white">
                       {subcategoryDraft.id
                         ? "Edit Subcategory"
                         : "New Subcategory"}
                     </p>
                     <div className="grid gap-3 md:grid-cols-2">
                       <div>
-                        <label className="mb-1 block text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                        <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 dark:text-slate-400 block mb-1">
                           Name *
                         </label>
                         <input
@@ -1091,11 +979,11 @@ export function CategoryManagementContainer() {
                             )
                           }
                           placeholder="e.g. Password Reset"
-                          className="input input-sm input-bordered w-full border-slate-300 bg-slate-50 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                          className="w-full rounded-xl border border-stone-300/80 dark:border-slate-700 bg-stone-50 dark:bg-slate-800/80 text-xs font-medium text-stone-900 dark:text-white placeholder-stone-400 dark:placeholder-slate-500 px-3 py-2 focus:outline-none focus:border-emerald-600 dark:focus:border-purple-500"
                         />
                       </div>
                       <div>
-                        <label className="mb-1 block text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                        <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 dark:text-slate-400 block mb-1">
                           Description
                         </label>
                         <input
@@ -1113,16 +1001,16 @@ export function CategoryManagementContainer() {
                             )
                           }
                           placeholder="Optional short description"
-                          className="input input-sm input-bordered w-full border-slate-300 bg-slate-50 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                          className="w-full rounded-xl border border-stone-300/80 dark:border-slate-700 bg-stone-50 dark:bg-slate-800/80 text-xs font-medium text-stone-900 dark:text-white placeholder-stone-400 dark:placeholder-slate-500 px-3 py-2 focus:outline-none focus:border-emerald-600 dark:focus:border-purple-500"
                         />
                       </div>
                     </div>
-                    <div className="mt-3 flex justify-end gap-2">
+                    <div className="flex justify-end gap-2 pt-1">
                       <button
                         type="button"
                         onClick={() => setSubcategoryDraft(null)}
                         disabled={savingSubcategory}
-                        className="btn btn-xs btn-ghost border border-slate-300 text-slate-600 dark:border-slate-700 dark:text-slate-300"
+                        className="rounded-xl border border-stone-200 dark:border-slate-700 px-3 py-1.5 text-xs font-bold text-stone-600 dark:text-slate-300 hover:bg-stone-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                       >
                         Cancel
                       </button>
@@ -1131,7 +1019,7 @@ export function CategoryManagementContainer() {
                         disabled={
                           savingSubcategory || !subcategoryDraft.name.trim()
                         }
-                        className="btn btn-xs btn-primary text-white"
+                        className="rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 dark:from-purple-600 dark:to-indigo-600 px-4 py-1.5 text-xs font-bold text-white shadow-sm hover:scale-105 transition-all cursor-pointer disabled:opacity-40"
                       >
                         {savingSubcategory ? "Saving..." : "Save Subcategory"}
                       </button>
@@ -1141,7 +1029,7 @@ export function CategoryManagementContainer() {
 
                 <div className="mt-4 space-y-2">
                   {editingCategory.subcategories.length === 0 ? (
-                    <div className="rounded-lg border border-dashed border-slate-300 px-4 py-6 text-center text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                    <div className="rounded-2xl border border-dashed border-stone-300 dark:border-slate-700 px-4 py-6 text-center text-xs font-medium text-stone-400 dark:text-slate-500">
                       No active subcategories. Add one to make ticket
                       classification more specific.
                     </div>
@@ -1149,13 +1037,13 @@ export function CategoryManagementContainer() {
                     editingCategory.subcategories.map((subcategory) => (
                       <div
                         key={subcategory.id}
-                        className="flex items-start justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5 dark:border-slate-700 dark:bg-slate-900"
+                        className="flex items-start justify-between gap-3 rounded-2xl border border-stone-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2.5 shadow-sm"
                       >
                         <div className="min-w-0">
-                          <p className="truncate text-xs font-semibold text-slate-800 dark:text-slate-200">
+                          <p className="truncate text-xs font-bold text-stone-900 dark:text-white">
                             {subcategory.name}
                           </p>
-                          <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                          <p className="mt-0.5 text-[11px] font-medium text-stone-400 dark:text-slate-400">
                             {subcategory.description || "No description"}
                           </p>
                         </div>
@@ -1175,10 +1063,10 @@ export function CategoryManagementContainer() {
                               savingSubcategory ||
                               Boolean(deletingSubcategoryId)
                             }
-                            className="btn btn-xs btn-ghost text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
+                            className="inline-flex items-center justify-center h-7 w-8 rounded-xl text-stone-400 hover:text-emerald-600 dark:hover:text-purple-400 hover:bg-stone-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                             title={`Edit ${subcategory.name}`}
                           >
-                            <EditIcon />
+                            <Pencil className="h-3.5 w-3.5" />
                           </button>
                           <button
                             type="button"
@@ -1187,13 +1075,13 @@ export function CategoryManagementContainer() {
                               savingSubcategory ||
                               Boolean(deletingSubcategoryId)
                             }
-                            className="btn btn-xs btn-ghost text-slate-600 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400"
+                            className="inline-flex items-center justify-center h-7 w-8 rounded-xl text-stone-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer disabled:opacity-30"
                             title={`Delete ${subcategory.name}`}
                           >
                             {deletingSubcategoryId === subcategory.id ? (
-                              <span className="loading loading-spinner loading-xs" />
+                              <RotateCw className="h-3.5 w-3.5 animate-spin text-rose-500" />
                             ) : (
-                              <TrashIcon />
+                              <Trash2 className="h-3.5 w-3.5" />
                             )}
                           </button>
                         </div>
@@ -1204,11 +1092,11 @@ export function CategoryManagementContainer() {
               </section>
             )}
 
-            <div className="mt-6 flex items-center justify-end gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
+            <div className="mt-6 flex items-center justify-end gap-2.5 border-t border-stone-100 dark:border-slate-800 pt-4">
               <button
                 type="button"
                 onClick={closeModal}
-                className="btn btn-sm btn-ghost border border-slate-300 text-slate-700 dark:border-slate-700 dark:text-slate-300"
+                className="rounded-xl border border-stone-200 dark:border-slate-700 px-4 py-2 text-xs font-bold text-stone-600 dark:text-slate-300 hover:bg-stone-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -1220,7 +1108,7 @@ export function CategoryManagementContainer() {
                   savingSubcategory ||
                   Boolean(deletingSubcategoryId)
                 }
-                className="btn btn-sm btn-primary text-white"
+                className="rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 dark:from-purple-600 dark:to-indigo-600 px-5 py-2 text-xs font-bold text-white shadow-md shadow-emerald-700/20 dark:shadow-purple-600/30 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
               >
                 {submitting
                   ? "Saving..."
@@ -1233,6 +1121,7 @@ export function CategoryManagementContainer() {
         </div>
       )}
 
+      {/* SİLME ONAY MODALLARI */}
       <ConfirmModal
         open={Boolean(subcategoryToDelete)}
         title="Delete Subcategory"
