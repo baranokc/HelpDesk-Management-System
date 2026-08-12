@@ -29,6 +29,7 @@ const UNASSIGNED_TICKETS_PAGE_SIZE = 10;
 const defaultSortDirections: Record<TicketSortField, TicketSortDirection> = {
   ticketNumber: "desc",
   title: "asc",
+  category: "asc",
   status: "asc",
   priority: "desc",
   createdBy: "asc",

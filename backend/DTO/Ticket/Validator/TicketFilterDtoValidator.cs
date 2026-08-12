@@ -17,6 +17,7 @@ public class TicketFilterDtoValidator : AbstractValidator<TicketFilterDto>
             {
                 "ticketNumber",
                 "title",
+                "category",
                 "status",
                 "priority",
                 "createdBy"

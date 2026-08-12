@@ -29,6 +29,7 @@ export interface TicketPagedResultDto extends PagedResultDto<TicketListDto> {
 export type TicketSortField =
   | "ticketNumber"
   | "title"
+  | "category"
   | "status"
   | "priority"
   | "createdBy";

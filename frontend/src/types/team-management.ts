@@ -24,6 +24,7 @@ export interface TeamMemberTicketDto {
   id: string;
   ticketNumber: string;
   ticketTitle: string;
+  categoryName: string;
   priorityName: string;
   urgencyLevelName: string;
   statusName: string;
