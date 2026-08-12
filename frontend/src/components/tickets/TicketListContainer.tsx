@@ -38,6 +38,7 @@ const initialFilter: TicketFilterDto = {
 const defaultSortDirections: Record<TicketSortField, TicketSortDirection> = {
   ticketNumber: "desc",
   title: "asc",
+  category: "asc",
   status: "asc",
   priority: "desc",
   createdBy: "asc",
@@ -406,7 +407,13 @@ export function TicketListContainer() {
                         direction={filter.sortDirection}
                         onSort={changeSort}
                       />
-                      <th className="px-5 py-3.5">Category</th>
+                      <SortableHeader
+                        label="Category"
+                        field="category"
+                        activeField={filter.sortBy}
+                        direction={filter.sortDirection}
+                        onSort={changeSort}
+                      />
                       <SortableHeader
                         label="Status"
                         field="status"

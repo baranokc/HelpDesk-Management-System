@@ -188,6 +188,12 @@ public class TicketService : ITicketService
                 : query.OrderBy(ticket => ticket.TicketTitle)
                     .ThenBy(ticket => ticket.TicketNumber),
 
+            "category" => descending
+                ? query.OrderByDescending(ticket => ticket.Category.Name)
+                    .ThenByDescending(ticket => ticket.TicketNumber)
+                : query.OrderBy(ticket => ticket.Category.Name)
+                    .ThenBy(ticket => ticket.TicketNumber),
+
             "status" => descending
                 ? query.OrderByDescending(ticket => ticket.Status.Name)
                     .ThenByDescending(ticket => ticket.TicketNumber)

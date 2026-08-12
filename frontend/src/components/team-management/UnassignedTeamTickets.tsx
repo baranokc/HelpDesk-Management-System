@@ -216,7 +216,13 @@ export function UnassignedTeamTickets({
                     label="Title"
                     onSort={onSort}
                   />
-                  <th className="px-5 py-3.5">Category</th>
+                  <SortableHeader
+                    activeField={sortBy}
+                    direction={sortDirection}
+                    field="category"
+                    label="Category"
+                    onSort={onSort}
+                  />
                   <SortableHeader
                     activeField={sortBy}
                     direction={sortDirection}

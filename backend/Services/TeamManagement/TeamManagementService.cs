@@ -829,6 +829,7 @@ public async Task<TeamMemberScheduleDto?> UpdateMemberScheduleAsync(
                 Id = item.Ticket.Id,
                 TicketNumber = item.Ticket.TicketNumber,
                 TicketTitle = item.Ticket.TicketTitle,
+                CategoryName = item.Ticket.Category.Name,
                 PriorityName = item.Ticket.Priority.Name,
                 UrgencyLevelName = item.Ticket.UrgencyLevel.Name,
                 StatusName = item.Ticket.Status.Name,
@@ -921,6 +922,12 @@ public async Task<TeamMemberScheduleDto?> UpdateMemberScheduleAsync(
                 : query.OrderBy(ticket => ticket.TicketTitle)
                     .ThenBy(ticket => ticket.TicketNumber),
 
+            "category" => descending
+                ? query.OrderByDescending(ticket => ticket.Category.Name)
+                    .ThenByDescending(ticket => ticket.TicketNumber)
+                : query.OrderBy(ticket => ticket.Category.Name)
+                    .ThenBy(ticket => ticket.TicketNumber),
+
             "status" => descending
                 ? query.OrderByDescending(ticket => ticket.Status.Name)
                     .ThenByDescending(ticket => ticket.TicketNumber)
@@ -1008,6 +1015,7 @@ public async Task<TeamMemberScheduleDto?> UpdateMemberScheduleAsync(
                 Id = item.Ticket.Id,
                 TicketNumber = item.Ticket.TicketNumber,
                 TicketTitle = item.Ticket.TicketTitle,
+                CategoryName = item.Ticket.Category.Name,
                 PriorityName = item.Ticket.Priority.Name,
                 UrgencyLevelName = item.Ticket.UrgencyLevel.Name,
                 StatusName = item.Ticket.Status.Name,

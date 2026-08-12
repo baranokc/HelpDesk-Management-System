@@ -74,6 +74,7 @@ const weekDays = [
 const defaultSortDirections: Record<TicketSortField, TicketSortDirection> = {
   ticketNumber: "desc",
   title: "asc",
+  category: "asc",
   status: "asc",
   priority: "desc",
   createdBy: "asc",
@@ -223,7 +224,7 @@ function MemberTicketList({
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1000px] border-collapse text-left">
+            <table className="w-full min-w-[1120px] border-collapse text-left">
               <thead className="border-b border-stone-100 bg-stone-50/80 text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 dark:border-slate-800 dark:bg-slate-800/50 dark:text-slate-400">
                 <tr>
                   <SortableHeader
@@ -238,6 +239,13 @@ function MemberTicketList({
                     direction={sortDirection}
                     field="title"
                     label="Title"
+                    onSort={onSort}
+                  />
+                  <SortableHeader
+                    activeField={sortBy}
+                    direction={sortDirection}
+                    field="category"
+                    label="Category"
                     onSort={onSort}
                   />
                   <th className="px-5 py-3.5">Relation</th>
@@ -270,6 +278,9 @@ function MemberTicketList({
                     </td>
                     <td className="max-w-xs truncate px-5 py-4 font-bold text-stone-900 dark:text-white">
                       {ticket.ticketTitle}
+                    </td>
+                    <td className="max-w-48 truncate px-5 py-4 text-stone-600 dark:text-slate-300">
+                      {ticket.categoryName}
                     </td>
                     <td className="px-5 py-4">
                       <span className="inline-flex h-7 items-center whitespace-nowrap rounded-lg border border-stone-200 bg-stone-100 px-2.5 text-[11px] font-bold text-stone-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
