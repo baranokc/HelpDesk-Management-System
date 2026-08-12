@@ -3,97 +3,173 @@
 import { useEffect, useState, useMemo } from "react";
 import { 
   Search, RotateCw, Download, Eye, X, 
-  Activity, PlusCircle, Pencil, Trash2, Layers 
+  Activity, PlusCircle, Pencil, Trash2, Layers, CalendarClock, Filter, Eraser
 } from "lucide-react";
 import { Alert } from "@/src/components/ui/Alert";
 import { LoadingSpinner } from "@/src/components/ui/LoadingSpinner";
-import { api } from "@/src/lib/api";
+import { getApiErrorMessage } from "@/src/lib/api";
+import {
+  auditLogService,
+  type AuditLogDateRange,
+  type AuditLogDto,
+} from "@/src/services/auditLogService";
 
-export interface AuditLogDto {
-  id: string;
-  userId?: string;
-  userEmail?: string;
-  userName?: string;
-  userRole?: string;
-  action: string;
-  entityName: string;
-  entityId?: string;
-  ipAddress?: string;
-  details?: string;
-  oldValues?: string;
-  newValues?: string;
-  createdAt: string;
+interface AppliedDateInputs {
+  from: string;
+  to: string;
+}
+
+const EMPTY_DATE_INPUTS: AppliedDateInputs = { from: "", to: "" };
+
+function toUtcIso(value: string): string | undefined {
+  if (!value) return undefined;
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+}
+
+function buildDateRange(from: string, to: string): AuditLogDateRange {
+  return {
+    from: toUtcIso(from),
+    to: toUtcIso(to),
+  };
 }
 
 export default function AdminAuditLogsPage() {
   const [logs, setLogs] = useState<AuditLogDto[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [selectedActionFilter, setSelectedActionFilter] = useState("ALL");
   const [selectedLog, setSelectedLog] = useState<AuditLogDto | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [appliedDateInputs, setAppliedDateInputs] =
+    useState<AppliedDateInputs>(EMPTY_DATE_INPUTS);
+  const [appliedDateRange, setAppliedDateRange] =
+    useState<AuditLogDateRange>({});
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const hasPendingDateChanges =
+    dateFrom !== appliedDateInputs.from || dateTo !== appliedDateInputs.to;
 
-  const fetchAuditLogs = async () => {
+  const fetchAuditLogs = async (dateRange: AuditLogDateRange = appliedDateRange) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.get("/auditlogs");
-      const data = response.data;
-
-      if (Array.isArray(data)) {
-        setLogs(data);
-      } else if (data && Array.isArray(data.items)) {
-        setLogs(data.items);
-      } else if (data && Array.isArray(data.$values)) {
-        setLogs(data.$values);
-      } else {
-        setLogs([]);
-      }
+      const data = await auditLogService.getAuditLogs(1, 10000, dateRange);
+      setLogs(Array.isArray(data.items) ? data.items : []);
+      setTotalCount(data.totalCount ?? 0);
     } catch (err) {
       console.error("Failed to fetch audit logs", err);
-      setError("Failed to load audit logs. Please try again.");
+      setError(getApiErrorMessage(err, "Failed to load audit logs. Please try again."));
       setLogs([]);
+      setTotalCount(0);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    void fetchAuditLogs();
+    let cancelled = false;
+
+    void auditLogService
+      .getAuditLogs(1, 10000, {})
+      .then((data) => {
+        if (cancelled) return;
+        setLogs(Array.isArray(data.items) ? data.items : []);
+        setTotalCount(data.totalCount ?? 0);
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        console.error("Failed to fetch audit logs", err);
+        setError(getApiErrorMessage(err, "Failed to load audit logs. Please try again."));
+        setLogs([]);
+        setTotalCount(0);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
+  const validateDateRange = (): string | null => {
+    const fromDate = dateFrom ? new Date(dateFrom) : null;
+    const toDate = dateTo ? new Date(dateTo) : null;
+
+    if (fromDate && Number.isNaN(fromDate.getTime())) {
+      return "Please select a valid start date and time.";
+    }
+
+    if (toDate && Number.isNaN(toDate.getTime())) {
+      return "Please select a valid end date and time.";
+    }
+
+    if (fromDate && toDate && fromDate > toDate) {
+      return "The start date and time cannot be later than the end date and time.";
+    }
+
+    return null;
+  };
+
+  const handleApplyDateFilter = async () => {
+    const validationMessage = validateDateRange();
+    if (validationMessage) {
+      setError(validationMessage);
+      return;
+    }
+
+    const dateRange = buildDateRange(dateFrom, dateTo);
+    setAppliedDateInputs({ from: dateFrom, to: dateTo });
+    setAppliedDateRange(dateRange);
+    setCurrentPage(1);
+    await fetchAuditLogs(dateRange);
+  };
+
+  const handleClearDateFilter = async () => {
+    setDateFrom("");
+    setDateTo("");
+    setAppliedDateInputs(EMPTY_DATE_INPUTS);
+    setAppliedDateRange({});
+    setCurrentPage(1);
+    await fetchAuditLogs({});
+  };
+
   const handleExportExcel = async () => {
+    if (hasPendingDateChanges) {
+      setError("Apply the selected date range before exporting.");
+      return;
+    }
+
     setIsExporting(true);
     setError(null);
     try {
-      // Backend'den veri çekiliyor
-      const response = await api.get("/auditlogs/export", {
-        responseType: "blob", 
-      });
-      
-      // 🌟 DÜZELTME: Backend CSV gönderdiği için MIME türü ve uzantı .csv yapıldı.
-      // Bu sayede Excel "Uzantı veya format geçersiz" uyarısı vermeden doğrudan açar.
-      const blob = new Blob([response.data], {
-        type: "text/csv;charset=utf-8;",
-      });
+      const blob = await auditLogService.exportAuditLogs(appliedDateRange);
       
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `AuditLogs_${new Date().toISOString().split("T")[0]}.csv`);
+      link.setAttribute(
+        "download",
+        `AuditLogs_${new Date().toISOString().replace(/[:.]/g, "-")}.xlsx`
+      );
       document.body.appendChild(link);
       link.click();
       
-      // Bellek temizliği
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Excel export failed", err);
-      setError("Excel export failed. Please check your connection or try again later.");
+      setError(getApiErrorMessage(
+        err,
+        "Excel export failed. Please check your connection or try again later."
+      ));
     } finally {
       setIsExporting(false);
     }
@@ -172,7 +248,7 @@ export default function AdminAuditLogsPage() {
 
         <div className="flex items-center gap-3">
           <button
-            onClick={() => void fetchAuditLogs()}
+            onClick={() => void fetchAuditLogs(appliedDateRange)}
             disabled={loading}
             className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-stone-300/80 dark:border-purple-900/40 bg-stone-100 dark:bg-slate-800 px-3.5 text-xs font-bold text-stone-800 dark:text-slate-200 shadow-sm transition-all hover:bg-stone-200 dark:hover:bg-slate-700 cursor-pointer disabled:opacity-50"
           >
@@ -182,7 +258,8 @@ export default function AdminAuditLogsPage() {
 
           <button
             onClick={() => void handleExportExcel()}
-            disabled={isExporting}
+            disabled={isExporting || hasPendingDateChanges}
+            title={hasPendingDateChanges ? "Apply the date range before exporting." : undefined}
             className="inline-flex h-9 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 dark:from-purple-600 dark:to-indigo-600 px-4 text-xs font-bold text-white shadow-md shadow-emerald-700/20 dark:shadow-purple-600/30 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer disabled:opacity-50"
           >
             <Download className="h-4 w-4" />
@@ -202,7 +279,7 @@ export default function AdminAuditLogsPage() {
               Total Events
             </span>
             <div className="text-2xl font-black text-stone-900 dark:text-white mt-0.5">
-              {Array.isArray(logs) ? logs.length : 0}
+              {totalCount}
             </div>
           </div>
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-stone-900/10 dark:bg-slate-100/15 text-stone-900 dark:text-slate-100 border border-stone-900/20 dark:border-slate-100/30">
@@ -252,6 +329,75 @@ export default function AdminAuditLogsPage() {
           </div>
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-700 border border-rose-500/20 dark:bg-rose-500/20 dark:text-rose-400 dark:border-rose-500/30">
             <Trash2 className="h-5 w-5" />
+          </div>
+        </div>
+      </div>
+
+      {/* DATE AND TIME RANGE */}
+      <div className="rounded-3xl border border-stone-200/80 dark:border-purple-900/40 bg-white/80 dark:bg-slate-900/80 p-4 shadow-xl backdrop-blur-2xl">
+        <div className="flex w-full flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+          <div className="grid w-full min-w-0 flex-1 grid-cols-1 gap-3 sm:grid-cols-2 xl:max-w-3xl">
+            <label className="space-y-1.5">
+              <span className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-stone-500 dark:text-slate-400">
+                <CalendarClock className="h-3.5 w-3.5" />
+                From date and time
+              </span>
+              <input
+                type="datetime-local"
+                step="1"
+                value={dateFrom}
+                onChange={(event) => setDateFrom(event.target.value)}
+                className="w-full rounded-xl border border-stone-300/80 bg-stone-50 px-3 py-2 text-xs font-semibold text-stone-800 [color-scheme:light] focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-200 dark:[color-scheme:dark] dark:focus:border-purple-500"
+              />
+            </label>
+
+            <label className="space-y-1.5">
+              <span className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-stone-500 dark:text-slate-400">
+                <CalendarClock className="h-3.5 w-3.5" />
+                To date and time
+              </span>
+              <input
+                type="datetime-local"
+                step="1"
+                value={dateTo}
+                onChange={(event) => setDateTo(event.target.value)}
+                className="w-full rounded-xl border border-stone-300/80 bg-stone-50 px-3 py-2 text-xs font-semibold text-stone-800 [color-scheme:light] focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-200 dark:[color-scheme:dark] dark:focus:border-purple-500"
+              />
+            </label>
+          </div>
+
+          <div className="flex w-full flex-col gap-2 xl:w-[420px] xl:shrink-0">
+            <span
+              aria-hidden={!hasPendingDateChanges}
+              className={`min-h-4 text-right text-[11px] font-semibold text-amber-700 transition-opacity dark:text-amber-400 ${
+                hasPendingDateChanges
+                  ? "visible opacity-100"
+                  : "invisible opacity-0"
+              }`}
+            >
+              Apply the range to refresh the list and enable export.
+            </span>
+
+            <div className="grid w-full grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => void handleClearDateFilter()}
+                disabled={loading || (!dateFrom && !dateTo && !appliedDateInputs.from && !appliedDateInputs.to)}
+                className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-xl border border-stone-300/80 bg-stone-50 px-3.5 text-xs font-bold text-stone-700 transition-colors hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+              >
+                <Eraser className="h-3.5 w-3.5" />
+                Clear
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleApplyDateFilter()}
+                disabled={loading || !hasPendingDateChanges}
+                className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-xl border border-emerald-700 bg-emerald-600 px-4 text-xs font-bold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-purple-500 dark:bg-purple-600 dark:hover:bg-purple-700"
+              >
+                <Filter className="h-3.5 w-3.5" />
+                Apply Range
+              </button>
+            </div>
           </div>
         </div>
       </div>
