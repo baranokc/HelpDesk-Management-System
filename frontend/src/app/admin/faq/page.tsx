@@ -1,8 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  GripVertical, 
+  Plus, 
+  Pencil, 
+  Trash2, 
+  HelpCircle, 
+  X, 
+  Tag, 
+  CheckCircle2, 
+  XCircle 
+} from "lucide-react";
 import { faqService, type FaqItemDto } from "@/src/services/faqService";
-import { Card } from "@/src/components/ui/Card";
 import { ConfirmModal } from "@/src/components/ui/ConfirmModal";
 import { LoadingSpinner } from "@/src/components/ui/LoadingSpinner";
 import { api } from "@/src/lib/api";
@@ -12,58 +23,44 @@ interface CategoryDto {
   name: string;
 }
 
-// Inline SVG Ikonlar
-const DragHandleIcon = () => (
-  <svg className="w-4 h-4 text-slate-400 cursor-grab active:cursor-grabbing" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
-  </svg>
-);
-
-const PlusIcon = () => (
-  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-  </svg>
-);
-
-const EditIcon = () => (
-  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-  </svg>
-);
-
-const TrashIcon = () => (
-  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-  </svg>
-);
-
-const QuestionCircleIcon = () => (
-  <svg className="w-6 h-6 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-  </svg>
-);
+// 🌟 SWR / Bellek Önbelleği (Giriş-Çıkışlarda anında yüklenme sağlar)
+let cachedFaqs: FaqItemDto[] | null = null;
+let cachedCategories: CategoryDto[] | null = null;
 
 export default function AdminFaqPage() {
-  const [faqs, setFaqs] = useState<FaqItemDto[]>([]);
-  const [categories, setCategories] = useState<CategoryDto[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [faqs, setFaqs] = useState<FaqItemDto[]>(() => cachedFaqs || []);
+  const [categories, setCategories] = useState<CategoryDto[]>(() => cachedCategories || []);
+  const [loading, setLoading] = useState<boolean>(() => !cachedFaqs);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-  const [faqToDelete, setFaqToDelete] = useState<{id: string; question: string;} | null>(null);
+  const [faqToDelete, setFaqToDelete] = useState<{ id: string; question: string } | null>(null);
 
   const [deletingFaq, setDeletingFaq] = useState(false);
-  const [formData, setFormData] = useState({question: "", answer: "", category: "", isActive: true,});
+  const [formData, setFormData] = useState({
+    question: "",
+    answer: "",
+    category: "",
+    isActive: true,
+  });
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (showLoadingSpinner = false) => {
+    if (showLoadingSpinner || !cachedFaqs) {
+      setLoading(true);
+    }
+
     try {
       const [faqData, catResponse] = await Promise.all([
         faqService.getAllFaqsForAdmin(),
         api.get<CategoryDto[]>("/categories").catch(() => ({ data: [] })),
       ]);
+
+      // Cache güncelleme
+      cachedFaqs = faqData;
+      cachedCategories = catResponse.data || [];
+
       setFaqs(faqData);
-      setCategories(catResponse.data || []);
+      setCategories(cachedCategories);
     } catch (err) {
       console.error(err);
     } finally {
@@ -80,24 +77,29 @@ export default function AdminFaqPage() {
     setDraggedIndex(index);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = async (targetIndex: number) => {
+  const handleDragEnter = (targetIndex: number) => {
     if (draggedIndex === null || draggedIndex === targetIndex) return;
 
     const updatedFaqs = [...faqs];
     const [movedItem] = updatedFaqs.splice(draggedIndex, 1);
     updatedFaqs.splice(targetIndex, 0, movedItem);
 
-    const reorderedList = updatedFaqs.map((item, idx) => ({
+    setFaqs(updatedFaqs);
+    cachedFaqs = updatedFaqs; // Cache senkronizasyonu
+    setDraggedIndex(targetIndex);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDragEnd = async () => {
+    setDraggedIndex(null);
+
+    const reorderedList = faqs.map((item, idx) => ({
       ...item,
       displayOrder: idx + 1,
     }));
-
-    setFaqs(reorderedList);
-    setDraggedIndex(null);
 
     try {
       await faqService.reorderFaqs(
@@ -110,8 +112,7 @@ export default function AdminFaqPage() {
   };
 
   const handleOpenModal = (faq?: FaqItemDto) => {
-    const defaultCategory =
-      categories.length > 0 ? categories[0].name : "General";
+    const defaultCategory = categories.length > 0 ? categories[0].name : "General";
 
     if (faq) {
       setEditingId(faq.id);
@@ -179,237 +180,267 @@ export default function AdminFaqPage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header Area */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <div className="space-y-6 max-w-full overflow-hidden">
+      {/* Üst Başlık & Ekleme Butonu */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+          <h1 className="text-2xl font-black tracking-tight text-stone-900 dark:text-white">
             FAQ Management
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-xs font-medium text-stone-500 dark:text-slate-400">
             Drag items to reorder. Create and edit frequently asked questions for users.
           </p>
         </div>
         <button
           onClick={() => handleOpenModal()}
-          className="btn btn-sm btn-primary flex items-center gap-2"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 dark:from-purple-600 dark:to-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-emerald-700/20 dark:shadow-purple-600/30 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
         >
-          <PlusIcon />
+          <Plus className="h-4 w-4" />
           <span>Add New FAQ</span>
         </button>
       </div>
 
-      {/* Main Table Card */}
-      <Card className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-0 overflow-hidden shadow-sm">
+      {/* Ana Tablo Kartı */}
+      <div className="rounded-3xl border border-stone-200/80 dark:border-purple-900/40 bg-white/80 dark:bg-slate-900/80 overflow-hidden shadow-xl backdrop-blur-2xl">
         {loading ? (
-          <div className="p-8 flex justify-center">
+          <div className="p-12 flex justify-center">
             <LoadingSpinner label="Loading FAQ entries..." />
           </div>
         ) : faqs.length === 0 ? (
-          <div className="p-12 text-center text-slate-500 dark:text-slate-400 space-y-3">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
-              <QuestionCircleIcon />
+          <div className="p-12 text-center space-y-3">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-stone-100 dark:bg-slate-800 text-stone-400 dark:text-slate-500">
+              <HelpCircle className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+              <p className="text-sm font-bold text-stone-800 dark:text-slate-200">
                 No FAQ entries found
               </p>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs font-medium text-stone-400 dark:text-slate-500 mt-1">
                 Click "+ Add New FAQ" to create your first question.
               </p>
             </div>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="table w-full text-left border-collapse">
-              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase text-slate-600 dark:text-slate-400">
+          <div className="w-full overflow-x-auto">
+            <table className="w-full text-left text-sm table-fixed min-w-[750px]">
+              <thead className="bg-stone-50/80 dark:bg-slate-800/50 text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 dark:text-slate-400 border-b border-stone-100 dark:border-slate-800">
                 <tr>
-                  <th className="p-3 w-10"></th>
-                  <th className="p-3 w-12 text-center">#</th>
-                  <th className="p-3 w-32">Category</th>
-                  <th className="p-3">Question</th>
-                  <th className="p-3 w-28 text-center">Status</th>
-                  <th className="p-3 w-28 text-right">Actions</th>
+                  <th className="px-3 py-3.5 w-10 text-center"></th>
+                  <th className="px-2 py-3.5 w-10 text-center">#</th>
+                  <th className="px-4 py-3.5 w-[24%]">Category</th>
+                  <th className="px-4 py-3.5 w-[44%]">Question & Answer</th>
+                  <th className="px-4 py-3.5 w-28 text-center">Status</th>
+                  <th className="px-5 py-3.5 w-24 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
+              <tbody className="divide-y divide-stone-100 dark:divide-slate-800/60 font-medium relative">
                 {faqs.map((f, index) => (
-                  <tr
+                  <motion.tr
                     key={f.id}
+                    layout
+                    transition={{ type: "spring", stiffness: 350, damping: 28 }}
                     draggable
                     onDragStart={() => handleDragStart(index)}
+                    onDragEnter={() => handleDragEnter(index)}
                     onDragOver={handleDragOver}
-                    onDrop={() => void handleDrop(index)}
-                    className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors ${
-                      draggedIndex === index ? "opacity-40 bg-blue-50 dark:bg-blue-950/30" : ""
+                    onDragEnd={() => void handleDragEnd()}
+                    className={`hover:bg-stone-50/60 dark:hover:bg-slate-800/50 transition-colors ${
+                      draggedIndex === index
+                        ? "opacity-30 bg-emerald-500/20 dark:bg-purple-500/30 scale-[0.99] shadow-inner"
+                        : ""
                     }`}
                   >
-                    <td className="p-3 text-center">
-                      <DragHandleIcon />
+                    <td className="px-3 py-4 text-center">
+                      <GripVertical className="h-4 w-4 text-stone-400 dark:text-slate-500 cursor-grab active:cursor-grabbing mx-auto hover:text-stone-700 dark:hover:text-slate-300 transition-colors" />
                     </td>
-                    <td className="p-3 text-center font-mono text-xs font-bold text-slate-400">
+                    <td className="px-2 py-4 text-center font-mono text-xs font-black text-stone-400 dark:text-slate-500">
                       {index + 1}
                     </td>
-                    <td className="p-3">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
-                        {f.category}
+                    <td className="px-4 py-4 min-w-0">
+                      <span
+                        title={f.category}
+                        className="inline-flex items-center gap-1.5 max-w-full rounded-full bg-stone-100 dark:bg-slate-800 border border-stone-200 dark:border-slate-700/80 text-stone-700 dark:text-slate-300 px-3 py-1 text-xs font-bold"
+                      >
+                        <Tag className="h-3 w-3 shrink-0 text-stone-400 dark:text-slate-500" />
+                        <span className="truncate">{f.category}</span>
                       </span>
                     </td>
-                    <td className="p-3">
-                      <div className="font-semibold text-slate-900 dark:text-white text-xs sm:text-sm">
+                    <td className="px-4 py-4">
+                      <div className="font-bold text-stone-900 dark:text-white text-xs sm:text-sm">
                         {f.question}
                       </div>
-                      <div className="text-xs text-slate-400 line-clamp-1 mt-0.5 font-normal">
+                      <div className="text-xs font-medium text-stone-500 dark:text-slate-400 line-clamp-1 mt-1">
                         {f.answer}
                       </div>
                     </td>
-                    <td className="p-3 text-center">
+                    <td className="px-4 py-4 text-center whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold border ${
+                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold border ${
                           f.isActive
-                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800"
-                            : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-300 dark:border-slate-700"
+                            ? "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/40"
+                            : "bg-stone-200/70 text-stone-700 border-stone-300 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
                         }`}
                       >
-                        {f.isActive ? "Active" : "Disabled"}
+                        {f.isActive ? (
+                          <>
+                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                            Active
+                          </>
+                        ) : (
+                          <>
+                            <XCircle className="h-3.5 w-3.5 text-stone-500 dark:text-slate-400" />
+                            Disabled
+                          </>
+                        )}
                       </span>
                     </td>
-                    <td className="p-3 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                    <td className="px-5 py-4 text-right whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-1">
                         <button
+                          type="button"
                           onClick={() => handleOpenModal(f)}
-                          className="p-1.5 text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
-                          title="Edit"
+                          className="inline-flex items-center justify-center h-8 w-8 rounded-xl text-stone-400 hover:text-emerald-600 dark:hover:text-purple-400 hover:bg-stone-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                          title="Edit FAQ"
                         >
-                          <EditIcon />
+                          <Pencil className="h-4 w-4" />
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDelete(f)}
                           disabled={deletingFaq}
-                          className="p-1.5 text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                          title="Delete"
+                          className="inline-flex items-center justify-center h-8 w-8 rounded-xl text-stone-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10 transition-colors disabled:opacity-30 cursor-pointer"
+                          title="Delete FAQ"
                         >
-                          <TrashIcon />
+                          <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))}
               </tbody>
             </table>
           </div>
         )}
-      </Card>
+      </div>
 
       {/* Modal Form */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <form
-            onSubmit={(e) => void handleSubmit(e)}
-            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 max-w-lg w-full space-y-4 shadow-xl transition-all"
-          >
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                {editingId ? "Edit FAQ Entry" : "Add New FAQ Entry"}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-white font-bold text-lg"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                Category
-              </label>
-              {categories.length > 0 ? (
-                <select
-                  required
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="select select-sm select-bordered w-full bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs mt-1"
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/60 dark:bg-slate-950/80 backdrop-blur-md p-4">
+            <motion.form
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              onSubmit={(e) => void handleSubmit(e)}
+              className="bg-white dark:bg-slate-900 border border-stone-200/80 dark:border-purple-900/40 rounded-3xl p-6 max-w-lg w-full space-y-5 shadow-2xl transition-all"
+            >
+              <div className="flex items-center justify-between border-b border-stone-100 dark:border-slate-800 pb-4">
+                <h3 className="text-lg font-black tracking-tight text-stone-900 dark:text-white">
+                  {editingId ? "Edit FAQ Entry" : "Add New FAQ Entry"}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-xl text-stone-400 hover:text-stone-700 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
-                  <option value="" disabled>Select category...</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id || cat.name} value={cat.name}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  type="text"
-                  required
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  placeholder="e.g. Account, Technical"
-                  className="input input-sm input-bordered w-full bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs mt-1"
-                />
-              )}
-            </div>
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
 
-            <div>
-              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                Question
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.question}
-                onChange={(e) => setFormData({ ...formData, question: e.target.value })}
-                placeholder="Enter the question..."
-                className="input input-sm input-bordered w-full bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs mt-1"
-              />
-            </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 dark:text-slate-400 block mb-1">
+                    Category
+                  </label>
+                  {categories.length > 0 ? (
+                    <select
+                      required
+                      value={formData.category}
+                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      className="w-full rounded-xl border border-stone-300/80 dark:border-slate-700 bg-stone-50 dark:bg-slate-800/80 text-xs font-bold text-stone-900 dark:text-white px-3 py-2.5 focus:outline-none focus:border-emerald-600 dark:focus:border-purple-500 cursor-pointer"
+                    >
+                      <option value="" disabled>Select category...</option>
+                      {categories.map((cat) => (
+                        <option key={cat.id || cat.name} value={cat.name}>
+                          {cat.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      required
+                      value={formData.category}
+                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      placeholder="e.g. Account, Technical"
+                      className="w-full rounded-xl border border-stone-300/80 dark:border-slate-700 bg-stone-50 dark:bg-slate-800/80 text-xs font-medium text-stone-900 dark:text-white placeholder-stone-400 dark:placeholder-slate-500 px-3 py-2.5 focus:outline-none focus:border-emerald-600 dark:focus:border-purple-500"
+                    />
+                  )}
+                </div>
 
-            <div>
-              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                Answer
-              </label>
-              <textarea
-                required
-                rows={4}
-                value={formData.answer}
-                onChange={(e) => setFormData({ ...formData, answer: e.target.value })}
-                placeholder="Enter detailed answer..."
-                className="textarea textarea-bordered w-full bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs mt-1"
-              />
-            </div>
+                <div>
+                  <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 dark:text-slate-400 block mb-1">
+                    Question
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.question}
+                    onChange={(e) => setFormData({ ...formData, question: e.target.value })}
+                    placeholder="Enter the question..."
+                    className="w-full rounded-xl border border-stone-300/80 dark:border-slate-700 bg-stone-50 dark:bg-slate-800/80 text-xs font-medium text-stone-900 dark:text-white placeholder-stone-400 dark:placeholder-slate-500 px-3 py-2.5 focus:outline-none focus:border-emerald-600 dark:focus:border-purple-500"
+                  />
+                </div>
 
-            <div className="flex items-center pt-2">
-              <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.isActive}
-                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                  className="checkbox checkbox-xs"
-                />
-                Is Active (Visible to users)
-              </label>
-            </div>
+                <div>
+                  <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 dark:text-slate-400 block mb-1">
+                    Answer
+                  </label>
+                  <textarea
+                    required
+                    rows={4}
+                    value={formData.answer}
+                    onChange={(e) => setFormData({ ...formData, answer: e.target.value })}
+                    placeholder="Enter detailed answer..."
+                    className="w-full rounded-xl border border-stone-300/80 dark:border-slate-700 bg-stone-50 dark:bg-slate-800/80 text-xs font-medium text-stone-900 dark:text-white placeholder-stone-400 dark:placeholder-slate-500 p-3 focus:outline-none focus:border-emerald-600 dark:focus:border-purple-500 resize-none"
+                  />
+                </div>
 
-            <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="btn btn-sm btn-ghost text-xs text-slate-500"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="btn btn-sm btn-primary text-xs"
-              >
-                Save
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+                <div className="pt-1">
+                  <label className="inline-flex items-center gap-2.5 text-xs font-bold text-stone-700 dark:text-slate-300 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={formData.isActive}
+                      onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                      className="h-4 w-4 rounded-md border-stone-300 dark:border-slate-700 text-emerald-600 dark:text-purple-600 focus:ring-0 cursor-pointer"
+                    />
+                    <span>Is Active (Visible to users)</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2.5 pt-4 border-t border-stone-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="rounded-xl border border-stone-200 dark:border-slate-700 px-4 py-2 text-xs font-bold text-stone-600 dark:text-slate-300 hover:bg-stone-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 dark:from-purple-600 dark:to-indigo-600 px-5 py-2 text-xs font-bold text-white shadow-md shadow-emerald-700/20 dark:shadow-purple-600/30 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+                >
+                  Save
+                </button>
+              </div>
+            </motion.form>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Silme Onay Modalı */}
       <ConfirmModal
         open={Boolean(faqToDelete)}
         title="Delete FAQ Entry"
