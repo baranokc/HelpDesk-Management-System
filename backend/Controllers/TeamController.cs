@@ -470,13 +470,25 @@ public class TeamController : ControllerBase
             .Where(userRole => userRole.UserId == userId)
             .ToListAsync(cancellationToken);
 
-        _context.UserRoles.RemoveRange(existingRoles);
-        _context.UserRoles.Add(new UserRole
+        var targetUserRole = existingRoles.FirstOrDefault(
+            userRole => userRole.RoleId == role.Id);
+
+        _context.UserRoles.RemoveRange(existingRoles.Where(
+            userRole => userRole.RoleId != role.Id));
+
+        if (targetUserRole is null)
         {
-            UserId = userId,
-            RoleId = role.Id,
-            AssignedAt = DateTime.UtcNow
-        });
+            _context.UserRoles.Add(new UserRole
+            {
+                UserId = userId,
+                RoleId = role.Id,
+                AssignedAt = DateTime.UtcNow
+            });
+        }
+        else
+        {
+            targetUserRole.AssignedAt = DateTime.UtcNow;
+        }
     }
 
     [HttpPost("{id:guid}/members")]
@@ -651,14 +663,84 @@ public class TeamController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> DeleteTeam(Guid id)
+    public async Task<IActionResult> DeleteTeam(
+        Guid id,
+        CancellationToken cancellationToken)
     {
-        var team = await _context.Teams.FirstOrDefaultAsync(t => t.Id == id);
+        await using var transaction = await _context.Database
+            .BeginTransactionAsync(cancellationToken);
+
+        var team = await _context.Teams
+            .Include(item => item.TeamMembers)
+            .FirstOrDefaultAsync(
+                item => item.Id == id,
+                cancellationToken);
+
         if (team == null)
             return NotFound("Team not found.");
 
+        var leaderIds = team.TeamMembers
+            .Where(member =>
+                member.IsActive &&
+                member.RoleInTeam == TeamMemberRole.TeamLeader)
+            .Select(member => member.UserId)
+            .ToHashSet();
+
+        if (team.LeadId.HasValue)
+            leaderIds.Add(team.LeadId.Value);
+
+        var activeLeaderIds = await _context.Users
+            .Where(user =>
+                user.IsActive &&
+                leaderIds.Contains(user.Id))
+            .Select(user => user.Id)
+            .ToListAsync(cancellationToken);
+
+        var demotedLeaderIds = new List<Guid>();
+
+        foreach (var leaderId in activeLeaderIds)
+        {
+            var leadsAnotherTeam = await _context.Teams
+                .AnyAsync(otherTeam =>
+                    otherTeam.Id != id &&
+                    otherTeam.IsActive &&
+                    (otherTeam.LeadId == leaderId ||
+                     otherTeam.TeamMembers.Any(member =>
+                         member.UserId == leaderId &&
+                         member.IsActive &&
+                         member.RoleInTeam == TeamMemberRole.TeamLeader)),
+                    cancellationToken);
+
+            if (leadsAnotherTeam)
+                continue;
+
+            await SetSystemRoleAsync(
+                leaderId,
+                Roles.SupportAgent,
+                cancellationToken);
+            demotedLeaderIds.Add(leaderId);
+        }
+
+        var usersLinkedToDeletedTeam = await _context.Users
+            .Where(user => user.TeamId == id)
+            .ToListAsync(cancellationToken);
+
+        foreach (var user in usersLinkedToDeletedTeam)
+            user.TeamId = null;
+
         _context.Teams.Remove(team);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        foreach (var leaderId in demotedLeaderIds)
+        {
+            await _hubContext.Clients
+                .User(leaderId.ToString())
+                .SendAsync(
+                    "SessionChanged",
+                    new { reason = "TeamDeleted" },
+                    cancellationToken);
+        }
 
         return NoContent();
     }
