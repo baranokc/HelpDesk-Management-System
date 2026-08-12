@@ -1,5 +1,6 @@
-using System.Text;
 using backend.Data;
+using backend.Entities;
+using backend.Services.AuditLog;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -19,14 +20,27 @@ namespace backend.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAuditLogs([FromQuery] int page = 1, [FromQuery] int pageSize = 10000)
+        public async Task<IActionResult> GetAuditLogs(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10000,
+            [FromQuery] DateTimeOffset? from = null,
+            [FromQuery] DateTimeOffset? to = null)
         {
-            var query = _context.AuditLogs
-                .Include(a => a.User)
-                .OrderByDescending(a => a.CreatedAt);
+            var validationResult = ValidateRequest(page, pageSize, from, to);
+            if (validationResult is not null)
+            {
+                return validationResult;
+            }
+
+            var query = ApplyDateRange(
+                _context.AuditLogs.AsNoTracking(),
+                from,
+                to);
 
             var totalCount = await query.CountAsync();
             var logs = await query
+                .Include(a => a.User)
+                .OrderByDescending(a => a.CreatedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .Select(a => new
@@ -55,62 +69,95 @@ namespace backend.Controllers
             });
         }
 
-        // 🌟 EXPORT EXCEL ENDPOINT'İ (Frontend'deki 404 hatasını çözen metod)
         [HttpGet("export")]
-        public async Task<IActionResult> ExportAuditLogs()
+        public async Task<IActionResult> ExportAuditLogs(
+            [FromQuery] DateTimeOffset? from = null,
+            [FromQuery] DateTimeOffset? to = null)
         {
-            var logs = await _context.AuditLogs
+            if (from.HasValue && to.HasValue && from.Value > to.Value)
+            {
+                return BadRequest(new
+                {
+                    message = "The start date and time cannot be later than the end date and time."
+                });
+            }
+
+            var logs = await ApplyDateRange(
+                    _context.AuditLogs.AsNoTracking(),
+                    from,
+                    to)
                 .Include(a => a.User)
                 .OrderByDescending(a => a.CreatedAt)
-                .Select(a => new
+                .Select(a => new AuditLogExcelRow
                 {
-                    a.CreatedAt,
+                    CreatedAt = a.CreatedAt,
                     UserName = a.User != null ? (a.User.Username ?? a.User.Email) : "Sistem / Anonim",
                     UserEmail = a.User != null ? a.User.Email : "",
-                    a.Action,
-                    a.EntityName,
-                    a.EntityId,
-                    a.IpAddress,
-                    a.OldValues,
-                    a.NewValues
+                    Action = a.Action,
+                    EntityName = a.EntityName,
+                    EntityId = a.EntityId,
+                    IpAddress = a.IpAddress,
+                    OldValues = a.OldValues,
+                    NewValues = a.NewValues
                 })
                 .ToListAsync();
 
-            var builder = new StringBuilder();
-            // Excel kolon başlıkları
-            builder.AppendLine("Tarih;Kullanici;Email;Islem;Hedef Varlik;Hedef ID;IP Adresi;Eski Degerler;Yeni Degerler");
-
-            foreach (var log in logs)
-            {
-                var date = log.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss");
-                var userName = CleanCsvField(log.UserName);
-                var userEmail = CleanCsvField(log.UserEmail);
-                var action = CleanCsvField(log.Action);
-                var entityName = CleanCsvField(log.EntityName);
-                var entityId = CleanCsvField(log.EntityId.ToString());
-                var ip = CleanCsvField(log.IpAddress);
-                var oldVal = CleanCsvField(log.OldValues);
-                var newVal = CleanCsvField(log.NewValues);
-
-                builder.AppendLine($"{date};{userName};{userEmail};{action};{entityName};{entityId};{ip};{oldVal};{newVal}");
-            }
-
-            // Türkçe karakterlerin Excel'de bozuk görünmemesi için UTF-8 BOM ekliyoruz
-            var bytes = Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(builder.ToString())).ToArray();
+            var bytes = AuditLogExcelExporter.CreateWorkbook(logs);
+            var fromPart = from?.UtcDateTime.ToString("yyyyMMdd_HHmmss") ?? "Beginning";
+            var toPart = to?.UtcDateTime.ToString("yyyyMMdd_HHmmss") ?? "Now";
 
             return File(
-                bytes, 
-                "text/csv", 
-                $"AuditLogs_{DateTime.UtcNow:yyyyMMdd_HHmmss}.csv"
+                bytes,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"AuditLogs_{fromPart}_{toPart}.xlsx"
             );
         }
 
-        // Metin içindeki tırnak, yeni satır veya noktalı virgül gibi karakterleri temizler
-        private static string CleanCsvField(string? field)
+        private BadRequestObjectResult? ValidateRequest(
+            int page,
+            int pageSize,
+            DateTimeOffset? from,
+            DateTimeOffset? to)
         {
-            if (string.IsNullOrEmpty(field)) return "";
-            var cleaned = field.Replace("\"", "\"\"").Replace("\r", " ").Replace("\n", " ");
-            return $"\"{cleaned}\"";
+            if (page < 1)
+            {
+                return BadRequest(new { message = "Page must be greater than zero." });
+            }
+
+            if (pageSize < 1 || pageSize > 10000)
+            {
+                return BadRequest(new { message = "Page size must be between 1 and 10000." });
+            }
+
+            if (from.HasValue && to.HasValue && from.Value > to.Value)
+            {
+                return BadRequest(new
+                {
+                    message = "The start date and time cannot be later than the end date and time."
+                });
+            }
+
+            return null;
+        }
+
+        private static IQueryable<AuditLog> ApplyDateRange(
+            IQueryable<AuditLog> query,
+            DateTimeOffset? from,
+            DateTimeOffset? to)
+        {
+            if (from.HasValue)
+            {
+                var fromUtc = from.Value.UtcDateTime;
+                query = query.Where(log => log.CreatedAt >= fromUtc);
+            }
+
+            if (to.HasValue)
+            {
+                var toUtc = to.Value.UtcDateTime;
+                query = query.Where(log => log.CreatedAt <= toUtc);
+            }
+
+            return query;
         }
     }
 }
