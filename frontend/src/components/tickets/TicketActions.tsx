@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import { Alert } from "@/src/components/ui/Alert";
 import { Button } from "@/src/components/ui/Button";
-import { Checkbox } from "@/src/components/ui/Checkbox";
 import { Modal } from "@/src/components/ui/Modal";
 import { Textarea } from "@/src/components/ui/Textarea";
 import { getApiErrorMessage } from "@/src/lib/api";
@@ -56,7 +55,6 @@ export function TicketActions({
   const [loadingAction, setLoadingAction] = useState<ActionName | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [unassignmentReason, setUnassignmentReason] = useState("");
-  const [keepTeamAssignment, setKeepTeamAssignment] = useState(false);
 
   const canManageWorkflow =
     userRole === "Admin" ||
@@ -151,20 +149,20 @@ export function TicketActions({
     }
   };
 
+  // 🌟 Sadece atanan Support Agent'ı kaldırmak için keepTeamAssignment: true olarak ayarlandı
   const handleUnassign = async () => {
     const succeeded = await runAction(
       "unassign",
       () =>
         ticketAssignmentService.unassignTicket(ticket.id, {
           reason: unassignmentReason.trim() || null,
-          keepTeamAssignment,
+          keepTeamAssignment: true,
         }),
-      "The ticket assignment could not be removed.",
+      "The assigned support agent could not be removed.",
     );
 
     if (succeeded) {
       setUnassignmentReason("");
-      setKeepTeamAssignment(false);
     }
   };
 
@@ -266,7 +264,7 @@ export function TicketActions({
                          hover:!bg-rose-500/25 transition-all active:scale-[0.98]"
             >
               <UserMinus className="h-3.5 w-3.5 shrink-0" />
-              <span>Remove assignment</span>
+              <span>Remove agent</span>
             </Button>
           )}
 
@@ -352,31 +350,41 @@ export function TicketActions({
         />
       </Modal>
 
+      {/* 🌟 YENİLENMİŞ REMOVE AGENT MODALI */}
       <Modal
         onClose={closeAction}
         open={activeAction === "unassign"}
-        title="Remove ticket assignment"
+        title="Remove agent assignment"
       >
         {errorAlert}
 
-        <div className="space-y-4">
+        <div className="space-y-4 pt-1">
+          {/* İkonlu Bilgilendirme Kartı */}
+          <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/20 dark:border-amber-500/30 text-amber-900 dark:text-amber-200">
+            <UserMinus className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+            <div className="text-xs space-y-1">
+              <p className="font-bold text-amber-950 dark:text-amber-100">
+                Agent assignment will be removed
+              </p>
+              <p className="font-medium opacity-90 leading-relaxed text-[11px]">
+                The assigned support agent will be removed from this ticket, but it will remain assigned to{" "}
+                <b className="font-bold">{ticket.teamName || "the current team"}</b> so another team member can pick it up.
+              </p>
+            </div>
+          </div>
+
           <Textarea
             hint={`${unassignmentReason.length}/250 characters`}
-            label="Reason"
+            label="Reason for removal (Optional)"
             maxLength={250}
+            placeholder="e.g. Workload distribution, agent unavailable..."
             onChange={(event) => setUnassignmentReason(event.target.value)}
             value={unassignmentReason}
           />
 
-          <Checkbox
-            checked={keepTeamAssignment}
-            label="Keep the ticket assigned to the current team"
-            onChange={(event) => setKeepTeamAssignment(event.target.checked)}
-          />
-
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="flex justify-end gap-2.5 pt-3 border-t border-stone-100 dark:border-slate-800">
             <Button
-              className={secondaryBtnStyle}
+              className="!rounded-xl !px-4 !py-2 !text-xs !font-bold bg-stone-100 dark:bg-slate-800 text-stone-700 dark:text-slate-200 border-stone-300 dark:border-slate-700 hover:bg-stone-200 dark:hover:bg-slate-700 transition-all shadow-sm"
               onClick={closeAction}
               type="button"
               variant="secondary"
@@ -384,12 +392,13 @@ export function TicketActions({
               Cancel
             </Button>
             <Button
+              className="!rounded-xl !px-4 !py-2 !text-xs !font-bold"
               loading={loadingAction === "unassign"}
               onClick={() => void handleUnassign()}
               type="button"
               variant="danger"
             >
-              Remove assignment
+              Remove agent
             </Button>
           </div>
         </div>
