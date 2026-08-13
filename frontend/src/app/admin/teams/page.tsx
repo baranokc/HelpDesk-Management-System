@@ -686,7 +686,7 @@ export default function TeamsPage() {
                 disabled={!selectedAgentToAdd || memberActionLoading}
                 className="rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 dark:from-purple-600 dark:to-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-emerald-700/20 dark:shadow-purple-600/30 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
               >
-                Add Member
+                +
               </button>
             </div>
 
