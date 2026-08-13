@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using FluentValidation;
 namespace backend.DTO.Ticket.Validator;
+
 public class TicketCreateDtoValidator : AbstractValidator<TicketCreateDto>
 {
     private static readonly string[] AllowedExtensions =
@@ -41,45 +42,50 @@ public class TicketCreateDtoValidator : AbstractValidator<TicketCreateDto>
     public TicketCreateDtoValidator()
     {
         RuleFor(x => x.TicketTitle)
-            .NotEmpty().WithMessage("Ticket başlığı boş bırakılamaz.")
-            .MinimumLength(5).WithMessage("Ticket başlığı 5 karakterden kısa olamaz.")
-            .MaximumLength(50).WithMessage("Ticket başlığı 50 karakterden uzun olamaz.");
+            .NotEmpty().WithMessage("Ticket title cannot be empty.")
+            .MinimumLength(5).WithMessage("Ticket title cannot be shorter than 5 characters.")
+            .MaximumLength(50).WithMessage("Ticket title cannot be longer than 50 characters.");
+
         RuleFor(x => x.TicketDescription)
-            .NotEmpty().WithMessage("Ticket özetlemesi boş bırakılamaz.")
-            .MinimumLength(5).WithMessage("Ticket özetlemesi 5 karakterden kısa olamaz.")
-            .MaximumLength(10000).WithMessage("Ticket özetlemesi 10000 karakterden uzun olamaz.");
+            .NotEmpty().WithMessage("Ticket summary cannot be empty.")
+            .MinimumLength(5).WithMessage("Ticket summary cannot be shorter than 5 characters.")
+            .MaximumLength(10000).WithMessage("Ticket summary cannot be longer than 10,000 characters.");
+
         RuleFor(x => x.Subject)
-            .NotEmpty().WithMessage("Ticket açıklaması boş bırakılamaz.")
-            .MinimumLength(5).WithMessage("Ticket açıklaması 5 karakterden kısa olamaz.")
-            .MaximumLength(10000).WithMessage("Ticket açıklaması 10.000 karakterden uzun olamaz.");
+            .NotEmpty().WithMessage("Ticket description cannot be empty.")
+            .MinimumLength(5).WithMessage("Ticket description cannot be shorter than 5 characters.")
+            .MaximumLength(10000).WithMessage("Ticket description cannot be longer than 10,000 characters.");
+
         RuleFor(x => x.CategoryId)
-            .NotEmpty().WithMessage("Kategori seçilmesi zorunludur.");
+            .NotEmpty().WithMessage("Category selection is required.");
+
         RuleFor(x => x.SubcategoryId)
-            .NotEqual(Guid.Empty).When(x => x.SubcategoryId.HasValue).WithMessage("Geçerli bir alt kategori seçilmesi zorunludur");
+            .NotEqual(Guid.Empty)
+            .When(x => x.SubcategoryId.HasValue)
+            .WithMessage("A valid subcategory must be selected.");
+
         RuleFor(x => x.PriorityId)
-            .NotEmpty().WithMessage("Öncelik seçilmesi zorunludur.");
+            .NotEmpty().WithMessage("Priority selection is required.");
+
         RuleFor(x => x.ImpactLevelId)
-            .NotEmpty().WithMessage("Etki seviyesi seçilmesi zorunludur.");
+            .NotEmpty().WithMessage("Impact level selection is required.");
+
         RuleFor(x => x.UrgencyLevelId)
             .NotEmpty()
-            .WithMessage(
-                "Aciliyet seviyesi seçilmesi zorunludur.");
+            .WithMessage("Urgency level selection is required.");
+
         RuleFor(x => x.Attachments)
             .Must(files => files.Count <= 10)
-            .WithMessage(
-                "Bir ticket'a en fazla 10 dosya yüklenebilir.")
+            .WithMessage("A maximum of 10 files can be uploaded to a ticket.")
             .Must(files =>
                 files.Sum(file => file.Length) <=
                 MaxTotalSizeBytes)
-            .WithMessage(
-                "Dosyaların toplam boyutu 100 MB'ı geçemez.");
+            .WithMessage("The total file size cannot exceed 100 MB.");
 
         RuleForEach(x => x.Attachments)
             .Must(HasValidFileSize)
-            .WithMessage(
-                "Dosya boş olamaz veya 10 MB'ı geçemez.")
+            .WithMessage("File cannot be empty or exceed 10 MB.")
             .Must(HasValidExtension)
-            .WithMessage(
-                "Desteklenmeyen dosya uzantısı.");
+            .WithMessage("Unsupported file extension.");
     }
 }
