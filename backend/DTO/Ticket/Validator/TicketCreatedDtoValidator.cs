@@ -47,7 +47,7 @@ public class TicketCreateDtoValidator : AbstractValidator<TicketCreateDto>
         RuleFor(x => x.TicketDescription)
             .NotEmpty().WithMessage("Ticket özetlemesi boş bırakılamaz.")
             .MinimumLength(5).WithMessage("Ticket özetlemesi 5 karakterden kısa olamaz.")
-            .MaximumLength(100).WithMessage("Ticket özetlemesi 100 karakterden uzun olamaz.");
+            .MaximumLength(10000).WithMessage("Ticket özetlemesi 10000 karakterden uzun olamaz.");
         RuleFor(x => x.Subject)
             .NotEmpty().WithMessage("Ticket açıklaması boş bırakılamaz.")
             .MinimumLength(5).WithMessage("Ticket açıklaması 5 karakterden kısa olamaz.")
