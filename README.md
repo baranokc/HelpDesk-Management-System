@@ -30,7 +30,6 @@ internal support requests under clearly defined service-level agreements.
 - [Production Deployment](#production-deployment)
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
-- [Project Team](#project-team)
 - [License](#license)
 
 ## About the Project
