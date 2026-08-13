@@ -324,7 +324,7 @@ export function TeamManagementContainer() {
                         {member.csat.totalSurveysCount > 0 ? (
                           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
                             <span className="flex items-center gap-1.5 font-bold text-amber-700 dark:text-amber-400">
-                              <Star className="h-4 w-4 fill-current" />
+                              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                               Overall {member.csat.averageRating.toFixed(1)}
                             </span>
                             <span className="flex items-center gap-1.5 font-semibold text-blue-700 dark:text-blue-400">
