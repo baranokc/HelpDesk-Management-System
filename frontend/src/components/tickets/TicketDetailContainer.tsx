@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Edit3, Trash2, MessageSquarePlus } from "lucide-react";
+import { ArrowLeft, Edit3, Trash2, MessageSquarePlus, AlertTriangle } from "lucide-react";
 import { Alert } from "@/src/components/ui/Alert";
 import { Button } from "@/src/components/ui/Button";
 import { ConfirmModal } from "@/src/components/ui/ConfirmModal";
@@ -169,23 +169,37 @@ export function TicketDetailContainer({
     return <LoadingSpinner label="Loading ticket details..." />;
   }
 
+  // 🌟 LIGHT & DARK MOD UYUMLU GELİŞTİRİLMİŞ HATA EKRANI (Ticket Not Found vb.)
   if (loadError || !ticket) {
     return (
-      <div className="mx-auto max-w-2xl space-y-4">
-        <Alert variant="error">{loadError ?? "Ticket not found."}</Alert>
+      <div className="mx-auto max-w-md pt-16">
+        <div className="rounded-3xl border border-stone-200/80 dark:border-purple-900/40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl p-8 shadow-2xl text-center space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-500/10 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 dark:border-rose-500/30 shadow-inner">
+            <AlertTriangle className="h-7 w-7" />
+          </div>
 
-        <div className="flex flex-wrap gap-3">
-          <Button onClick={() => void loadTicket()} variant="danger">
-            Try again
-          </Button>
+          <div className="space-y-1">
+            <h2 className="text-base font-black tracking-tight text-stone-900 dark:text-white">
+              Unable to load ticket
+            </h2>
+            <p className="text-xs font-medium text-stone-500 dark:text-slate-400">
+              {loadError ?? "The requested ticket could not be found or you do not have permission to view it."}
+            </p>
+          </div>
 
-          <Link
-            href="/tickets"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-stone-700 dark:text-slate-300 bg-stone-100 dark:bg-slate-800 hover:bg-stone-200 dark:hover:bg-slate-700 transition-all"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Back to tickets</span>
-          </Link>
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Button onClick={() => void loadTicket()} variant="danger" className="w-full sm:w-auto !rounded-xl !text-xs !font-bold">
+              Try again
+            </Button>
+
+            <Link
+              href="/tickets"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-stone-700 dark:text-slate-200 bg-stone-100 dark:bg-slate-800 hover:bg-stone-200 dark:hover:bg-slate-700 border border-stone-300/80 dark:border-slate-700 transition-all shadow-sm"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              <span>Back to tickets</span>
+            </Link>
+          </div>
         </div>
       </div>
     );
