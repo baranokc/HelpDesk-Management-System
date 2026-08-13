@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, PlusCircle } from 'lucide-react';
@@ -11,10 +11,16 @@ import type { TicketCreateDto, TicketUpdateDto } from '@/src/types/ticket';
 
 export default function CreateTicketPage() {
   const router = useRouter();
+  const submitLockRef = useRef(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
 
   const handleSubmit = async (dto: TicketCreateDto | TicketUpdateDto) => {
+    if (submitLockRef.current) {
+      return;
+    }
+
+    submitLockRef.current = true;
     setError(undefined);
     setLoading(true);
 
@@ -27,14 +33,15 @@ export default function CreateTicketPage() {
       router.push('/tickets');
       router.refresh();
     } catch (requestError: unknown) {
+      submitLockRef.current = false;
+      setLoading(false);
+
       setError(
         getApiErrorMessage(
           requestError,
           'Ticket could not be created. Please check the entered values and try again.',
         ),
       );
-    } finally {
-      setLoading(false);
     }
   };
 

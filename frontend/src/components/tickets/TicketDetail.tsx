@@ -141,9 +141,9 @@ export function TicketHeader({ ticket }: { ticket: TicketDetailDto }) {
         <h1 className="text-2xl font-black tracking-tight bg-gradient-to-r from-amber-800 via-emerald-800 to-teal-900 dark:from-purple-300 dark:via-violet-200 dark:to-indigo-200 bg-clip-text text-transparent sm:text-3xl">
           {ticket.ticketTitle}
         </h1>
-        {ticket.ticketDescription && (
+        {ticket.subject && (
           <p className="text-xs sm:text-sm font-medium text-stone-600 dark:text-slate-300">
-            {ticket.ticketDescription}
+            {ticket.subject}
           </p>
         )}
       </div>
@@ -166,7 +166,7 @@ export function TicketSubject({ ticket }: { ticket: TicketDetailDto }) {
         </span>
       </div>
       <p className="whitespace-pre-wrap text-xs sm:text-sm leading-relaxed text-stone-800 dark:text-slate-200 font-medium">
-        {ticket.subject}
+        {ticket.ticketDescription}
       </p>
     </div>
   );

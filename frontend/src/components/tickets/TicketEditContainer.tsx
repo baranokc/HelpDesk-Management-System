@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Edit3, AlertTriangle } from "lucide-react";
@@ -21,6 +21,7 @@ interface TicketEditContainerProps {
 export function TicketEditContainer({ ticketId }: TicketEditContainerProps) {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const submitLockRef = useRef(false);
   const [ticket, setTicket] = useState<TicketDetailDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -50,6 +51,11 @@ export function TicketEditContainer({ ticketId }: TicketEditContainerProps) {
   }, [loadTicket]);
 
   const handleSubmit = async (dto: TicketUpdateDto) => {
+    if (submitLockRef.current) {
+      return;
+    }
+
+    submitLockRef.current = true;
     setSaving(true);
     setSaveError(null);
 
@@ -60,14 +66,15 @@ export function TicketEditContainer({ ticketId }: TicketEditContainerProps) {
       router.replace(categoryChanged ? "/tickets" : `/tickets/${ticketId}`);
       router.refresh();
     } catch (error: unknown) {
+      submitLockRef.current = false;
+      setSaving(false);
+
       setSaveError(
         getApiErrorMessage(
           error,
           "An error occurred while updating the ticket.",
         ),
       );
-    } finally {
-      setSaving(false);
     }
   };
 
