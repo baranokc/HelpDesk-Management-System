@@ -309,7 +309,7 @@ export function RegisterForm() {
           </div>
 
           <h2 className="text-2xl font-black tracking-tight bg-gradient-to-r from-amber-800 via-emerald-800 to-teal-900 dark:from-purple-300 dark:via-violet-200 dark:to-indigo-200 bg-clip-text text-transparent">
-            Create Island Account
+            Create Archipelago Account
           </h2>
 
           <p className="text-xs font-medium text-stone-500 dark:text-slate-400">

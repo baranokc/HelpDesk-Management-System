@@ -283,7 +283,7 @@ export default function FaqPage() {
               Still need help?
             </h3>
             <p className="text-xs text-stone-500 dark:text-slate-400 max-w-md font-medium">
-              Can't find the answer you are looking for? Submit a ticket and our Island support team will get back to you shortly.
+              Can't find the answer you are looking for? Submit a ticket and our Archipelago support team will get back to you shortly.
             </p>
           </div>
         </div>
